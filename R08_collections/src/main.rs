@@ -23,6 +23,12 @@ fn vectors() {
     let trois: i32 = v1[2];
     //v1.push(4);       // Not accepted because there is an immutable borrow 2 lines above
 
+    // Iterate over mutable references (can't do it on v1 since there is an immutable bowwow)
+    for i in &mut v3 {
+        println!("{}", i);
+        *i += 100;
+    }
+
     // get accessor returning Option<&T>.
     let v_index = 5;
     match v1.get(v_index) {
