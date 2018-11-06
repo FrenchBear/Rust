@@ -7,12 +7,13 @@
 
 fn main() {
     vectors();
+    strings();
 }
 
 fn vectors() {
-    let mut v1: Vec<i32> = Vec::new();
-    let mut v2 = Vec::<i32>::new();
-    let mut v3 = vec![1, 2, 3]; // Declare and initialize: no type annotation needed
+    let mut v1: Vec<i32> = Vec::new();  // Using variable type annotation to hint Vec about the type of elements
+    let mut v2 = Vec::<i32>::new();     // And not Vec<i32>::new() for some reason
+    let mut v3 = vec![1, 2, 3];         // Declare and initialize: no type annotation needed
 
     v1.push(1);
     v1.push(2);
@@ -23,13 +24,16 @@ fn vectors() {
     let trois: i32 = v1[2];
     //v1.push(4);       // Not accepted because there is an immutable borrow 2 lines above
 
-    // Iterate over mutable references (can't do it on v1 since there is an immutable bowwow)
+    // Slices
+    let slice = &v2[2..=4];
+
+    // Iterate over mutable references (can't do it on v1 since there is an immutable borrow)
     for i in &mut v3 {
         println!("{}", i);
         *i += 100;
     }
 
-    // get accessor returning Option<&T>.
+    // get accessor returning Option<&T>, doesn't panic if index does not exist contrary to v1[v_index]
     let v_index = 5;
     match v1.get(v_index) {
         Some(_) => { println!("Reachable element at index: {}", v_index); }
@@ -49,4 +53,41 @@ fn vectors() {
         Mixed::Float(10.12),
     ];
 
+}
+
+fn strings() {
+    // Strings and str are UTF-8 encoded
+    // Standard library also provide types OsString, OsStr, CString, and CStr
+
+    // new empty string
+    let mut s = String::new();
+
+    // With initial content, both forms are equivalent
+    let s = "initial contents".to_string();
+    let s = String::from("initial contents");
+
+    // Appending text to a string
+    let mut s = String::from("foo");
+    s.push_str("bar");      // Uses a string slice, no ownership of parameter taken
+
+    // Use + operator
+    let s1 = String::from("Hello, ");
+    let s2 = String::from("world!");
+    let s3 = s1 + &s2;      // Note s1 has been moved here and can no longer be used
+    // That's because the + operator uses the add method, whose signature looks something like this:
+    //      fn add(self, s: &str) -> String {
+    // We can only add a &str to a String; we can’t add two String values together.
+    // The reason we’re able to use &s2 in the call to add is that the compiler can coerce the &String argument into a &str.
+    // When we call the add method, Rust uses a deref coercion, which here turns &s2 into &s2[..]. 
+
+    let s1 = String::from("tic");
+    let s2 = String::from("tac");
+    let s3 = String::from("toe");
+    let s = s1 + "-" + &s2 + "-" + &s3;
+
+    let s1 = String::from("tic");   // Since s1 has lost ownership of its content
+    let s = format!("{}-{}-{}", s1, s2, s3);
+
+
+    // 8.2.4 Indexing into Strings
 }
