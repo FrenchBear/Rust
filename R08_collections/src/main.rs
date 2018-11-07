@@ -8,6 +8,7 @@
 fn main() {
     vectors();
     strings();
+    hashmaps();
 }
 
 fn vectors() {
@@ -18,6 +19,8 @@ fn vectors() {
     v1.push(1);
     v1.push(2);
     v1.push(3);
+    v1.push(4);
+    v1.push(5);
 
     // Indexed access
     let third: &i32 = &v1[2];
@@ -25,7 +28,7 @@ fn vectors() {
     //v1.push(4);       // Not accepted because there is an immutable borrow 2 lines above
 
     // Slices
-    let slice = &v2[2..=4];
+    let slice = &v1[2..4];
 
     // Iterate over mutable references (can't do it on v1 since there is an immutable borrow)
     for i in &mut v3 {
@@ -90,4 +93,32 @@ fn strings() {
 
 
     // 8.2.4 Indexing into Strings
+    let s = "Aéà♫山𝄞🐗";       // à is decomposed form (combining accent and a)
+    println!("s={}  s.len()={}", s, s.len()); // len() = 17 UTF-8 bytes
+
+    let mut l=0;
+    println!("s.chars()");
+    for c in s.chars() {
+        l+=1;
+        print!("{} ", c);
+    }
+    println!("    l={}", l);
+
+    l=0;
+    println!("s.bytes()");
+    for b in s.bytes() {
+        l+=1;
+        print!("{} ", b);
+    }
+    println!("    l={}", l);
+}
+
+
+use std::collections::HashMap;
+
+fn hashmaps() {
+    let mut scores = HashMap::new();            // type is inferred from following lines!
+    scores.insert(String::from("Blue"), 10);
+    scores.insert(String::from("Yellow"), 50);
+
 }

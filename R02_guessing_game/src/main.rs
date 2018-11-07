@@ -1,4 +1,4 @@
-// guessing_game
+cargo run// guessing_game
 // Learning rust
 // 2018-10-12	PV
 
