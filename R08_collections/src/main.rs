@@ -10,6 +10,7 @@ fn main() {
     strings();
     hashmaps();
     testvectop();
+    testpiglatin();
 }
 
 fn vectors() {
@@ -130,7 +131,7 @@ use std::collections::HashMap;
 fn hashmaps() {
     let mut scores = HashMap::new(); // type is inferred from following lines!
     let kblue = String::from("Blue");
-    scores.insert(kblue, 10);       // HashMap is now the owner of kblue
+    scores.insert(kblue, 10); // HashMap is now the owner of kblue
     scores.insert(String::from("Yellow"), 50);
     // let z=kblue;         // Error: value used after move
     // could have used &String, but references must be valid as long as hashmap is valid
@@ -142,7 +143,7 @@ fn hashmaps() {
     strscores.entry("Blue").or_insert(15);
 
     // retrieve a valie from a hashmap
-    let val = strscores.get(sblue);     // no pb to reuse sblue, val is Some(&i32)
+    let val = strscores.get(sblue); // no pb to reuse sblue, val is Some(&i32)
     match val {
         Some(&res) => println!("score {}: {}", sblue, res),
         None => println!("No score for {}", sblue),
@@ -153,7 +154,10 @@ fn hashmaps() {
     let initial_scores = vec![10, 50];
     // Two forms
     let scores: HashMap<_, _> = teams.iter().zip(initial_scores.iter()).collect();
-    let scores = teams.iter().zip(initial_scores.iter()).collect::<HashMap<_, _>>();
+    let scores = teams
+        .iter()
+        .zip(initial_scores.iter())
+        .collect::<HashMap<_, _>>();
 
     print!("{{");
     for (key, value) in &scores {
@@ -172,16 +176,123 @@ fn hashmaps() {
 }
 
 fn testvectop() {
-    let vi = vec![1,2,3];
-    let s = sum(&vi);
-    println!("vi = {:?}", vi);
-    println!("sum: {}", s);
+    let vi = vec![12, 8, 17, 13, 1, 21, 7, 87];
+    println!("vi:   {:?}", vi);
+    println!("sum:  {}", sum(&vi));
+    println!("avg:  {}", avg(&vi));
+    println!("med1: {}", med1(&vi));
+    println!("med2: {}", med2(&vi));
 }
 
+// Computes sum of Vec<i32>
 fn sum(vi: &Vec<i32>) -> i32 {
     let mut s = 0;
-    for i in &vi {
+    for i in vi {
         s += i;
     }
-    return r;
+    return s;
+}
+
+// Computes average of Vec<i32>
+fn avg(vi: &Vec<i32>) -> f64 {
+    (sum(vi) as f64) / (vi.len() as f64)
+}
+
+// Computes vector median using sorting
+fn med1(vi: &Vec<i32>) -> f64 {
+    let mut vj = vi.clone();
+    vj.sort();
+    if vj.len() % 2 == 1 {
+        vj[vj.len() / 2] as f64
+    } else {
+        (vj[vj.len() / 2] + vj[vj.len() / 2 - 1]) as f64 / 2.0
+    }
+}
+
+// Computes vector median using select algorithm
+fn med2(vj: &Vec<i32>) -> f64 {
+    if vj.len() % 2 == 1 {
+        select(vj, vj.len() / 2) as f64
+    } else {
+        (select(vj, vj.len() / 2) + select(vj, vj.len() / 2 - 1)) as f64 / 2.0
+    }
+}
+
+// Return kth element of vector vi in O(n) time
+// From "more programming pearls", §15
+// Basically a quicksort (tail-call recursion implemented as loop) only caring about
+// half of the set at each loop, the one that contains index k
+fn select(vi: &Vec<i32>, k: usize) -> i32 {
+    let mut l = 0;
+    let mut u = vi.len() - 1;
+    let mut x = vi.clone();
+    while l < u {
+        swap(&mut x, l, randint(l, u)); // Random select pivot to avoid problems with almost sorted arrays
+        let mut m = l;
+        let mut i = l + 1;
+        while i <= u {
+            if x[i] < x[l] {
+                m += 1;
+                swap(&mut x, m, i);
+            }
+            i += 1;
+        }
+        swap(&mut x, l, m); // move pivot to its correct position
+                            // continue with "below" or "above" part using the one that contains index k
+        if k <= m {
+            u = m - 1;
+        } else if k >= m {
+            l = m + 1;
+        }
+    }
+    return x[k];
+}
+
+extern crate rand;
+fn randint(min: usize, max: usize) -> usize {
+    use rand::Rng;
+    let mut rng = rand::thread_rng();
+    return rng.gen_range(min, max + 1);
+}
+
+fn swap(v: &mut Vec<i32>, i: usize, j: usize) {
+    let t = v[i];
+    v[i] = v[j];
+    v[j] = t;
+}
+
+
+
+fn testpiglatin() {
+    let s = "first apple";
+    println!("{} -> {}", s, piglatin(s));
+}
+
+// Convert strings to pig Latin. The first consonant of each word is moved to the end of the word and “ay” is
+// added, so “first” becomes “irst-fay.” Words that start with a vowel have “hay” added to the end instead (“apple”
+// becomes “apple-hay”). Keep in mind the details about UTF-8 encoding!
+
+fn piglatin(s: &str) -> String {
+    let mut res = String::from("");
+    for word in s.split_whitespace() {
+        if res.len() > 0 {
+            res.push(' ');
+        }
+        let firstletter = word.chars().next().unwrap();
+        if isvowel(firstletter) {
+            res += &word;
+            res += "-hay";
+        } else {
+            res += &word[1..];
+            res += &format!("-{}ay", firstletter);
+//            res.push('-');
+//            res.push(firstletter);
+//            res += "ay";
+        }
+    }
+    return res;
+}
+
+fn isvowel(c: char) -> bool {
+    c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u' || c == 'y'
 }

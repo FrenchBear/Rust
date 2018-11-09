@@ -5,3 +5,4 @@ authors = ["French Bear <FrenchBear38@outlook.com>"]
 
 [dependencies]
 unicode-normalization = "0.1.7"
+rand = "0.5.5"
