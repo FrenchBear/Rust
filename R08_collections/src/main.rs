@@ -1,5 +1,5 @@
 // R08_collections
-// Learning Rust
+// Learning Rust, Vectors, strings and hash maps
 // 2018-10-29	PV
 
 #![allow(unused_mut)]
@@ -9,6 +9,7 @@ fn main() {
     vectors();
     strings();
     hashmaps();
+    testvectop();
 }
 
 fn vectors() {
@@ -99,7 +100,7 @@ fn strings() {
     let s = format!("{}-{}-{}", s1, s2, s3);
 
     // 8.2.4 Indexing into Strings
-    let s = "Aéà♫山𝄞🐗";      // à is decomposed form (combining accent and a)
+    let s = "Aéà♫山𝄞🐗"; // à is decomposed form (combining accent and a)
     println!("s={}  s.len()={}", s, s.len()); // len() = 17 UTF-8 bytes
 
     let mut l = 0;
@@ -124,11 +125,63 @@ fn strings() {
     println!("Après décomposition: len={}", s.len());
 }
 
-
 use std::collections::HashMap;
 
 fn hashmaps() {
     let mut scores = HashMap::new(); // type is inferred from following lines!
-    scores.insert(String::from("Blue"), 10);
+    let kblue = String::from("Blue");
+    scores.insert(kblue, 10);       // HashMap is now the owner of kblue
     scores.insert(String::from("Yellow"), 50);
+    // let z=kblue;         // Error: value used after move
+    // could have used &String, but references must be valid as long as hashmap is valid
+
+    let mut strscores = HashMap::new(); // variant using str instead of String
+    let sblue = "Blue";
+    strscores.insert(sblue, 10);
+    strscores.insert("Yellow", 50);
+    strscores.entry("Blue").or_insert(15);
+
+    // retrieve a valie from a hashmap
+    let val = strscores.get(sblue);     // no pb to reuse sblue, val is Some(&i32)
+    match val {
+        Some(&res) => println!("score {}: {}", sblue, res),
+        None => println!("No score for {}", sblue),
+    }
+
+    // build a hashmap from the content of two vectors
+    let teams = vec![String::from("Blue"), String::from("Yellow")];
+    let initial_scores = vec![10, 50];
+    // Two forms
+    let scores: HashMap<_, _> = teams.iter().zip(initial_scores.iter()).collect();
+    let scores = teams.iter().zip(initial_scores.iter()).collect::<HashMap<_, _>>();
+
+    print!("{{");
+    for (key, value) in &scores {
+        print!("{}: {}, ", key, value);
+    }
+    println!("\x08\x08}}");
+    println!("{:?}", scores);
+
+    let text = "hello world wonderful world";
+    let mut map = HashMap::new();
+    for word in text.split_whitespace() {
+        let count = map.entry(word).or_insert(0);
+        *count += 1;
+    }
+    println!("{:?}", map);
+}
+
+fn testvectop() {
+    let vi = vec![1,2,3];
+    let s = sum(&vi);
+    println!("vi = {:?}", vi);
+    println!("sum: {}", s);
+}
+
+fn sum(vi: &Vec<i32>) -> i32 {
+    let mut s = 0;
+    for i in &vi {
+        s += i;
+    }
+    return r;
 }
