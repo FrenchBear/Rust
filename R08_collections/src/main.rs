@@ -134,7 +134,7 @@ fn hashmaps() {
     scores.insert(kblue, 10); // HashMap is now the owner of kblue
     scores.insert(String::from("Yellow"), 50);
     // let z=kblue;         // Error: value used after move
-    // could have used &String, but references must be valid as long as hashmap is valid
+    // could have used &String, but references must be valid as long as HashMap is valid
 
     let mut strscores = HashMap::new(); // variant using str instead of String
     let sblue = "Blue";
@@ -142,14 +142,14 @@ fn hashmaps() {
     strscores.insert("Yellow", 50);
     strscores.entry("Blue").or_insert(15);
 
-    // retrieve a valie from a hashmap
+    // retrieve a value from a hashmap
     let val = strscores.get(sblue); // no pb to reuse sblue, val is Some(&i32)
     match val {
         Some(&res) => println!("score {}: {}", sblue, res),
         None => println!("No score for {}", sblue),
     }
 
-    // build a hashmap from the content of two vectors
+    // build a HashMap from the content of two vectors
     let teams = vec![String::from("Blue"), String::from("Yellow")];
     let initial_scores = vec![10, 50];
     // Two forms
@@ -176,12 +176,13 @@ fn hashmaps() {
 }
 
 fn testvectop() {
-    let vi = vec![12, 8, 17, 13, 1, 21, 7, 87];
+    let vi = vec![8, 12, 17, 13, 12, 21, 7, 87];
     println!("vi:   {:?}", vi);
     println!("sum:  {}", sum(&vi));
     println!("avg:  {}", avg(&vi));
     println!("med1: {}", med1(&vi));
     println!("med2: {}", med2(&vi));
+    println!("most: {}", most(&vi));
 }
 
 // Computes sum of Vec<i32>
@@ -255,13 +256,31 @@ fn randint(min: usize, max: usize) -> usize {
     return rng.gen_range(min, max + 1);
 }
 
+// swaps two elements of a vector
 fn swap(v: &mut Vec<i32>, i: usize, j: usize) {
     let t = v[i];
     v[i] = v[j];
     v[j] = t;
 }
 
-
+// compute most frequently found value of a vector
+fn most(vi: &Vec<i32>) -> i32 {
+    let mut hm = HashMap::<i32, i32>::new();
+    for &item in vi {
+        let c = hm.entry(item).or_insert(0);
+        *c += 1;
+    }
+    //println!("most(): hm: {:?}", hm);
+    let mut mval = -1;
+    let mut mcount = 0;
+    for (val, count) in hm {
+        if count > mcount {
+            mcount = count;
+            mval = val;
+        }
+    }
+    mval
+}
 
 fn testpiglatin() {
     let s = "first apple";
@@ -271,7 +290,6 @@ fn testpiglatin() {
 // Convert strings to pig Latin. The first consonant of each word is moved to the end of the word and “ay” is
 // added, so “first” becomes “irst-fay.” Words that start with a vowel have “hay” added to the end instead (“apple”
 // becomes “apple-hay”). Keep in mind the details about UTF-8 encoding!
-
 fn piglatin(s: &str) -> String {
     let mut res = String::from("");
     for word in s.split_whitespace() {
@@ -285,9 +303,6 @@ fn piglatin(s: &str) -> String {
         } else {
             res += &word[1..];
             res += &format!("-{}ay", firstletter);
-//            res.push('-');
-//            res.push(firstletter);
-//            res += "ay";
         }
     }
     return res;
