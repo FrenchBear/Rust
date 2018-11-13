@@ -22,11 +22,18 @@ impl Chien {
 
 impl Aboyer for Chien {
     fn ouaf(&self) {
-        print!("{}: ouaf!", self.nom);
+        println!("{}: ouaf!", self.nom);
     }
+}
+
+fn woof(a: impl Aboyer) {
+    a.ouaf();
 }
 
 fn main() {
     let athos = Chien::new("Athos", "Charplanina");
     athos.ouaf();
+
+    let baltik = Chien::new("Baltik", "Charplanina");
+    woof(baltik);
 }
