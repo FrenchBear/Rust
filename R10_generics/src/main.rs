@@ -27,17 +27,24 @@ fn main() {
     let p2 = Point { x: 1.414, y: 1.732 };
 
     let p3 = p1.mixup(p2);
-    print!("p3: ({}, {})", p3.x, p3.y);
+    println!("p3: ({}, {})", p3.x, p3.y);
+
+    let a1 = [1,4,3,12,3,5];
+    let a2 = [3.1416, 2.7182, 1.4142, 1.7321];
+    let a3 = ["once", "upon", "a", "time"];
+    println!("largest(a1): {}", largest(&a1));
+    println!("largest(a2): {}", largest(&a2));
+    println!("largest(a3): {}", largest(&a3));
 }
 
 
 // Wait until I know how to add a trait constraint to a generic function
-// fn largest<T>(list: &[T]) -> T {
-//     let mut largest = list[0];
-//     for &item in list.iter() {
-//         if item > largest {
-//             largest = item;
-//         }
-//     }
-//     largest
-// }
+fn largest<T: std::cmp::PartialOrd>(list: &[T]) -> &T {
+    let mut largest = &list[0];
+    for item in list.iter() {
+        if item > largest {
+            largest = item;
+        }
+    }
+    largest
+}
