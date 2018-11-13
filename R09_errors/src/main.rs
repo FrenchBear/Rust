@@ -82,7 +82,8 @@ fn read_username_from_file_1() -> Result<String, io::Error> {
 }
 
 // Same functionality as previous fn
-// The ? operator can only be used in functions that have a return type of Result
+// The ? operator can only be used in functions that have a return type of Result<T, E>
+// If result is a Ok(value), unwraps value, otherwise function returns Error (after conversion if needed and available) 
 fn read_username_from_file_2() -> Result<String, io::Error> {
     let mut f = File::open("hello.txt")?;
     let mut s = String::new();
@@ -90,11 +91,20 @@ fn read_username_from_file_2() -> Result<String, io::Error> {
     Ok(s)
 }
 
+// Even more compact, chaining calls after ?, still the same behavior
+fn read_username_from_file_3() -> Result<String, io::Error> {
+    let mut s = String::new();
+    File::open("hello.txt")?.read_to_string(&mut s)?;
+    Ok(s)
+}
+
+
 fn divzero() {
     test_division(12, 4);
     test_division(4, 0);
 }
 
+// Use of checked_div to return a Option<u32> (and not a Result<u32, DivisioByZeroError>) to control division by zero
 fn test_division(numerator: u32, denominator: u32) {
     match numerator.checked_div(denominator) {
         Some(result) => println!("{} / {} = {}", numerator, denominator, result),
