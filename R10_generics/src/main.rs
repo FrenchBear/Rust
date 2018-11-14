@@ -24,9 +24,34 @@ impl<T, U> Point<T, U> {
     }
 }
 
+// Specific implementation for <f64,f64>
+impl Point<f64, f64> {
+    fn distance_origin(&self) -> f64 {
+        (self.x * self.x + self.y * self.y).sqrt()
+    }
+}
+
+// Specific implementation for <i32,i32>
+impl Point<i32, i32> {
+    fn distance_origin(&self) -> i32 {
+        max(self.x.abs(), self.y.abs())
+    }
+}
+
+fn max<T: PartialOrd + Copy>(a: T, b: T) -> T {
+    if a > b {
+        a
+    } else {
+        b
+    }
+}
+
 fn main() {
     let p1 = Point { x: 1, y: 2 };
     let p2 = Point { x: 1.414, y: 1.732 };
+
+    println!("p1.distance_origin(): {}", p1.distance_origin());
+    println!("p2.distance_origin(): {}", p2.distance_origin());
 
     let p3 = p1.mixup(p2);
     println!("p3: ({}, {})", p3.x, p3.y);
