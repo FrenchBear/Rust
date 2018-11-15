@@ -4,6 +4,8 @@
 
 #![allow(dead_code)]
 #![allow(unused_variables)]
+#![allow(unused_assignments)]
+
 
 pub trait Aboyer {
     // Just a prototype (=interface), no default implementation
@@ -53,15 +55,18 @@ fn get_aboyeur() -> impl Aboyer {
 }
 
 fn main() {
+    let chenil;     // Type won't be inferred until initialization
+
     let athos = Chien::new("Athos", "Charplanina");
     athos.ouaf();
     athos.wif();
-
+    
     let baltik = Chien::new("Baltik", "Charplanina");
     woof1(&baltik);
     woof2(&athos);
     woof3(&get_aboyeur());
 
+    chenil = vec![athos, baltik];
 
     println!("\nEnChaine");
     println!("{}", EnChaine::en_chaine(&2));
@@ -83,3 +88,5 @@ impl<T:std::fmt::Display> EnChaine for T {
         String::from(format!("{}", self))
     }
 }
+
+

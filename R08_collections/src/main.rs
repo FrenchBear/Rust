@@ -38,6 +38,14 @@ fn vectors() {
         *i += 100;
     }
 
+    // Beware, iterating directly on an array actually moves out content
+    let mut sum = 0;
+    for i in v3 {
+        sum += i;
+    }
+    println!("sum = {}", sum);
+    //let i = v3[0];  // Err: Value used after move, v3 doesn't implement Copy trait
+
     // get accessor returning Option<&T>, doesn't panic if index does not exist contrary to v1[v_index]
     let v_index = 5;
     match v1.get(v_index) {

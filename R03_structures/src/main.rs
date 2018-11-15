@@ -78,6 +78,12 @@ fn main() {
     let mut _a: [i32; 5] = [1, 2, 3, 4, 5];
     _a[0] = 0;
 
+    let mut sum = 0;
+    for i in _a.iter() {
+        sum += i;
+    }
+    println!("sum = {}", sum);
+
     // functions, can be nested
     fn fact(n: i128) -> i128 {
         return if n < 2 { 1 } else { n * fact(n - 1) };
@@ -148,4 +154,3 @@ fn main() {
     println!("φ={}", phi);
 
 }
-
