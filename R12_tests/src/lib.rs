@@ -40,6 +40,12 @@ fn prints_and_returns_10(n: i32) -> i32 {
 }
 
 
+pub fn add_two(n:i32) -> i32 {
+    n+2
+}
+
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -50,7 +56,7 @@ mod tests {
     }
 
     #[test]
-    //#[should_panic]
+    #[should_panic]
     fn another() {
         panic!("Make this test fail");
     }
@@ -70,6 +76,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn greeting_contains_name() {
         let result = greeting("Pierre");
         assert!(result.contains("Piere"), "Greeting did not contain name, value was `{}`", result);
@@ -92,7 +99,7 @@ mod tests {
         }
     }
 
-    // Tests with some output
+    // Tests with some output.  Note that function is not public, that's fine with Rust.
     #[test]
     fn this_test_will_pass() {
         let value = prints_and_returns_10(4);
@@ -100,6 +107,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn this_test_will_fail() {
         let value = prints_and_returns_10(8);
         assert_eq!(5, value);
