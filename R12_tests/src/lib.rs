@@ -34,6 +34,11 @@ impl Guess {
     }
 }
 
+fn prints_and_returns_10(n: i32) -> i32 {
+    println!("Received value {}", n);
+    10
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -45,6 +50,7 @@ mod tests {
     }
 
     #[test]
+    //#[should_panic]
     fn another() {
         panic!("Make this test fail");
     }
@@ -69,9 +75,41 @@ mod tests {
         assert!(result.contains("Piere"), "Greeting did not contain name, value was `{}`", result);
     }
 
+    // Example of #[should_panic]
     #[test]
     #[should_panic]
     fn greater_than_100() {
         Guess::new(200);
     }
+
+    // This test is based on Result<T,E>, can't use #[should_panic], but return an error instead
+    #[test]
+    fn it_works() -> Result<(), String> {
+        if 2+2==4 {
+            Ok(())
+        } else {
+            Err(String::from("2+2!=4"))
+        }
+    }
+
+    // Tests with some output
+    #[test]
+    fn this_test_will_pass() {
+        let value = prints_and_returns_10(4);
+        assert_eq!(10, value);
+    }
+
+    #[test]
+    fn this_test_will_fail() {
+        let value = prints_and_returns_10(8);
+        assert_eq!(5, value);
+    }
+
+    // Executed if -- --ignored is passed
+    #[test]
+    #[ignore]
+    fn expensive_test() {
+        // code that takes an hour to run
+    }
+
 }
