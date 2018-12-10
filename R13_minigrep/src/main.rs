@@ -2,8 +2,6 @@
 // Learning rust
 // 2018-11-30	PV
 
-extern crate minigrep;
-
 use std::env;
 use std::process;
 use minigrep::Config;
