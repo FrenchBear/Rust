@@ -1,7 +1,0 @@
-[package]
-name = "optlt"
-version = "0.1.0"
-authors = ["French Bear <FrenchBear38@outlook.com>"]
-edition = "2018"
-
-[dependencies]
