@@ -1,5 +1,5 @@
 // fnptr
-// Funtions pointers/references in rust
+// Functions pointers/references in Rust
 // 2018-12-21	PV
 
 #![allow(non_snake_case)]
