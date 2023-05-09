@@ -1,11 +1,4 @@
 {
-    "spellright.language": [
-        "en"
-    ],
-    "spellright.documentTypes": [
-        "markdown",
-        "latex"
-    ],
     "workbench.colorCustomizations": {
         "activityBar.background": "#602f00",
         "activityBar.foreground": "#e7e7e7",
@@ -18,7 +11,13 @@
         "titleBar.inactiveForeground": "#e7e7e799",
         "statusBar.background": "#2d1600",
         "statusBarItem.hoverBackground": "#602f00",
-        "statusBar.foreground": "#e7e7e7"
+        "statusBar.foreground": "#e7e7e7",
+        "activityBar.activeBackground": "#602f00",
+        "activityBar.activeBorder": "#00803e",
+        "commandCenter.border": "#e7e7e799",
+        "sash.hoverBorder": "#602f00",
+        "statusBarItem.remoteBackground": "#2d1600",
+        "statusBarItem.remoteForeground": "#e7e7e7"
     },
     "peacock.color": "#2d1600"
 }

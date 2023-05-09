@@ -1,37 +1,47 @@
 // guessing_game
 // Learning rust
+//
 // 2018-10-12	PV
-
-extern crate rand;
+// 2023-05-01   PV      Restart Rust learning
 
 use std::io;
-use std::cmp::Ordering;
 use rand::Rng;
 
 fn main() {
-    println!("Guess the number!");
+    println!("Devinez le nombre!");
 
-    let secret_number = rand::thread_rng().gen_range(1, 101);
-    println!("Secret number: {}", secret_number);
+    let secret_number = rand::thread_rng().gen_range(1..=100);
+    //println!("Le nombre secret est: {secret_number}");                    // Pour tricher :-)
 
+    let mut trial = 0;
     loop {
-        println!("Please input your guess");
-     
-        let mut guess = String::new();
-        io::stdin().read_line(&mut guess).expect("Failed to read line");
-     
-        let guess:u32 = match guess.trim().parse() {
-            Ok(num) => num,
-            Err(_) => continue,
-        };
+        trial += 1;
+        println!("Entrez votre essai (#{trial}):");
 
-        match guess.cmp(&secret_number) {
-            Ordering::Less => println!("Too small!"),
-            Ordering::Greater => println!("Too big!"),
-            Ordering::Equal => {
-                println!("You win!");
-                break;
+        let mut guess = String::new();
+        io::stdin()
+            .read_line(&mut guess)
+            .expect("Erreur de lecture");
+
+        let guess: u32 = match guess.trim().parse() {
+            Ok(num) => num,
+            Err(_) => {
+                println!("Vous devriez entrer un nombre entier");
+                continue;
             }
         };
+
+        println!("Votre essai: {guess}");
+
+        match guess.cmp(&secret_number) {
+            std::cmp::Ordering::Less => println!("Trop petit"),
+            std::cmp::Ordering::Greater => println!("Trop grand"),
+            std::cmp::Ordering::Equal => {
+                println!("Gagné!");
+                break;
+            }
+        }
     }
+
+    println!("Vous avez gagné avec {trial} essais");
 }
