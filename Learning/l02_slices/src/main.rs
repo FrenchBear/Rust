@@ -9,6 +9,11 @@ fn main() {
         i += 1;
     }
     println!("^");
+
+    let mut t = String::from("Bonjour à tous");
+    let fw = first_word(&t);
+    t.clear();
+    println!("Fist word: {fw}");
 }
 
 fn first_space(s: &String) -> usize {
@@ -18,4 +23,18 @@ fn first_space(s: &String) -> usize {
         }
     }
     return s.len();
+}
+
+fn first_word(s: &String) -> &str {
+    /*
+    for (i, &c) in s.as_bytes().iter().enumerate() {
+        if c==b' ' {
+            return &s[0..i];
+        }
+    }
+    &s[..]
+    */
+
+    let s = "Hello world";
+    return &s[0..5];
 }
