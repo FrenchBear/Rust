@@ -11,7 +11,8 @@ fn main() {
     println!("^");
 
     let mut t = String::from("Bonjour à tous");
-    let fw = first_word(&t);
+    let t2 = t.clone();
+    let fw = first_word(&t2);       // Doesn't compile with &t because of next line, must use a cloned (deep copy) version
     t.clear();
     println!("Fist word: {fw}");
 }
