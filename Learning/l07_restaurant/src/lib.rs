@@ -1,3 +1,8 @@
+// l07_Restaurant
+// Learning Rust again, modules
+//
+// 2023-06-10   PV
+
 #![allow(dead_code, unused_variables)]
 
 mod front_of_house;     // Moved to a separate file instead of mod fron_of_house { content... }

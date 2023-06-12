@@ -1,5 +1,5 @@
 // l03_struct
-// Learning structures
+// Learning Rust again, Structures
 //
 // 2023-05-16   PV
 

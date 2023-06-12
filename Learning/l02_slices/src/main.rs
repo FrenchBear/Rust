@@ -1,3 +1,8 @@
+// l02_slices
+// Learning Rust again, Slices
+//
+// 2023-05-16   PV
+
 fn main() {
     let s = String::from("Once_upon_a_time");
     let b = first_space(&s);

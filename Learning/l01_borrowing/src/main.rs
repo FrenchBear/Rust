@@ -1,4 +1,6 @@
-// Just testing borrowing
+// l01_borrowing
+// Learning Rust again, Testing borrowing
+//
 // 2023-05-08   PV
 
 fn main() {

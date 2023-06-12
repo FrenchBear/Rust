@@ -1,5 +1,5 @@
 // l04_enums
-// PLay with Rust enums and Option
+// Learning Rust again, PLay with enums and Options
 //
 // 2023-05-17   PV
 
