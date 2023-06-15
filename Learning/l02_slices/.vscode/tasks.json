@@ -7,8 +7,19 @@
             "problemMatcher": [
                 "$rustc"
             ],
-            "group": "build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
             "label": "Rust: cargo build - Rust"
+        },
+        {
+            "type": "cargo",
+            "command": "run",
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "label": "Run Program"
         },
         {
             "type": "cargo",
@@ -27,14 +38,6 @@
             ],
             "group": "clean",
             "label": "Rust: cargo clean - Rust"
-        },
-        {
-            "type": "cargo",
-            "command": "run",
-            "problemMatcher": [
-                "$rustc"
-            ],
-            "label": "Rust: cargo run - Rust"
         },
         {
             "type": "cargo",
