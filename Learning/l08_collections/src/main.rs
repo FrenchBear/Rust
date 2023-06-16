@@ -150,6 +150,54 @@ fn vectors() {
     vv.push(Vec::new());
     vv.push(Vec::new());
     vv.push(Vec::new());
+
+    let t1: [f64; 3] = [1.0, 5.0, 6.0];
+    let m1 = median(&t1).unwrap_or(-999.0);
+    println!("Median1: {m1}");
+    let t2: [f64; 4] = [1.0, 5.0, 6.0, 7.0];
+    let m2 = median(&t2).unwrap_or(-999.0);
+    println!("Median2: {m2}");
+
+    let v1 = vec![1, 2, 1, 6, 3, 4, 2, 2, 3, 5, 1, 5, 3, 4, 2, 2, 6, 1, 4];
+    let m = mode(&v1);
+    println!("Mode {m}");
+}
+
+fn mode(v: &Vec<i32>) -> i32 {
+    let mut map: HashMap<i32, i32> = HashMap::new();
+    for i in v {
+        let cnt = map.entry(*i).or_insert(0);
+        *cnt += 1;
+    }
+    let mut imax = 0;
+    let mut cntmax = 0;
+    for (k, v) in map {
+        if v > cntmax {
+            cntmax = v;
+            imax = k;
+        }
+    }
+
+    imax
+}
+
+// Exercice 10.4
+fn median(tf: &[f64]) -> Option<f64> {
+    let mut vf: Vec<f64> = Vec::new();
+    for f in tf {
+        vf.push(*f);
+    }
+    vf.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    let l = vf.len();
+    if l & 1 == 1 {
+        return vf.get(l / 2).copied();
+    }
+    if l == 0 {
+        return None;
+    }
+    let f1 = vf.get(l / 2 - 1).copied().unwrap_or(0.0);
+    let f2 = vf.get(l / 2).copied().unwrap_or(0.0);
+    Some((f1 + f2) / 2.0)
 }
 
 fn strings() {
@@ -235,14 +283,77 @@ fn strings() {
         }
     }
     println!("{s}\n{r}");
+
+    // -----------
+    // Exercise 10.4
+    // Convert strings to pig latin. The first consonant of each word is moved to the end of the word and “ay” is added, so “first” becomes “irst-fay.”
+    // Words that start with a vowel have “hay” added to the end instead (“apple” becomes “apple-hay”). Keep in mind the details about UTF-8 encoding!
+    println!();
+    let s = pig_latin("first apple");
+    println!("{s}")
+}
+
+fn pig_latin(s: &str) -> String {
+    let mut vs: Vec<String> = Vec::new();
+    for word in s.split_whitespace() {
+        let vw: Vec<char> = word.chars().collect();
+        //let c1 = word.chars().next().unwrap();
+        let c1 = vw[0];
+        if c1 == 'a' || c1 == 'e' || c1 == 'i' || c1 == '0' || c1 == 'u' || c1 == 'y' {
+            vs.push(String::from(word) + "hay");
+        } else {
+            let nw:String = vw[1..].iter().collect();
+            vs.push(format!("{nw}{c1}ay"));
+        }
+    }
+    vs.join(" ")
 }
 
 use std::collections::HashMap;
 
 fn hashmaps() {
+    println!();
     let mut scores = HashMap::new();
     scores.insert(String::from("Blue"), 10);
+    scores.insert(String::from("Blue"), 12); // Inserting again updates value
     scores.insert(String::from("Yellow"), 50);
+    scores.entry(String::from("Yellow")).or_insert(100); // Insert only if the key doesn' already have a value
     let team_name = String::from("Blue");
     let score = scores.get(&team_name).copied().unwrap_or(0);
+    for (key, value) in &scores {
+        println!("{key}: {value}");
+    }
+
+    // For owned values like String, invert moves the values and the hashmap is the owner
+    let field_name = String::from("Favorite color");
+    let field_value = String::from("Blue");
+    let mut map = HashMap::new();
+    map.insert(field_name, field_value);
+    //println!("{field_name}");     // Error
+    //println!("{field_value}");    // Error
+
+    // Inserting a reference won't move values, but the values referenced must be valid at least as long as the hashmap is valid
+    let field_name = String::from("Favorite color");
+    let field_value = String::from("Blue");
+    let mut map = HashMap::new();
+    map.insert(&field_name, &field_value);
+    println!("{field_name}");
+    println!("{field_value}");
+
+    // For chars, a copy is made automatically
+    let field_name = 'f';
+    let field_value = '𝄞';
+    let mut map = HashMap::new();
+    map.insert(field_name, field_value);
+    println!("{field_name}");
+    println!("{field_value}");
+
+    // counter
+    let text = "hello world wonderful world";
+    let mut map = HashMap::new();
+    for word in text.split_whitespace() {
+        let count = map.entry(word).or_insert(0);
+        *count += 1;
+    }
+    println!("{:?}", map);
 }
