@@ -1,15 +1,22 @@
 // l08_collections
 // Learning Rust again, arrays, collections, iterators...
 //
+
 // 2023-06-11   PV
 
 #![allow(dead_code, unused_variables)]
+
+extern crate unicode_normalization;
+
+use unicode_categories::UnicodeCategories;
+use unicode_normalization::UnicodeNormalization;
 
 fn main() {
     arrays();
     my_list();
     vectors();
     strings();
+    hashmaps();
 }
 
 fn arrays() {
@@ -171,44 +178,71 @@ fn strings() {
     let s = format!("{s1}-{s2}-{s3}"); // tic-tac-toe
 
     // -----------
+    // Print individual characters with associated bytes in a UTF-8 string
     println!();
     let s = "Aéà♫山𝄞🐗"; // à is decomposed form (combining accent and a)
     println!("{}", s);
 
     let bs = s.as_bytes();
-    let mut i=0;
-    while i<s.len() {
+    let mut i = 0;
+    while i < s.len() {
         let b = bs[i];
-        if b<128 {
+        if b < 128 {
             if let Ok(c) = String::from_utf8(bs[i..=i].to_vec()) {
                 print!("[{b:02x}: {c}]");
             }
-            i+=1;
-        } else if b&0b11100000 == 0b11000000 {
-            let b2 = bs[i+1];
-            if let Ok(c) = String::from_utf8(bs[i..=i+1].to_vec()) {
+            i += 1;
+        } else if b & 0b11100000 == 0b11000000 {
+            let b2 = bs[i + 1];
+            if let Ok(c) = String::from_utf8(bs[i..=i + 1].to_vec()) {
                 print!("[{b:02x} {b2:02x}: {c}]");
             }
-            i+=2;
-        } else if b&0b11110000 == 0b11100000 {
-            let b2 = bs[i+1];
-            let b3 = bs[i+2];
-            if let Ok(c) = String::from_utf8(bs[i..=i+2].to_vec()) {
+            i += 2;
+        } else if b & 0b11110000 == 0b11100000 {
+            let b2 = bs[i + 1];
+            let b3 = bs[i + 2];
+            if let Ok(c) = String::from_utf8(bs[i..=i + 2].to_vec()) {
                 print!("[{b:02x} {b2:02x} {b3:02x}: {c}]");
             }
-            i+=3;
-        } else if b&0b11111000 == 0b11110000 {
-            let b2 = bs[i+1];
-            let b3 = bs[i+2];
-            let b4 = bs[i+3];
-            if let Ok(c) = String::from_utf8(bs[i..=i+3].to_vec()) {
+            i += 3;
+        } else if b & 0b11111000 == 0b11110000 {
+            let b2 = bs[i + 1];
+            let b3 = bs[i + 2];
+            let b4 = bs[i + 3];
+            if let Ok(c) = String::from_utf8(bs[i..=i + 3].to_vec()) {
                 print!("[{b:02x} {b2:02x} {b3:02x} {b4:02x}: {c}]");
             }
-            i+=4;
+            i += 4;
         } else {
             panic!("Error");
         }
     }
     println!();
-    
+
+    // -----------
+    // Remove Mn category (Mark non-spacing = combining accents) characters
+    println!();
+    let s = "Élément où ça? Là!";
+    let s = &s.nfd().collect::<String>()[..];
+    let mut r = String::new();
+    for c in s.chars() {
+        let cv = c as u32;
+        let l = c.is_letter();
+        let m = c.is_mark_nonspacing();
+        //print!("{cv:04X} {c}: l={l} m={m}  ");
+        if !m {
+            r.push(c);
+        }
+    }
+    println!("{s}\n{r}");
+}
+
+use std::collections::HashMap;
+
+fn hashmaps() {
+    let mut scores = HashMap::new();
+    scores.insert(String::from("Blue"), 10);
+    scores.insert(String::from("Yellow"), 50);
+    let team_name = String::from("Blue");
+    let score = scores.get(&team_name).copied().unwrap_or(0);
 }
