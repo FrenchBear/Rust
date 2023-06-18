@@ -268,6 +268,14 @@ fn strings() {
     println!();
 
     // -----------
+    // Conversions String <=> Vec<Char>
+    println!();
+    let s = String::from("Aé♫山𝄞🐗🐻‍❄");
+    let v: Vec<char> = s.chars().collect();
+    let t: String = v.iter().collect();
+    assert_eq!(s, t);
+
+    // -----------
     // Remove Mn category (Mark non-spacing = combining accents) characters
     println!();
     let s = "Élément où ça? Là!";
@@ -302,7 +310,7 @@ fn pig_latin(s: &str) -> String {
         if c1 == 'a' || c1 == 'e' || c1 == 'i' || c1 == '0' || c1 == 'u' || c1 == 'y' {
             vs.push(String::from(word) + "hay");
         } else {
-            let nw:String = vw[1..].iter().collect();
+            let nw: String = vw[1..].iter().collect();
             vs.push(format!("{nw}{c1}ay"));
         }
     }
