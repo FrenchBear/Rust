@@ -1,7 +1,6 @@
 // l08_collections
 // Learning Rust again, arrays, collections, iterators...
 //
-
 // 2023-06-11   PV
 
 #![allow(dead_code, unused_variables)]

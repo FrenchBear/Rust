@@ -1,7 +1,6 @@
 // l09_ponic
 // Learning Rust again
 //
-
 // 2023-06-18   PV
 
 #![allow(dead_code, unused_variables)]
