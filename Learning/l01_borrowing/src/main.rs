@@ -3,6 +3,8 @@
 //
 // 2023-05-08   PV
 
+#![allow(unused)]
+
 fn main() {
     let s = String::from("Hello, world");
     let l = get_length(&s);
@@ -17,4 +19,14 @@ fn main() {
 
 fn get_length(s: &String) -> usize {
     s.len()
+}
+
+fn dangling_reference() {
+    let r; // No type, no value, but the variable exists inn this scope.  It can't be used before it gets a value, though (no concept of initial null value)
+    {
+        let x = 5;
+        r = x; // Ok
+        //r = &x; // Error: borrowed value doesn't live long enough
+    }
+    print!("{r}")
 }
