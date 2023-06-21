@@ -38,7 +38,10 @@ fn first_space(s: &String) -> usize {
     return s.len();
 }
 
-fn first_word(s: &String) -> &str {
+// Actually, compiler inferred «fn first_word<'a>(s: &'a str) -> &'a str {» thanks to elision rules,
+// but for this code, this is really «fn first_word<'a>(s: &'a str) -> &'static str {»
+// Since 'static lifetime is longer than or equal to 'a in all cases, compiler does not complain about the resturn statement
+fn first_word(s: &str) -> &str {
     /*
     for (i, &c) in s.as_bytes().iter().enumerate() {
         if c==b' ' {
