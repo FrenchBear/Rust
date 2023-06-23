@@ -5,7 +5,7 @@
             "name": "(Windows) Launch",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceRoot}/target/debug/l12_lifetimes.exe",
+            "program": "${workspaceRoot}/target/debug/l13_tests.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceRoot}",
