@@ -38,6 +38,9 @@ fn main() {
     let result2 = largest(&char_list);
     println!("The largest char is {result1} or {result2}");
 
+    // Use ::<type> to select a specific generic function
+    let largest_f64 = largest::<f64>;
+
     let fruit_list = vec![
         Fruit::new("Poire"),
         Fruit::new("Pomme"),
@@ -127,3 +130,4 @@ impl<X1, Y1> MixedPoint<X1, Y1> {
         }
     }
 }
+

@@ -2,6 +2,7 @@
 // Learning Rust again
 //
 // 2023-06-25   PV
+// 2023-06-28   PV      Use iterators from chap 15
 
 #![allow(unused)]
 
@@ -20,7 +21,7 @@ impl Config {
     pub fn build(args: &[String]) -> Result<Config, &'static str> {
         let mut nargs = 0;
         let mut query = &String::from("");
-        let mut file_path= &String::from("");
+        let mut file_path = &String::from("");
         let mut ignore_case = false;
         for arg in &args[1..] {
             if (arg.to_lowercase() == "-i" || arg.to_lowercase() == "/i") {
@@ -52,6 +53,26 @@ impl Config {
 
         Ok(c)
     }
+
+    // Using an iterator allow to transfer ownership of arguments without cloning them
+    pub fn build_using_iterator(mut args: impl Iterator<Item = String>) -> Result<Config, &'static str> {
+        args.next();
+        let query = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't get a query string"),
+        };
+        let file_path = match args.next() {
+            Some(arg) => arg,
+            None => return Err("Didn't get a file path"),
+        };
+        let ignore_case = env::var("IGNORE_CASE").is_ok();
+
+        Ok(Config {
+            query,
+            file_path,
+            ignore_case,
+        })
+    }
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
@@ -68,14 +89,18 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
 }
 
 pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
-    let mut results = Vec::new();
-    for line in contents.lines() {
-        if line.contains(query) {
-            results.push(line);
-        }
-    }
+    // let mut results = Vec::new();
+    // for line in contents.lines() {
+    //     if line.contains(query) {
+    //         results.push(line);
+    //     }
+    // }
+    // results
 
-    results
+    // Shorter with iterators
+    contents.lines()
+            .filter(|line| line.contains(query))
+            .collect()
 }
 
 pub fn search_case_insensitive<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {

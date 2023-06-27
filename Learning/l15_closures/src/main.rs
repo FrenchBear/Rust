@@ -171,6 +171,9 @@ fn fn_vs_closures_vs_generic() {
     let i = add_one_v1(add_one_v2(add_one_v3(add_one_v4(1u32))));
     let j = add_one_v5(1i32); // Generic allow multiple types, can't be done with closures
     let k = add_one_v5(1u32);
+
+    let add_one_v5_i128 = add_one_v5::<i128>;
+    let l = add_one_v5_i128(7324975923532959i128);
 }
 
 fn capture_immutable_reference() {
@@ -294,7 +297,10 @@ fn test_rectangle() {
 
     // swm is a FnMut
     let mut cnt = 0;
-    let swm = |r: &Rectangle| {cnt += 1; r.width};
+    let swm = |r: &Rectangle| {
+        cnt += 1;
+        r.width
+    };
     list.sort_by_key(swm);
     println!("{:#?} cnt={cnt}", list);
 }

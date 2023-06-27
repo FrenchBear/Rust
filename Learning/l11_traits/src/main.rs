@@ -145,3 +145,13 @@ impl<T:Display> Affichable for T {
         println!("{}", self)
     }
 }
+
+fn test_affichable(item: impl Affichable) {     // Takes ownership
+    item.affiche();
+}
+
+fn demo_affichable() {
+    let i=String::from("Hello");
+    test_affichable(i);
+    //println!("{i}");    // Err borrow of moved value
+}
