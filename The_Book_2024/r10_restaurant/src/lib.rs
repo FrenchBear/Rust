@@ -39,6 +39,7 @@ pub fn eat_at_restaurant() {
 
 fn deliver_order() {}
 
+// Private module, not accessible from outside
 mod back_of_house {
     fn fix_incorrect_order() {
         cook_order();
@@ -86,5 +87,32 @@ pub fn eat_breakfast_at_restaurant() {
 
     let order1 = back_of_house::Appetizer::Soup;
     let order2 = back_of_house::Appetizer::Salad;
+}
 
+
+pub mod reservations {
+    use phone_reservations::take_phone_reservation;
+
+
+    pub enum  ReservationMode {
+        Phone,
+        Email,
+        Sms,
+    }
+
+    // These submodules are private
+    mod email_reservations;     // from email_reservations.rs
+    mod sms_reservations;       // from sms_reservations\mod.rs (old style path)
+
+    mod phone_reservations {
+        pub fn take_phone_reservation() {}
+    }
+
+    pub fn take_reservation(mode: ReservationMode) {
+        match mode {
+            ReservationMode::Phone => take_phone_reservation(),
+            ReservationMode::Email => email_reservations::take_email_reservation(),
+            ReservationMode::Sms => sms_reservations::take_sms_reservation(),
+        }
+    }
 }

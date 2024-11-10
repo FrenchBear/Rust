@@ -5,8 +5,8 @@
 
 #![allow(dead_code, unused_variables)]
 
-//use r10_restaurant::{self, eat_breakfast_at_restaurant};
-use r10_restaurant::*;
+use r10_restaurant::{eat_breakfast_at_restaurant, eat_at_restaurant, reservations};
+//use r10_restaurant::*;        // glob operator
 
 fn main() {
     println!("Hello from main");
@@ -52,3 +52,8 @@ fn test_map() {
 // and use std::io::Result; is not permitted
 // But it's possible to rename one, for instance, use std::io::Result as IoResult;
 
+
+
+pub fn call_for_reservation() {
+    reservations::take_reservation(reservations::ReservationMode::Email);
+}
