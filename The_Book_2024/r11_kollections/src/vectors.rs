@@ -3,8 +3,6 @@
 //
 // 2024-11-10   PV
 
-#![allow(dead_code, unused_variables)]
-
 pub fn test_vectors() {
     println!("\ntest_vectors");
 
@@ -25,9 +23,10 @@ pub fn test_vectors() {
         None => "u doesn't have a third element",
     };
 
-    // Convert a Option<&i32> into a i32 with a default value of -1 without using a match construct
+    // Convert a Option<&i32> into a i32 with a default value of -1 without using a match construct, but it seems overly complex
     let zz = *u.get(2).or(Some(&-1)).unwrap();
     let uu = *u.get(2).unwrap_or(&-1);
+    let tt = u.get(2).copied().unwrap_or(-1);       // Solution, copied is the magic that converts Option<&T> into Option<T> where T:Copy
 
     u[2] = 5;
     let u2 = u[2];
@@ -68,8 +67,14 @@ pub fn test_vectors() {
         *i += 50; // Use dereference operator
     }
 
-    // Get the last element (added with push) from a vector
-    let last = v.pop().unwrap(); // unwrap because pop() returns Option<T>
+    // Get and remove the last element (added with push) from a vector (use last() to get the element without removing it)
+    // last() -> Option<&T>, pop() -> Option(T)
+    let last1 = v.last().copied().unwrap();
+    let len1 = v.len();
+    let last2 = v.pop().unwrap(); // unwrap because pop() returns Option<T>
+    let len2 = v.len();
+    assert_eq!(last1, last2);
+    assert_eq!(len1, len2+1);
 
     // Vectors containing different types
     enum SpreadsheetCell {

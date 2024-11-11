@@ -10,7 +10,7 @@
 //           Many of the same operations available with Vec<T> are available with String as well because String is actually implemented as a wrapper
 //           around a vector of bytes Vec<u8> with some extra guarantees, restrictions, and capabilities.
 
-#![allow(dead_code, unused_variables, unused_mut)]
+#![allow(unused_mut)]
 
 use core::ops::{Range, RangeInclusive};
 
@@ -86,6 +86,11 @@ pub fn test_strings() {
     println!("cgetcharopt(6)={:?}", cgetcharopt(s, 6));
     println!("cgetcharange(2..5)={:?}", cgetcharange(s, &(2usize..5usize)));
     println!("cgetcharangeinclusive(2..=5)={:?}", cgetcharangeinclusive(s, &(2usize..=5usize)));
+
+    let s="🏳️‍🌈🐻‍❄️";
+    println!("\ns={s}");
+    println!("blen={}", blen(s));
+    println!("clen={}", clen(s));
 
 }
 
