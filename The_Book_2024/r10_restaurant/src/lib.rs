@@ -102,7 +102,7 @@ pub mod reservations {
 
     // These submodules are private
     mod email_reservations;     // from email_reservations.rs
-    mod sms_reservations;       // from sms_reservations\mod.rs (old style path)
+    mod sms_reservations;       // from sms_reservations/mod.rs (old style path)
 
     mod phone_reservations {
         pub fn take_phone_reservation() {}
