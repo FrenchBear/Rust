@@ -145,9 +145,9 @@ fn text_command(m: &mut HashMap<String, Vec<String>>, cmd: &str) {
             match vopt {
                 Some(v) => {
                     println!("Persons in {department}:");
-                    let mut v2 = v.clone();
-                    v2.sort();
-                    for person in v2 {
+                    let mut persons = v.clone();
+                    persons.sort();
+                    for person in persons {
                         println!("- {person}");
                     }
                 },
@@ -159,12 +159,15 @@ fn text_command(m: &mut HashMap<String, Vec<String>>, cmd: &str) {
         "Company" => {
             assert_eq!(ts.len(),1);
 
-            let mut persons:Vec<String>=Vec::new();
-            for p in m.values() {
-                persons.extend(p.clone());
+            let mut persons:Vec<&str>=Vec::new();
+            for pvec in m.values() {
+                for p in pvec {
+                    persons.push(p);
+                }
+                // persons.extend(pvec.iter().map(|rs| &rs[..]));       // Same thing, but harder to read
             }
-            println!("All company persons:");
             persons.sort();
+            println!("All company persons:");
             for person in persons {
                 println!("- {person}");
             }
@@ -173,4 +176,3 @@ fn text_command(m: &mut HashMap<String, Vec<String>>, cmd: &str) {
         _ => panic!("Unsupported command {}", ts[0]),
     };
 }
-
