@@ -5,7 +5,8 @@
 
 #![allow(dead_code, unused_variables)]
 
-use std::{env, fs};
+use std::{env, fs, process};
+use std::error::Error;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -18,29 +19,39 @@ fn main() {
 
     let a2: LinkedList<String> = env::args().collect();
     dbg!(a2);
-    
+
     let a3: HashSet<String> = env::args().collect();
     dbg!(a3);
-    
+
     let a4: BTreeSet<String> = env::args().collect();
     dbg!(a4);
-    
+
     let a5: HashMap<String, bool> = env::args().map(|a| (a, true)).collect();
     dbg!(a5);
-    
+
     let a6: BTreeMap<String, bool> = env::args().map(|a| (a, true)).collect();
     dbg!(a6);
     */
 
-    let config = parse_config(&args);
+    let config = Config::build(&args).unwrap_or_else(|err| {
+        println!("Problem parsing arguments: {err}");
+        process::exit(1);
+    });
 
     println!("Searching for {}", config.query);
-    println!("In file {}",config.file_path);
+    println!("In file {}", config.file_path);
 
-    let contents = fs::read_to_string(config.file_path)
-        .expect("Should have been able to read the file");
+    if let Err(e) = run(config) {
+        println!("Application error: {e}");
+        process::exit(1);
+    }
+}
+
+fn run(config: Config) -> Result<(), Box<dyn Error>> {
+    let contents = fs::read_to_string(config.file_path)?;
+    
     println!("With text:\n{contents}");
-
+    Ok(())
 }
 
 struct Config {
@@ -48,10 +59,16 @@ struct Config {
     file_path: String,
 }
 
-// Passing a &Vec<String> to a &[String] is Ok...
-fn parse_config(args: &[String]) -> Config {
-    let query = args[1].clone();
-    let file_path = args[2].clone();
+impl Config {
+    // Passing a &Vec<String> to a &[String] is Ok...
+    fn build(args: &[String]) -> Result<Self, &'static str> {
+        if args.len() < 3 {
+            return Err("Not enough arguments!  Usage: minigrep pattern file");
+        }
 
-    Config { query, file_path }
+        let query = args[1].clone();
+        let file_path = args[2].clone();
+
+        Ok(Self { query, file_path })
+    }
 }
