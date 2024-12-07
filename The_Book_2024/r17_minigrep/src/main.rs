@@ -1,12 +1,12 @@
-// r17_minigrep
+// r17_minigrep - main.rs
 // Learning rust 2024, The Book §11, Command line tool
 //
 // 2024-12-01   PV
 
 #![allow(dead_code, unused_variables)]
 
-use std::{env, fs, process};
-use std::error::Error;
+use std::{env, process};
+use r17_minigrep::Config;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -41,34 +41,8 @@ fn main() {
     println!("Searching for {}", config.query);
     println!("In file {}", config.file_path);
 
-    if let Err(e) = run(config) {
+    if let Err(e) = r17_minigrep::run(config) {
         println!("Application error: {e}");
         process::exit(1);
-    }
-}
-
-fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let contents = fs::read_to_string(config.file_path)?;
-    
-    println!("With text:\n{contents}");
-    Ok(())
-}
-
-struct Config {
-    query: String,
-    file_path: String,
-}
-
-impl Config {
-    // Passing a &Vec<String> to a &[String] is Ok...
-    fn build(args: &[String]) -> Result<Self, &'static str> {
-        if args.len() < 3 {
-            return Err("Not enough arguments!  Usage: minigrep pattern file");
-        }
-
-        let query = args[1].clone();
-        let file_path = args[2].clone();
-
-        Ok(Self { query, file_path })
     }
 }
