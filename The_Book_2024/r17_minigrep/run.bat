@@ -1,1 +1,1 @@
-cargo run somebody poem.txt
+cargo run body poem.txt
