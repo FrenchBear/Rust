@@ -34,7 +34,7 @@ fn main() {
     */
 
     let config = Config::build(&args).unwrap_or_else(|err| {
-        println!("Problem parsing arguments: {err}");
+        eprintln!("Problem parsing arguments: {err}");      // To stderr
         process::exit(1);
     });
 
@@ -42,7 +42,7 @@ fn main() {
     // println!("In file {}", config.file_path);
 
     if let Err(e) = r17_minigrep::run(config) {
-        println!("Application error: {e}");
+        eprintln!("Application error: {e}");
         process::exit(1);
     }
 }
