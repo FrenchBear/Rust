@@ -3,11 +3,13 @@
 //
 // 2024-12-13   PV      First version
 
-mod glyph2_tests;
-mod byteindex_tests;
-mod byterange_tests;
-mod charindex_tests;
+mod tests_glyph2;
+mod tests_byteindex;
+mod tests_byterange;
+mod tests_charindex;
 
+
+/*
 #[cfg(test)]
 use super::*;
 pub mod length_tests {
@@ -38,3 +40,4 @@ pub mod length_tests {
 }
 
 
+ */

@@ -85,7 +85,7 @@ pub fn get_charslice_from_charindexrange<'a>(s: &'a str, range: &Range<usize>) -
 }
 
 pub fn get_refstr_from_charindexrangeinclusive<'a>(s: &'a str, range: &RangeInclusive<usize>) -> &'a str {
-    let start = *range.start();
+    let start = *range.start();     // No need to call function
     let end = *range.end() + 1;
     let newrange = start..end;
     get_refstr_from_charindexrange(s, &newrange)

@@ -44,7 +44,7 @@ pub fn test_vstrings() {
     println!("get_byteslice_from_start(5)={:?}", get_byteslice_from_startbytecount(s, 5usize));
     println!("get_byteslice_from_end(5)={:?}", get_byteslice_from_endbytecount(s, 5usize));
 
-    println!("get_byteiterator_from_range(3..5)={:?}", get_byteiterator_from_byterange(s, &(3usize..5usize)).collect::<Vec<u8>>());
+    println!("get_byteiterator_from_range(3..5)={:?}", get_byteiterator_from_byterange(s, 3usize..5usize).collect::<Vec<u8>>());
     //println!("get_byterefiterator_from_range(3..5)={:?}", get_byterefiterator_from_range(s, &(3usize..5usize)).collect::<Vec<&u8>>());
 
     /*

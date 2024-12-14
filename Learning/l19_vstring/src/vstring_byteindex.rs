@@ -7,6 +7,7 @@
 
 #![allow(unused_mut)]
 
+use core::panic;
 use std::str;
 
 use crate::glyph2::Glyph2;
@@ -118,4 +119,58 @@ pub fn get_charvector_from_byteindex(s: &str, byte_index: usize) -> Vec<char> {
 
 pub fn get_glyphvector_from_byteindex(s: &str, byte_index: usize) -> Vec<Glyph2> {
     vec![get_glyph_from_byteindex(s, byte_index)]
+}
+
+// ------------------------
+// get byte iterator
+
+pub fn get_byteiterator_from_byteindex<'a>(s: &'a str, byte_index: usize) -> impl Iterator<Item = u8> + 'a {
+    s[byte_index..=byte_index].bytes()
+}
+
+// ------------------------
+// get char iterator
+
+pub fn get_chariterator_from_byteindex<'a>(s: &'a str, byte_index: usize) -> impl Iterator<Item = char> + 'a {
+    s[byte_index..].chars().take(1)
+}
+
+// ------------------------
+// get glyph iterator
+
+pub fn get_glyphiterator_from_byteindex<'a>(s: &'a str, byte_index: usize) -> impl Iterator<Item = Glyph2> + 'a {
+    if byte_index >= s.len() {
+        panic!("index out of bounds: the len is {} but the index is {}", s.len(), byte_index);
+    }
+
+    for g in Glyph2::glyph2_indices(s) {
+        if byte_index == *g.byte_range.start() {
+            return vec![g].into_iter();     // Consuming iterator, takes ownership of local vector
+        }
+        if byte_index <= *g.byte_range.end() {
+            // Similar panic message when we try to slice a str in the middle of multibyte UTF-8 character
+            panic!(
+                "byte index {} is not a glyph boundary; it is inside '{}' (bytes {}..={})",
+                byte_index,
+                &s[g.byte_range.clone()],
+                *g.byte_range.start(),
+                *g.byte_range.end()
+            );
+        }
+    }
+    panic!("Internal error, see https://xkcd.com/2200/");   // Should bever get here actually
+}
+
+// ------------------------
+// get strref
+
+pub fn get_strref_from_byteindex<'a>(s: &'a str, byte_index: usize) -> &'a str {
+    &s[byte_index..=byte_index]
+}
+
+// ------------------------
+// get string
+
+pub fn get_string_from_byteindex(s:&str, byte_index: usize) -> String {
+    s[byte_index..=byte_index].to_string()
 }

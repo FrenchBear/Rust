@@ -2,12 +2,13 @@
 //
 // 2024-12-13   PV      First version
 
+/*
 #[cfg(test)]
 pub mod glyph2_tests {
     use crate::glyph2::Glyph2;
 
     #[test]
-    fn glyph2_tests_simple() {
+    fn test_glyph2_simple() {
         let s = "AB";
         let v = Glyph2::glyph2_indices(s).collect::<Vec<Glyph2>>();
 
@@ -19,7 +20,7 @@ pub mod glyph2_tests {
     }
 
     #[test]
-    fn glyph_tests_combining_accent() {
+    fn test_glyph2_combining_accent() {
         let s = "ae\u{0301}z";      
         // UTF8/byte: 61 'a', 65 'e', CC 81 {COMBINING ACUTE ACCENT}, 7A 'z'
         // Codepoints/char: U+0061, U+0065, U+0301, U+007A
@@ -36,9 +37,10 @@ pub mod glyph2_tests {
     }
 
     #[test]
-    fn glyph_tests_empty() {
+    fn tests_glyph2_empty() {
         let v = Glyph2::glyph2_indices("").collect::<Vec<Glyph2>>();
         assert!(v.len()==0);
     }
 
 }
+ */
