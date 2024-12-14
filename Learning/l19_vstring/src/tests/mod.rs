@@ -3,8 +3,9 @@
 //
 // 2024-12-13   PV      First version
 
-mod glyphs_tests;
+mod glyph2_tests;
 mod byteindex_tests;
+mod byterange_tests;
 mod charindex_tests;
 
 #[cfg(test)]
@@ -32,8 +33,7 @@ pub mod length_tests {
         assert_eq!(super::get_glyph_length("Aé♫山𝄞🐗"), 6);
         assert_eq!(super::get_glyph_length(""), 0);
         assert_eq!(super::get_glyph_length("e\u{0301}"), 1);
-        // Emoji ZWJ and VS are not supported yet
-        assert_eq!(super::get_glyph_length("🐻‍❄️"), 4);        // U+1F43B BEAR FACE, U+200D ZWJ, U+2744 SNOWFLAKE, U+FE0F VS-16
+        assert_eq!(super::get_glyph_length("🐻‍❄️"), 1);        // U+1F43B BEAR FACE, U+200D ZWJ, U+2744 SNOWFLAKE, U+FE0F VS-16
     }
 }
 

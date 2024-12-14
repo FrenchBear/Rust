@@ -2,11 +2,18 @@
 // Learning rust 2024, Prepare a module containing string helpers
 //
 // 2024-12-13   PV
+//
+// Two strings in rust:
+// - str:    in the core language, usually seen in its borrowed form &str. String slices are references to some UTF-8 encoded string data stored elsewhere.
+//           String literals, for example, are stored in the program’s binary and are therefore string slices.
+// - String: Provided by Rust’s standard library is a growable, mutable, owned, UTF-8 encoded string type.
+//           Many of the same operations available with Vec<T> are available with String as well because String is actually implemented as a wrapper
+//           around a vector of bytes Vec<u8> with some extra guarantees, restrictions, and capabilities.
 
 #![allow(dead_code, unused_variables)]
 
 mod vstring;
-mod glyph;
+mod glyph2;
 mod tests;
 
 use vstring::*;
@@ -27,17 +34,17 @@ pub fn test_vstrings() {
     println!("get_byteoption_from_index(20)={:?}", get_byteoption_from_byteindex(s, 20));
     println!("get_str_from_byteslice(b\"Hello\")={:?}", get_strref_from_byteslice(b"Hello"));
     
-    println!("get_byteslice_from_range(0..10)={:?}", get_byteslice_from_range(s, &(0usize..10usize)));
-    println!("get_byteslice_from_rangeinclusive(0..10)={:?}", get_byteslice_from_rangeinclusive(s, &(0usize..=10usize)));
-    println!("get_byteslice_from_rangefrom(10..)={:?}", get_byteslice_from_rangefrom(s, &(10..)));
-    println!("get_byteslice_from_rangeto(..10)={:?}", get_byteslice_from_rangeto(s, &(..10)));
-    println!("get_byteslice_from_rangetoinclusive(..=10)={:?}", get_byteslice_from_rangetoinclusive(s, &(..=10)));
-    println!("get_byteslice_from_rangerangefull(..)={:?}", get_byteslice_from_rangerangefull(s, &..));
+    println!("get_byteslice_from_range(0..10)={:?}", get_byteslice_from_byterange(s, 0usize..10usize));
+    println!("get_byteslice_from_rangeinclusive(0..10)={:?}", get_byteslice_from_byterangeinclusive(s, 0usize..=10usize));
+    println!("get_byteslice_from_rangefrom(10..)={:?}", get_byteslice_from_byterangefrom(s, 10..));
+    println!("get_byteslice_from_rangeto(..10)={:?}", get_byteslice_from_byterangeto(s, ..10));
+    println!("get_byteslice_from_rangetoinclusive(..=10)={:?}", get_byteslice_from_byterangetoinclusive(s, ..=10));
+    println!("get_byteslice_from_rangerangefull(..)={:?}", get_byteslice_from_bytefullrange(s, ..));
     println!("get_byteslice()={:?}", get_byteslice(s));
-    println!("get_byteslice_from_start(5)={:?}", get_byteslice_from_start(s, 5));
-    println!("get_byteslice_from_end(5)={:?}", get_byteslice_from_end(s, 5));
+    println!("get_byteslice_from_start(5)={:?}", get_byteslice_from_startbytecount(s, 5usize));
+    println!("get_byteslice_from_end(5)={:?}", get_byteslice_from_endbytecount(s, 5usize));
 
-    println!("get_byteiterator_from_range(3..5)={:?}", get_byteiterator_from_range(s, &(3usize..5usize)).collect::<Vec<u8>>());
+    println!("get_byteiterator_from_range(3..5)={:?}", get_byteiterator_from_byterange(s, &(3usize..5usize)).collect::<Vec<u8>>());
     //println!("get_byterefiterator_from_range(3..5)={:?}", get_byterefiterator_from_range(s, &(3usize..5usize)).collect::<Vec<&u8>>());
 
     /*
