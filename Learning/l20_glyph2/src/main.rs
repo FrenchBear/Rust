@@ -10,9 +10,6 @@ use glyph2::Glyph2;
 fn main() {
     let s = "Ae\u{0301}𝄞â̧̅🐗🐻‍❄️👨🏾‍❤️‍💋‍👨🏻";
 
-    // let t = "🐗";
-    // let t1 = &t[1..];
-
     for gr in Glyph2::glyph2_indices(s) {
         let ss = &s[gr.byte_range.clone()];
         println!("{:?}\t{:?}\t{}", gr.byte_range, gr.char_range, ss);
@@ -27,7 +24,7 @@ fn main() {
     println!("{:?}", get_glyph_from_byteindex(s, 32));
 
     println!("{:?}", get_glyph_from_byteindex("ABC", 1));
-    println!("{:?}", get_glyph_from_byteindex("🐗", 1));
+    println!("{:?}", get_glyph_from_byteindex("🐗", 1));        // Should panic
 }
 
 pub fn get_glyph_from_byteindex(s: &str, byte_index: usize) -> Glyph2 {

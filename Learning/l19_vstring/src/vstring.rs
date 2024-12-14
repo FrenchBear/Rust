@@ -15,8 +15,6 @@ mod vstring_byterange;
 pub use vstring_byterange::*;
 
 
-use core::ops::{Range, RangeInclusive};
-use std::ops::{RangeFrom, RangeFull, RangeTo, RangeToInclusive};
 use std::str;
 
 use crate::glyph2::Glyph2;

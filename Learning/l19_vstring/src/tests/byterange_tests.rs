@@ -4,8 +4,6 @@
 
 #[cfg(test)]
 pub mod byterange_tests {
-    use glyph2::Glyph2;
-
     use crate::*;
 
     // ------------------------

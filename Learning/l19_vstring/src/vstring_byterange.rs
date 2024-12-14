@@ -11,8 +11,6 @@ use core::ops::{Range, RangeInclusive};
 use std::ops::{RangeFrom, RangeFull, RangeTo, RangeToInclusive};
 use std::str;
 
-use crate::glyph2::Glyph2;
-
 // ==========================================================================================
 // From byterange
 

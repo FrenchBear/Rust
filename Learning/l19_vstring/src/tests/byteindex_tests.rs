@@ -9,7 +9,7 @@ pub mod byteindex_tests {
     use crate::*;
 
     // ------------------------
-    // get_byte
+    // get byte
 
     #[test]
     fn get_byte_from_byteindex_tests1() {
@@ -31,7 +31,7 @@ pub mod byteindex_tests {
     }
 
     // ------------------------
-    // get_char
+    // get char
     
     #[test]
     fn get_char_from_byteindex_standard() {
@@ -61,7 +61,7 @@ pub mod byteindex_tests {
     }
 
     // ------------------------
-    // get_glyph
+    // get glyph
 
     #[test]
     fn get_glyph_from_byteindex_standard() {
@@ -76,14 +76,14 @@ pub mod byteindex_tests {
         assert_eq!(get_glyph_from_byteindex(s, 32), Glyph2 { byte_range: (32usize..=66), char_range:  (13usize..=22usize)}); //👨🏾‍❤️‍💋‍👨🏻
     }
 
-    #[should_panic(expected = "out of bounds")]
     #[test]
+    #[should_panic(expected = "out of bounds")]
     fn get_glyph_from_byteindex_panic_out_of_bounds() {
         let _ = get_glyph_from_byteindex("abc", 5);
     }
 
-    #[should_panic(expected = "not a glyph boundary")]
     #[test]
+    #[should_panic(expected = "not a glyph boundary")]
     fn get_glyph_from_byteindex_panic_not_a_glyph_boundary() {
         let _ = get_glyph_from_byteindex("🐗", 1);
     }
@@ -94,5 +94,61 @@ pub mod byteindex_tests {
         assert_eq!(get_glyphoption_from_byteindex("ABC", 1), Some(Glyph2 { byte_range: (1usize..=1), char_range: (1usize..=1usize) }));
         assert_eq!(get_glyphoption_from_byteindex("ABC", 5), None);
         assert_eq!(get_glyphoption_from_byteindex("🐗", 1), None);
+    }
+
+    // ------------------------
+    // get byte slice
+
+    #[test]
+    fn get_byteslice_from_byteindex_standard() {
+        assert_eq!(get_byteslice_from_byteindex("ABC", 1), ['B' as u8])
+    }
+
+    #[test]
+    #[should_panic(expected = "out of range")]
+    fn get_byteslice_from_byteindex_panic_out_of_bounds() {
+        let _ = get_byteslice_from_byteindex("ABC", 4);
+    }
+
+    // ------------------------
+    // get byte vector
+
+    #[test]
+    fn get_bytevector_from_byteindex_standard() {
+        assert_eq!(get_bytevector_from_byteindex("ABC", 1), vec!['B' as u8])
+    }
+
+    #[test]
+    #[should_panic(expected = "out of bounds")]
+    fn get_bytevector_from_byteindex_panic_out_of_bounds() {
+        let _ = get_bytevector_from_byteindex("ABC", 4);
+    }
+
+    // ------------------------
+    // get char vector
+
+    #[test]
+    fn get_charvector_from_byteindex_standard() {
+        assert_eq!(get_charvector_from_byteindex("ABC", 1), vec!['B'])
+    }
+
+    #[test]
+    #[should_panic(expected = "out of bounds")]
+    fn get_charvector_from_byteindex_panic_out_of_bounds() {
+        let _ = get_charvector_from_byteindex("ABC", 4);
+    }
+
+    // ------------------------
+    // get glyph vector
+
+    #[test]
+    fn get_glyphvector_from_byteindex_standard() {
+        assert_eq!(get_glyphvector_from_byteindex("<🐻‍❄️>", 1), vec![Glyph2 { byte_range: 1..=13, char_range: 1..=4 }])
+    }
+
+    #[test]
+    #[should_panic(expected = "out of bounds")]
+    fn get_glyphvector_from_byteindex_panic_out_of_bounds() {
+        let _ = get_glyphvector_from_byteindex("<🐻‍❄️>", 123);
     }
 }

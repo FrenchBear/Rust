@@ -15,7 +15,7 @@ use crate::glyph2::Glyph2;
 // From byteindex
 
 // ------------------------
-// get_byte
+// get byte
 
 pub fn get_byte_from_byteindex(s: &str, byte_index: usize) -> u8 {
     s.as_bytes()[byte_index]
@@ -28,7 +28,7 @@ pub fn get_byteoption_from_byteindex(s: &str, byte_index: usize) -> Option<u8> {
 }
 
 // ------------------------
-// get_char
+// get char
 
 pub fn get_char_from_byteindex(s: &str, byte_index: usize) -> char {
     s[byte_index..].chars().next().unwrap()
@@ -51,7 +51,7 @@ pub fn get_charoption_from_byteindex(s: &str, byte_index: usize) -> Option<char>
 }
 
 // ------------------------
-// get_glyph
+// get glyph
 
 pub fn get_glyph_from_byteindex(s: &str, byte_index: usize) -> Glyph2 {
     get_glyphresult_from_byteindex(s, byte_index, true).unwrap()
@@ -71,7 +71,6 @@ fn get_glyphresult_from_byteindex(s: &str, byte_index: usize, should_panic: bool
         }
     }
 
-    let mut lmax: usize = 0;
     for g in Glyph2::glyph2_indices(s) {
         if byte_index == *g.byte_range.start() {
             return Some(g);
@@ -89,7 +88,34 @@ fn get_glyphresult_from_byteindex(s: &str, byte_index: usize, should_panic: bool
             }
             return None;
         }
-        lmax = *g.byte_range.end() + 1;
     }
     None // Actually we should never get here
+}
+
+// ------------------------
+// get byte slice
+
+pub fn get_byteslice_from_byteindex(s: &str, byte_index: usize) -> &[u8] {
+    &s.as_bytes()[byte_index..=byte_index]
+}
+
+// ------------------------
+// get byte vector
+
+pub fn get_bytevector_from_byteindex(s: &str, byte_index: usize) -> Vec<u8> {
+    vec![s.as_bytes()[byte_index]]
+}
+
+// ------------------------
+// get char vector
+
+pub fn get_charvector_from_byteindex(s: &str, byte_index: usize) -> Vec<char> {
+    vec![s[byte_index..].chars().next().unwrap()]
+}
+
+// ------------------------
+// get glyph vector
+
+pub fn get_glyphvector_from_byteindex(s: &str, byte_index: usize) -> Vec<Glyph2> {
+    vec![get_glyph_from_byteindex(s, byte_index)]
 }
