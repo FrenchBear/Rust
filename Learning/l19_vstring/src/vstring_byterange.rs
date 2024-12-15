@@ -7,7 +7,7 @@
 
 #![allow(unused_mut)]
 
-use core::ops::{Range, RangeInclusive};
+use core::ops::Range;
 use std::ops::RangeBounds;
 use std::str;
 
@@ -159,8 +159,7 @@ where
 // get glyph vector
 
 pub fn get_glyphvector_from_byterange<R>(s: &str, byte_range: R) -> Vec<Glyph2>
-where
-    R: RangeBounds<usize>,
+where R: RangeBounds<usize>,
 {
     // Validate range and convert all varians into inclusive byte indexes for start and end
     let r = validate_byterange(s.len(), byte_range);
@@ -197,30 +196,40 @@ where
 // ------------------------
 // get byte iterator
 
-// Basic version, no range
-pub fn get_byteiterator<'a>(s: &'a str) -> impl Iterator<Item = u8> + 'a {
-    s.bytes()
+pub fn get_byteiterator_from_byterange<'a, R>(s: &'a str, byte_range: R) -> impl Iterator<Item = u8> + 'a where R: RangeBounds<usize>, {
+    s[validate_byterange(s.len(), byte_range)].bytes()
 }
-
-// Returning an iterator on bytes
-pub fn get_byteiterator_from_byterange<'a>(s: &'a str, byte_range: Range<usize>) -> impl Iterator<Item = u8> + 'a {
-    s[byte_range].bytes()
-}
-
-pub fn get_byteiterator_from_byterangeinclusive<'a>(s: &'a str, byte_range: RangeInclusive<usize>) -> impl Iterator<Item = u8> + 'a {
-    s[byte_range].bytes()
-}
-
-// and many range variants
 
 // ------------------------
 // get char iterator
 
+pub fn get_chariterator_from_byterange<'a, R>(s: &'a str, byte_range: R) -> impl Iterator<Item = char> + 'a where R: RangeBounds<usize>, {
+    s[validate_byterange(s.len(), byte_range)].chars()
+}
+
 // ------------------------
 // get glyph iterator
+
+pub fn get_glyphiterator_from_byterange<R>(s: &str, byte_range: R) -> impl Iterator<Item = Glyph2> where R: RangeBounds<usize>, {
+    get_glyphvector_from_byterange(s, byte_range).into_iter()
+}
 
 // ------------------------
 // get &str
 
+pub fn get_strref_from_byterange<'a, R>(s: &'a str, byte_range: R) -> &'a str 
+where
+    R: RangeBounds<usize>,
+{
+    &s[validate_byterange(s.len(), byte_range)]
+}
+
 // ------------------------
 // get String
+
+pub fn get_string_from_byterange<R>(s: &str, byte_range: R) -> String
+where
+    R: RangeBounds<usize>,
+{
+    s[validate_byterange(s.len(), byte_range)].to_string()
+}

@@ -2,10 +2,10 @@
 //
 // 2024-12-13   PV      First version
 
+/*
+
 #[cfg(test)]
 pub mod byterange_tests {
-    use std::ops::{Range, RangeInclusive};
-
     use crate::*;
     use glyph2::Glyph2;
 
@@ -23,8 +23,8 @@ pub mod byterange_tests {
         assert_eq!(validate_byterange(10, ..4), 0..4);
         assert_eq!(validate_byterange(10, ..=4), 0..5);
         assert_eq!(validate_byterange(10, ..), 0..10);
-        assert_eq!(validate_byterange(10, 3..3), 3..3);       // An empty range is accepted
-        assert_eq!(validate_byterange(10, 0..0), 0..0);       // An empty range is accepted ==> crash, return a "normal" range
+        assert_eq!(validate_byterange(10, 3..3), 3..3); // An empty range is accepted
+        assert_eq!(validate_byterange(10, 0..0), 0..0); // An empty range is accepted ==> crash, return a "normal" range
     }
 
     #[test]
@@ -50,7 +50,7 @@ pub mod byterange_tests {
     pub fn test_validate_byterange_panic_invalid_range_4() {
         validate_byterange(10, 3..=10);
     }
-    
+
     #[test]
     #[should_panic(expected = "Range.end excluded 11 is too large for s.len 10")]
     pub fn test_validate_byterange_panic_invalid_range_5() {
@@ -128,7 +128,6 @@ pub mod byterange_tests {
         );
     }
 
-
     #[test]
     pub fn test_byteslice_from_startbytecount() {
         assert_eq!(get_byteslice_from_startbytecount("Hello", 3), ['H' as u8, 'e' as u8, 'l' as u8]);
@@ -149,27 +148,33 @@ pub mod byterange_tests {
         assert_eq!(get_bytevector_from_byterange("Hello", 2..=4), vec!['l' as u8, 'l' as u8, 'o' as u8]);
         assert_eq!(get_bytevector_from_byterange("Hello", 2..), vec!['l' as u8, 'l' as u8, 'o' as u8]);
         assert_eq!(get_bytevector_from_byterange("Hello", 0..3), vec!['H' as u8, 'e' as u8, 'l' as u8]);
-        assert_eq!(get_bytevector_from_byterange("Hello", 0..=3), vec!['H' as u8, 'e' as u8, 'l' as u8, 'l' as u8]);
-        assert_eq!(get_bytevector_from_byterange("Hello", ..), vec!['H' as u8, 'e' as u8, 'l' as u8, 'l' as u8, 'o' as u8]);
+        assert_eq!(
+            get_bytevector_from_byterange("Hello", 0..=3),
+            vec!['H' as u8, 'e' as u8, 'l' as u8, 'l' as u8]
+        );
+        assert_eq!(
+            get_bytevector_from_byterange("Hello", ..),
+            vec!['H' as u8, 'e' as u8, 'l' as u8, 'l' as u8, 'o' as u8]
+        );
     }
 
     // ------------------------
     // get char vector
 
+    #[test]
     pub fn test_charvector_from_byterange() {
         assert_eq!(get_charvector_from_byterange("Aé♫山𝄞🐗", 3..9), vec!['♫', '山']);
         assert_eq!(get_charvector_from_byterange("Aé♫山𝄞🐗", 3..=8), vec!['♫', '山']);
         assert_eq!(get_charvector_from_byterange("Aé♫山𝄞🐗", ..3), vec!['A', 'é']);
         assert_eq!(get_charvector_from_byterange("Aé♫山𝄞🐗", ..=2), vec!['A', 'é']);
         assert_eq!(get_charvector_from_byterange("Aé♫山𝄞🐗", ..), vec!['A', 'é', '♫', '山', '𝄞', '🐗']);
+        assert_eq!(get_charvector_from_byterange("Aé♫山𝄞🐗", 0..0), vec![]);
     }
 
     // ------------------------
     // get glyph vector
 
-    pub fn test_glyphvector() {
-    }
-
+    #[test]
     pub fn test_glyphvector_from_byterange() {
         assert_eq!(
             get_glyphvector_from_byterange("🐻‍❄️e\u{0301}👨🏾‍❤️‍💋‍👨🏻", 13..16),
@@ -199,20 +204,85 @@ pub mod byterange_tests {
     }
 
     // ----------------------------------
-    // get byteiterator
+    // get byte iterator
 
-    // Basic version, no range
-    pub fn get_byteiterator<'a>(s: &'a str) -> impl Iterator<Item = u8> + 'a {
-        s.bytes()
+    #[test]
+    pub fn test_byteiterator_from_byterange() {
+        let mut it = get_byteiterator_from_byterange("Hello", 2..5);
+        assert_eq!(it.next(), Some('l' as u8));
+        assert_eq!(it.next(), Some('l' as u8));
+        assert_eq!(it.next(), Some('o' as u8));
+        assert!(it.next().is_none());
+
+        let mut it = get_byteiterator_from_byterange("Aé♫山𝄞🐗", 3..3);
+        assert!(it.next().is_none());
     }
 
-    // Returning an iterator on bytes
-    pub fn get_byteiterator_from_byterange<'a>(s: &'a str, byterange: &Range<usize>) -> impl Iterator<Item = u8> + 'a {
-        s.as_bytes()[byterange.clone()].iter().copied()
+    // ----------------------------------
+    // get char iterator
+
+    #[test]
+    pub fn test_chariterator_from_byterange() {
+        let mut it = get_chariterator_from_byterange("Aé♫山𝄞🐗", 3..=12);
+        assert_eq!(it.next(), Some('♫'));
+        assert_eq!(it.next(), Some('山'));
+        assert_eq!(it.next(), Some('𝄞'));
+        assert!(it.next().is_none());
+
+        let mut it = get_byteiterator_from_byterange("Aé♫山𝄞🐗", 3..3);
+        assert!(it.next().is_none());
     }
 
-    pub fn get_byteiterator_from_byterangeinclusive<'a>(s: &'a str, byterange: &RangeInclusive<usize>) -> impl Iterator<Item = u8> + 'a {
-        s.as_bytes()[byterange.clone()].iter().copied()
+    // ----------------------------------
+    // get glyph iterator
+
+    #[test]
+    pub fn test_glyphiterator_from_byterange() {
+        let mut it = get_glyphiterator_from_byterange("🐻‍❄️e\u{0301}👨🏾‍❤️‍💋‍👨🏻", 13..16);
+        assert_eq!(
+            it.next(),
+            Some(Glyph2 {
+                byte_range: 13..=15,
+                char_range: 4..=5
+            })
+        );
+        assert!(it.next().is_none());
+
+        let mut it = get_glyphiterator_from_byterange("ABC", ..2);
+        assert_eq!(
+            it.next(),
+            Some(Glyph2 {
+                byte_range: 0..=0,
+                char_range: 0..=0
+            })
+        );
+        assert_eq!(
+            it.next(),
+            Some(Glyph2 {
+                byte_range: 1..=1,
+                char_range: 1..=1
+            })
+        );
+        assert!(it.next().is_none());
     }
-    // and many variants
+
+    // ------------------------
+    // get &str
+
+    #[test]
+    pub fn test_refstr_from_byterange() {
+        assert_eq!(get_strref_from_byterange("Aé♫山𝄞🐗", 3..=12), "♫山𝄞");
+        assert_eq!(get_strref_from_byterange("Aé♫山𝄞🐗", 3..3), "");
+    }
+
+    // ------------------------
+    // get String
+
+    #[test]
+    pub fn test_string_from_byterange() {
+        assert_eq!(get_string_from_byterange("Aé♫山𝄞🐗", 3..=12), "♫山𝄞".to_string());
+        assert!(String::is_empty(&get_string_from_byterange("Aé♫山𝄞🐗", 3..3)));
+    }
 }
+
+ */

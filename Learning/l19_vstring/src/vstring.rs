@@ -14,6 +14,10 @@ pub use vstring_byteindex::*;
 mod vstring_byterange;
 pub use vstring_byterange::*;
 
+#[path = "vstring_charindex.rs"]
+mod vstring_charindex;
+pub use vstring_charindex::*;
+
 
 use std::str;
 
