@@ -35,9 +35,20 @@ pub mod length_tests {
         assert_eq!(super::get_glyph_length("Aé♫山𝄞🐗"), 6);
         assert_eq!(super::get_glyph_length(""), 0);
         assert_eq!(super::get_glyph_length("e\u{0301}"), 1);
-        assert_eq!(super::get_glyph_length("🐻‍❄️"), 1);        // U+1F43B BEAR FACE, U+200D ZWJ, U+2744 SNOWFLAKE, U+FE0F VS-16
+        assert_eq!(super::get_glyph_length("🐻‍❄️👨🏾‍❤️‍💋‍👨🏻"), 2);        
+            // Glyph #1:
+            //  U+1F43B BEAR FACE, U+200D ZWJ, U+2744 SNOWFLAKE, U+FE0F VS-16
+            // Glyph #2:
+            //  U+1F468	MAN
+            //  U+1F3FE	EMOJI MODIFIER FITZPATRICK TYPE-5
+            //  U+200D	ZERO WIDTH JOINER
+            //  U+2764	HEAVY BLACK HEART
+            //  U+FE0F	VARIATION SELECTOR-16
+            //  U+200D	ZERO WIDTH JOINER
+            //  U+1F48B	KISS MARK
+            //  U+200D	ZERO WIDTH JOINER
+            //  U+1F468	MAN
+            //  U+1F3FB	EMOJI MODIFIER FITZPATRICK TYPE-1-2
     }
 }
-
-
  */

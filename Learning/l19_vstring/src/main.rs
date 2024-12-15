@@ -34,15 +34,12 @@ pub fn test_vstrings() {
     println!("get_byteoption_from_index(20)={:?}", get_byteoption_from_byteindex(s, 20));
     println!("get_str_from_byteslice(b\"Hello\")={:?}", get_strref_from_byteslice(b"Hello"));
     
-    println!("get_byteslice_from_range(0..10)={:?}", get_byteslice_from_byterange(s, 0usize..10usize));
-    println!("get_byteslice_from_rangeinclusive(0..10)={:?}", get_byteslice_from_byterangeinclusive(s, 0usize..=10usize));
-    println!("get_byteslice_from_rangefrom(10..)={:?}", get_byteslice_from_byterangefrom(s, 10..));
-    println!("get_byteslice_from_rangeto(..10)={:?}", get_byteslice_from_byterangeto(s, ..10));
-    println!("get_byteslice_from_rangetoinclusive(..=10)={:?}", get_byteslice_from_byterangetoinclusive(s, ..=10));
-    println!("get_byteslice_from_rangerangefull(..)={:?}", get_byteslice_from_bytefullrange(s, ..));
-    println!("get_byteslice()={:?}", get_byteslice(s));
-    println!("get_byteslice_from_start(5)={:?}", get_byteslice_from_startbytecount(s, 5usize));
-    println!("get_byteslice_from_end(5)={:?}", get_byteslice_from_endbytecount(s, 5usize));
+    println!("get_byteslice_from_range(1..3)={:?}", get_byteslice_from_byterange(s, 1..3));
+    println!("get_byteslice_from_range(0..10)={:?}", get_byteslice_from_byterange(s, 0..10));
+    println!("get_byteslice_from_range(0..=9)={:?}", get_byteslice_from_byterange(s, 0..=9));
+    println!("get_byteslice_from_range(..)={:?}", get_byteslice_from_byterange(s, ..));
+    println!("get_byteslice_from_start(5)={:?}", get_byteslice_from_startbytecount(s, 5));
+    println!("get_byteslice_from_end(5)={:?}", get_byteslice_from_endbytecount(s, 5));
 
     println!("get_byteiterator_from_range(3..5)={:?}", get_byteiterator_from_byterange(s, 3usize..5usize).collect::<Vec<u8>>());
     //println!("get_byterefiterator_from_range(3..5)={:?}", get_byterefiterator_from_range(s, &(3usize..5usize)).collect::<Vec<&u8>>());
