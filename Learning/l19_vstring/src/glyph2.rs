@@ -8,14 +8,14 @@
 // 2024-12-13   PV      First version, inefficient, only supporing simple combining diacriticals, but working!
 // 2024-12-14   PV      Store char_indices iterator instead of a Vec<char>; return ranges rather than strings
 
-use core::ops::RangeInclusive;
+use core::ops::Range;
 use std::str::CharIndices;
 
 // Returned by glyph2_indices iterator
 #[derive(Debug, PartialEq)]
 pub struct Glyph2 {
-    pub byte_range: RangeInclusive<usize>,
-    pub char_range: RangeInclusive<usize>,
+    pub byte_range: Range<usize>,
+    pub char_range: Range<usize>,
 }
 
 // Private internal iterator object storing current state
@@ -80,8 +80,8 @@ impl<'a> Iterator for Glyph2Iterator<'a> {
         }
 
         let result: Option<Glyph2> = Some(Glyph2 {
-            byte_range: bix_start..=bix_end,
-            char_range: self.current_char_index..=cix_end,
+            byte_range: bix_start..bix_end+1,
+            char_range: self.current_char_index..cix_end+1,
         });
 
         self.current_char_index = cix_end + 1;

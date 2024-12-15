@@ -2,8 +2,6 @@
 //
 // 2024-12-13   PV      First version
 
-/*
-
 #[cfg(test)]
 pub mod byterange_tests {
     use crate::*;
@@ -179,8 +177,8 @@ pub mod byterange_tests {
         assert_eq!(
             get_glyphvector_from_byterange("🐻‍❄️e\u{0301}👨🏾‍❤️‍💋‍👨🏻", 13..16),
             vec![Glyph2 {
-                byte_range: 13..=15,
-                char_range: 4..=5
+                byte_range: 13..16,
+                char_range: 4..6
             }]
         );
 
@@ -188,16 +186,16 @@ pub mod byterange_tests {
             get_glyphvector_from_byterange("🐻‍❄️e\u{0301}👨🏾‍❤️‍💋‍👨🏻", ..),
             vec![
                 Glyph2 {
-                    byte_range: 0..=12,
-                    char_range: 0..=3
+                    byte_range: 0..13,
+                    char_range: 0..4
                 },
                 Glyph2 {
-                    byte_range: 13..=15,
-                    char_range: 4..=5
+                    byte_range: 13..16,
+                    char_range: 4..6
                 },
                 Glyph2 {
-                    byte_range: 16..=50,
-                    char_range: 6..=15
+                    byte_range: 16..51,
+                    char_range: 6..16
                 }
             ]
         );
@@ -242,8 +240,8 @@ pub mod byterange_tests {
         assert_eq!(
             it.next(),
             Some(Glyph2 {
-                byte_range: 13..=15,
-                char_range: 4..=5
+                byte_range: 13..16,
+                char_range: 4..6
             })
         );
         assert!(it.next().is_none());
@@ -252,15 +250,15 @@ pub mod byterange_tests {
         assert_eq!(
             it.next(),
             Some(Glyph2 {
-                byte_range: 0..=0,
-                char_range: 0..=0
+                byte_range: 0..1,
+                char_range: 0..1
             })
         );
         assert_eq!(
             it.next(),
             Some(Glyph2 {
-                byte_range: 1..=1,
-                char_range: 1..=1
+                byte_range: 1..2,
+                char_range: 1..2
             })
         );
         assert!(it.next().is_none());
@@ -284,5 +282,3 @@ pub mod byterange_tests {
         assert!(String::is_empty(&get_string_from_byterange("Aé♫山𝄞🐗", 3..3)));
     }
 }
-
- */

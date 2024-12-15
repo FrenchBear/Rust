@@ -167,25 +167,25 @@ where R: RangeBounds<usize>,
     let mut accumulate = false;
     let mut res = Vec::new();
     for g in Glyph2::glyph2_indices(s) {
-        if r.start == *g.byte_range.start() {
+        if r.start == g.byte_range.start {
             accumulate = true;
         };
 
-        if r.start > *g.byte_range.start() && r.start <= *g.byte_range.end() {
+        if r.start > g.byte_range.start && r.start < g.byte_range.end {
             // Similar panic message when we try to slice a str in the middle of multibyte UTF-8 character
             panic!(
-                "Range.start {} is not a glyph boundary; it is inside '{}' (bytes {}..={})",
+                "Range.start {} is not a glyph boundary; it is inside '{}' (bytes {}..{})",
                 r.start,
                 &s[g.byte_range.clone()],
-                *g.byte_range.start(),
-                *g.byte_range.end()
+                g.byte_range.start,
+                g.byte_range.end
             );
         }
 
         if accumulate {
-            let e = *g.byte_range.end();
+            let e = g.byte_range.end;
             res.push(g);
-            if r.end == e + 1 {
+            if r.end == e {
                 return res;
             }
         }

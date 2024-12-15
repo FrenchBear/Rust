@@ -2,8 +2,6 @@
 //
 // 2024-12-13   PV      First version
 
-/*
-
 #[cfg(test)]
 pub mod byteindex_tests {
     use glyph2::Glyph2;
@@ -69,13 +67,13 @@ pub mod byteindex_tests {
     fn test_glyph_from_byteindex_standard() {
         let s = "Ae\u{0301}𝄞â̧̅🐗🐻‍❄️👨🏾‍❤️‍💋‍👨🏻";
 
-        assert_eq!(get_glyph_from_byteindex(s, 0), Glyph2 { byte_range: (0usize..=0), char_range:    (0usize..=0usize)});   // A
-        assert_eq!(get_glyph_from_byteindex(s, 1), Glyph2 { byte_range: (1usize..=3), char_range:    (1usize..=2usize)});   // é
-        assert_eq!(get_glyph_from_byteindex(s, 4), Glyph2 { byte_range: (4usize..=7), char_range:    (3usize..=3usize)});   // 𝄞
-        assert_eq!(get_glyph_from_byteindex(s, 8), Glyph2 { byte_range: (8usize..=14), char_range:   (4usize..=7usize)});   // â̧̅
-        assert_eq!(get_glyph_from_byteindex(s, 15), Glyph2 { byte_range: (15usize..=18), char_range:  (8usize..=8usize)});   //🐗
-        assert_eq!(get_glyph_from_byteindex(s, 19), Glyph2 { byte_range: (19usize..=31), char_range:  (9usize..=12usize)});  //🐻‍❄️
-        assert_eq!(get_glyph_from_byteindex(s, 32), Glyph2 { byte_range: (32usize..=66), char_range:  (13usize..=22usize)}); //👨🏾‍❤️‍💋‍👨🏻
+        assert_eq!(get_glyph_from_byteindex(s, 0), Glyph2 { byte_range:  (0..1),   char_range: (0..1)});   // A
+        assert_eq!(get_glyph_from_byteindex(s, 1), Glyph2 { byte_range:  (1..4),   char_range: (1..3)});   // é
+        assert_eq!(get_glyph_from_byteindex(s, 4), Glyph2 { byte_range:  (4..8),   char_range: (3..4)});   // 𝄞
+        assert_eq!(get_glyph_from_byteindex(s, 8), Glyph2 { byte_range:  (8..15),  char_range: (4..8)});   // â̧̅
+        assert_eq!(get_glyph_from_byteindex(s, 15), Glyph2 { byte_range: (15..19), char_range: (8..9)});   //🐗
+        assert_eq!(get_glyph_from_byteindex(s, 19), Glyph2 { byte_range: (19..32), char_range: (9..13)});  //🐻‍❄️
+        assert_eq!(get_glyph_from_byteindex(s, 32), Glyph2 { byte_range: (32..67), char_range: (13..23)}); //👨🏾‍❤️‍💋‍👨🏻
     }
 
     #[test]
@@ -93,7 +91,7 @@ pub mod byteindex_tests {
 
     #[test]
     fn test_glyphoption_from_byteindex_standard() {
-        assert_eq!(get_glyphoption_from_byteindex("ABC", 1), Some(Glyph2 { byte_range: (1usize..=1), char_range: (1usize..=1usize) }));
+        assert_eq!(get_glyphoption_from_byteindex("ABC", 1), Some(Glyph2 { byte_range: (1..2), char_range: (1..2) }));
         assert_eq!(get_glyphoption_from_byteindex("ABC", 5), None);
         assert_eq!(get_glyphoption_from_byteindex("🐗", 1), None);
     }
@@ -152,7 +150,7 @@ pub mod byteindex_tests {
 
     #[test]
     fn test_glyphvector_from_byteindex_standard() {
-        assert_eq!(get_glyphvector_from_byteindex("<🐻‍❄️>", 1), vec![Glyph2 { byte_range: 1..=13, char_range: 1..=4 }])
+        assert_eq!(get_glyphvector_from_byteindex("<🐻‍❄️>", 1), vec![Glyph2 { byte_range: 1..14, char_range: 1..5 }])
     }
 
     #[test]
@@ -212,7 +210,7 @@ pub mod byteindex_tests {
     #[test]
     fn test_glyphiterator_from_byteindex_standard() {
         let mut it = get_glyphiterator_from_byteindex("<🐻‍❄️>", 1);
-        assert!(it.next()==Some(Glyph2 { byte_range: 1..=13, char_range: 1..=4 }));
+        assert!(it.next()==Some(Glyph2 { byte_range: 1..14, char_range: 1..5 }));
         assert!(it.next().is_none());
     }
 
@@ -257,5 +255,3 @@ pub mod byteindex_tests {
     }
 
 }
-
-*/

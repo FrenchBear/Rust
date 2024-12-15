@@ -10,12 +10,13 @@
 //           Many of the same operations available with Vec<T> are available with String as well because String is actually implemented as a wrapper
 //           around a vector of bytes Vec<u8> with some extra guarantees, restrictions, and capabilities.
 
-#![allow(dead_code, unused_variables)]
+#![allow(dead_code, unused_variables, unused_imports)]
 
 mod vstring;
 mod glyph2;
 mod tests;
 
+use glyph2::Glyph2;
 use vstring::*;
 
 fn main() {
@@ -24,38 +25,12 @@ fn main() {
 
 pub fn test_vstrings() {
 
-    let s = "Aé♫山𝄞🐗";
+    let s = "Aé♫山𝄞🐗🏳️‍🌈🐻‍❄️";
     println!("s={s}");
 
-    // Bytes
     println!("\nBytes functions");
     println!("get_byte_length={}", get_byte_length(s));
-    println!("get_byte_from_index(10)={}", get_byte_from_byteindex(s, 10));
-    println!("get_byteoption_from_index(20)={:?}", get_byteoption_from_byteindex(s, 20));
-    println!("get_str_from_byteslice(b\"Hello\")={:?}", get_strref_from_byteslice(b"Hello"));
-    
-    println!("get_byteslice_from_range(1..3)={:?}", get_byteslice_from_byterange(s, 1..3));
-    println!("get_byteslice_from_range(0..10)={:?}", get_byteslice_from_byterange(s, 0..10));
-    println!("get_byteslice_from_range(0..=9)={:?}", get_byteslice_from_byterange(s, 0..=9));
-    println!("get_byteslice_from_range(..)={:?}", get_byteslice_from_byterange(s, ..));
-    println!("get_byteslice_from_start(5)={:?}", get_byteslice_from_startbytecount(s, 5));
-    println!("get_byteslice_from_end(5)={:?}", get_byteslice_from_endbytecount(s, 5));
-
-    println!("get_byteiterator_from_range(3..5)={:?}", get_byteiterator_from_byterange(s, 3usize..5usize).collect::<Vec<u8>>());
-    //println!("get_byterefiterator_from_range(3..5)={:?}", get_byterefiterator_from_range(s, &(3usize..5usize)).collect::<Vec<&u8>>());
-
-    /*
-    println!("\nChar functions");
-    println!("clen={}", get_char_length(s));
-    println!("cgetchar(5)={}", get_char_from_index(s, 5));
-    println!("cgetcharopt(6)={:?}", get_charoption_from_index(s, 6));
-    println!("cgetcharange(2..5)={:?}", get_charslice_from_range(s, &(2usize..5usize)));
-    println!("cgetcharangeinclusive(2..=5)={:?}", cgetcharangeinclusive(s, &(2usize..=5usize)));
-
-    let s = "🏳️‍🌈🐻‍❄️";
-    println!("\ns={s}");
-    println!("blen={}", get_byte_length(s));
-    println!("clen={}", get_char_length(s));
-     */
+    println!("get_char_length={}", get_char_length(s));
+    println!("get_glyph_length={}", get_glyph_length(s));
 
 }

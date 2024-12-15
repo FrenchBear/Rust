@@ -31,7 +31,7 @@ pub fn validate_charindex(s: &str, char_index: usize) -> (Range<usize>, char) {
         if ix == char_index {
             let ci = ciopt.unwrap();
             let nextopt = it.next();
-            if ciopt.is_none() {
+            if nextopt.is_none() {
                 return (ci.0..s.len(), ci.1);
             } else {
                 return (ci.0..nextopt.unwrap().0, ci.1);
@@ -58,63 +58,40 @@ pub fn get_charoption_from_charindex(s: &str, char_index: usize) -> Option<char>
     return None;
 }
 
-/*
 // ------------------------
 // get glyph
 
 pub fn get_glyph_from_charindex(s: &str, char_index: usize) -> Glyph2 {
-    get_glyphresult_from_charindex(s, char_index, true).unwrap()
+    let mut charcount = 0;
+    for g in Glyph2::glyph2_indices(s) {
+        if g.char_range.start == char_index { return g; }
+        charcount = g.char_range.end;
+    }
+    panic!("char index out of bounds: s contains {} characters, but the index is {}", charcount, char_index);
 }
 
 pub fn get_glyphoption_from_charindex(s: &str, char_index: usize) -> Option<Glyph2> {
-    get_glyphresult_from_charindex(s, char_index, false)
-}
-
-// Private base function
-fn get_glyphresult_from_charindex(s: &str, char_index: usize, should_panic: bool) -> Option<Glyph2> {
-    if char_index >= s.len() {
-        if should_panic {
-            panic!("index out of bounds: the len is {} but the index is {}", s.len(), char_index);
-        } else {
-            return None;
-        }
-    }
-
     for g in Glyph2::glyph2_indices(s) {
-        if char_index == *g.byte_range.start() {
-            return Some(g);
-        }
-        if char_index <= *g.byte_range.end() {
-            if should_panic {
-                // Similar panic message when we try to slice a str in the middle of multibyte UTF-8 character
-                panic!(
-                    "char index {} is not a glyph boundary; it is inside '{}' (bytes {}..={})",
-                    char_index,
-                    &s[g.byte_range.clone()],
-                    *g.byte_range.start(),
-                    *g.byte_range.end()
-                );
-            }
-            return None;
-        }
+        if g.char_range.start == char_index { return Some(g); }
     }
-    None // Actually we should never get here
+    None
 }
 
 // ------------------------
 // get byte slice
 
 pub fn get_byteslice_from_charindex(s: &str, char_index: usize) -> &[u8] {
-    &s.as_bytes()[char_index..=char_index]
+    &s.as_bytes()[validate_charindex(s, char_index).0]
 }
 
 // ------------------------
 // get byte vector
 
 pub fn get_bytevector_from_charindex(s: &str, char_index: usize) -> Vec<u8> {
-    vec![s.as_bytes()[char_index]]
+    Vec::from(&s[validate_charindex(s, char_index).0])
 }
 
+/*
 // ------------------------
 // get char vector
 
@@ -155,14 +132,14 @@ pub fn get_glyphiterator_from_charindex<'a>(s: &'a str, char_index: usize) -> im
         if char_index == *g.byte_range.start() {
             return vec![g].into_iter(); // Consuming iterator, takes ownership of local vector
         }
-        if char_index <= *g.byte_range.end() {
+        if char_index <= *g.byte_range_inclusive.end() {
             // Similar panic message when we try to slice a str in the middle of multibyte UTF-8 character
             panic!(
                 "char index {} is not a glyph boundary; it is inside '{}' (bytes {}..={})",
                 char_index,
-                &s[g.byte_range.clone()],
+                &s[g.byte_range_inclusive.clone()],
                 *g.byte_range.start(),
-                *g.byte_range.end()
+                *g.byte_range_inclusive.end()
             );
         }
     }

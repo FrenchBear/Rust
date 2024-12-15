@@ -2,7 +2,6 @@
 //
 // 2024-12-13   PV      First version
 
-/*
 #[cfg(test)]
 pub mod glyph2_tests {
     use crate::glyph2::Glyph2;
@@ -13,10 +12,10 @@ pub mod glyph2_tests {
         let v = Glyph2::glyph2_indices(s).collect::<Vec<Glyph2>>();
 
         assert!(v.len()==2);
-        assert!(v[0].byte_range==(0usize..=0usize));
-        assert!(v[0].char_range==(0usize..=0usize));
-        assert!(v[1].byte_range==(1usize..=1usize));
-        assert!(v[1].char_range==(1usize..=1usize));
+        assert!(v[0].byte_range==(0..1));
+        assert!(v[0].char_range==(0..1));
+        assert!(v[1].byte_range==(1..2));
+        assert!(v[1].char_range==(1..2));
     }
 
     #[test]
@@ -28,12 +27,12 @@ pub mod glyph2_tests {
         let v = Glyph2::glyph2_indices(s).collect::<Vec<Glyph2>>();
 
         assert!(v.len()==3);
-        assert!(v[0].byte_range==(0usize..=0usize));
-        assert!(v[0].char_range==(0usize..=0usize));
-        assert!(v[1].byte_range==(1usize..=3usize));
-        assert!(v[1].char_range==(1usize..=2usize));
-        assert!(v[2].byte_range==(4usize..=4usize));
-        assert!(v[2].char_range==(3usize..=3usize));
+        assert!(v[0].byte_range==(0..1));
+        assert!(v[0].char_range==(0..1));
+        assert!(v[1].byte_range==(1..4));
+        assert!(v[1].char_range==(1..3));
+        assert!(v[2].byte_range==(4..5));
+        assert!(v[2].char_range==(3..4));
     }
 
     #[test]
@@ -43,4 +42,3 @@ pub mod glyph2_tests {
     }
 
 }
- */

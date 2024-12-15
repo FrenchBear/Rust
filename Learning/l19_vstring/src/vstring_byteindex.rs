@@ -73,18 +73,18 @@ fn get_glyphresult_from_byteindex(s: &str, byte_index: usize, should_panic: bool
     }
 
     for g in Glyph2::glyph2_indices(s) {
-        if byte_index == *g.byte_range.start() {
+        if byte_index == g.byte_range.start {
             return Some(g);
         }
-        if byte_index <= *g.byte_range.end() {
+        if byte_index < g.byte_range.end {
             if should_panic {
                 // Similar panic message when we try to slice a str in the middle of multibyte UTF-8 character
                 panic!(
-                    "byte index {} is not a glyph boundary; it is inside '{}' (bytes {}..={})",
+                    "byte index {} is not a glyph boundary; it is inside '{}' (bytes {}..{})",
                     byte_index,
                     &s[g.byte_range.clone()],
-                    *g.byte_range.start(),
-                    *g.byte_range.end()
+                    g.byte_range.start,
+                    g.byte_range.end
                 );
             }
             return None;
@@ -144,17 +144,17 @@ pub fn get_glyphiterator_from_byteindex<'a>(s: &'a str, byte_index: usize) -> im
     }
 
     for g in Glyph2::glyph2_indices(s) {
-        if byte_index == *g.byte_range.start() {
+        if byte_index == g.byte_range.start {
             return vec![g].into_iter();     // Consuming iterator, takes ownership of local vector
         }
-        if byte_index <= *g.byte_range.end() {
+        if byte_index < g.byte_range.end {
             // Similar panic message when we try to slice a str in the middle of multibyte UTF-8 character
             panic!(
-                "byte index {} is not a glyph boundary; it is inside '{}' (bytes {}..={})",
+                "byte index {} is not a glyph boundary; it is inside '{}' (bytes {}..{})",
                 byte_index,
                 &s[g.byte_range.clone()],
-                *g.byte_range.start(),
-                *g.byte_range.end()
+                g.byte_range.start,
+                g.byte_range.end
             );
         }
     }
