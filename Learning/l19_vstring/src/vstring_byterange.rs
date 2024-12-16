@@ -19,55 +19,37 @@ use crate::glyph2::Glyph2;
 // ------------------------
 // Helpers
 
+use std::ops::Bound::*;
+
 // Checks that byte_range is compatible with a &str on len bytes
+// Accepts all variations of Range
 // Panics in case of invalid range or incompatibility
-// If Ok, return a usize tuple(start_index, end_index_included) representing all forms of ranges
-pub fn validate_byterange<R>(len: usize, byte_range: R) -> Range<usize>
+// If Ok, return a Range<usize> (bytes index) representing all forms of ranges
+pub fn validate_byterange<R>(count: usize, byte_range: R) -> Range<usize>
 where
     R: RangeBounds<usize>,
 {
-    let stnum = match byte_range.start_bound() {
-        std::ops::Bound::Included(&st) => {
-            if st >= len {
-                panic!("Range.start {} is too large for s.len {}", st, len);
-            };
-            match byte_range.end_bound() {
-                std::ops::Bound::Included(&enin) => {
-                    if enin < st {
-                        panic!("Invalid range, start {} is greater than end included {}", st, enin);
-                    }
-                }
-                // An empty range x..x is accepted
-                std::ops::Bound::Excluded(&enex) => {
-                    if enex < st {
-                        panic!("Invalid range, start {} is greater or equal to end excluded {}", st, enex);
-                    }
-                }
-                std::ops::Bound::Unbounded => {}
-            };
-            st
-        }
-        std::ops::Bound::Excluded(_) => 0, // Don't think this case exists for start bound
-        std::ops::Bound::Unbounded => 0,
+    let start = match byte_range.start_bound() {
+        Included(&n) => n,
+        Excluded(&n) => n + 1,
+        Unbounded => 0,
+    };
+    let end = match byte_range.end_bound() {
+        Included(&n) => n + 1,
+        Excluded(&n) => n,
+        Unbounded => count,
     };
 
-    let eninnum = match byte_range.end_bound() {
-        std::ops::Bound::Included(&enin) => {
-            if enin >= len {
-                panic!("Range.end included {} is too large for s.len {}", enin, len);
-            };
-            enin + 1
-        }
-        std::ops::Bound::Excluded(&enex) => {
-            if enex > len {
-                panic!("Range.end excluded {} is too large for s.len {}", enex, len);
-            };
-            enex
-        }
-        std::ops::Bound::Unbounded => len,
-    };
-
-    stnum..eninnum
+    if start>end {
+        panic!("Invalid range, start {} is greater than end {}", start, end);
+    }
+    if start>count {
+        panic!("Invalid range, start {} is greater than byte count {}", start, count);
+    }
+    if end>count {
+        panic!("Invalid range, end {} is greater than byte count {}", end, count);
+    }
+    start..end    
 }
 
 // ------------------------

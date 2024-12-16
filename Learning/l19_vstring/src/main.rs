@@ -25,7 +25,7 @@ fn main() {
 
 pub fn test_vstrings() {
 
-    let s = "Aé♫山𝄞🐗🏳️‍🌈🐻‍❄️";
+    let s = "Aé♫山𝄞🐗🐻‍❄️";
     println!("s={s}");
 
     println!("\nBytes functions");
@@ -33,4 +33,8 @@ pub fn test_vstrings() {
     println!("get_char_length={}", get_char_length(s));
     println!("get_glyph_length={}", get_glyph_length(s));
 
+    for b in get_byteiterator_from_byterange(s, ..) {
+        print!("{0:#02X}, ", b)
+    }
+    println!();
 }

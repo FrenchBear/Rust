@@ -18,6 +18,10 @@ pub use vstring_byterange::*;
 pub mod vstring_charindex;
 pub use vstring_charindex::*;
 
+#[path = "vstring_charrange.rs"]
+pub mod vstring_charrange;
+pub use vstring_charrange::*;
+
 use std::str;
 
 use crate::glyph2::Glyph2;

@@ -7,6 +7,7 @@ mod tests_glyph2;
 mod tests_byteindex;
 mod tests_byterange;
 mod tests_charindex;
+mod tests_charrange;
 
 
 /*

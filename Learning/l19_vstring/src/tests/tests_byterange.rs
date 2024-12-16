@@ -17,41 +17,31 @@ pub mod byterange_tests {
         assert_eq!(validate_byterange(10, 5..=7), 5..8);
         assert_eq!(validate_byterange(10, 5..=5), 5..6);
         assert_eq!(validate_byterange(10, 5..=9), 5..10);
+        assert_eq!(validate_byterange(10, 5..=4), 5..5); // Empty range
         assert_eq!(validate_byterange(10, 5..), 5..10);
         assert_eq!(validate_byterange(10, ..4), 0..4);
         assert_eq!(validate_byterange(10, ..=4), 0..5);
         assert_eq!(validate_byterange(10, ..), 0..10);
         assert_eq!(validate_byterange(10, 3..3), 3..3); // An empty range is accepted
+        assert_eq!(validate_byterange(10, 10..10), 10..10); // An empty range at end position is accepted
         assert_eq!(validate_byterange(10, 0..0), 0..0); // An empty range is accepted ==> crash, return a "normal" range
     }
 
     #[test]
-    #[should_panic(expected = "Range.start 10 is too large for s.len 10")]
+    #[should_panic(expected = "Invalid range, start 3 is greater than end 2")]
     pub fn test_validate_byterange_panic_invalid_range_1() {
-        validate_byterange(10, 10..20);
-    }
-
-    #[test]
-    #[should_panic(expected = "Invalid range, start 3 is greater than end included 2")]
-    pub fn test_validate_byterange_panic_invalid_range_2() {
-        validate_byterange(10, 3..=2);
-    }
-
-    #[test]
-    #[should_panic(expected = "Invalid range, start 3 is greater or equal to end excluded 2")]
-    pub fn test_validate_byterange_panic_invalid_range_3() {
         validate_byterange(10, 3..2);
     }
 
     #[test]
-    #[should_panic(expected = "Range.end included 10 is too large for s.len 10")]
-    pub fn test_validate_byterange_panic_invalid_range_4() {
-        validate_byterange(10, 3..=10);
+    #[should_panic(expected = "Invalid range, start 12 is greater than byte count 10")]
+    pub fn test_validate_byterange_panic_invalid_range_2() {
+        validate_byterange(10, 12..20);
     }
 
     #[test]
-    #[should_panic(expected = "Range.end excluded 11 is too large for s.len 10")]
-    pub fn test_validate_byterange_panic_invalid_range_5() {
+    #[should_panic(expected = "Invalid range, end 11 is greater than byte count 10")]
+    pub fn test_validate_byterange_panic_invalid_range_3() {
         validate_byterange(10, 3..11);
     }
 
@@ -62,15 +52,9 @@ pub mod byterange_tests {
     #[test]
     pub fn test_byteslice_from_byterange_normal() {
         assert_eq!(get_byteslice_from_byterange("Hello", 1..3), ['e' as u8, 'l' as u8]);
-        assert_eq!(get_byteslice_from_byterange("Hello", 2..=2), ['l' as u8]);
         assert_eq!(get_byteslice_from_byterange("Hello", 2..2), []);
-
-        assert_eq!(
-            get_byteslice_from_byterange("Hello", ..),
-            ['H' as u8, 'e' as u8, 'l' as u8, 'l' as u8, 'o' as u8]
-        );
+        assert_eq!(get_byteslice_from_byterange("Hello", ..), ['H' as u8, 'e' as u8, 'l' as u8, 'l' as u8, 'o' as u8]);
         assert_eq!(get_byteslice_from_byterange("", ..), []);
-        assert_eq!(get_byteslice_from_byterange("Hello", 1..=3), ['e' as u8, 'l' as u8, 'l' as u8]);
         assert_eq!(get_byteslice_from_byterange("Hello", 2..=2), ['l' as u8]);
         assert_eq!(get_byteslice_from_byterange("Hello", 2..), ['l' as u8, 'l' as u8, 'o' as u8]);
         assert_eq!(get_byteslice_from_byterange("Hello", ..2), ['H' as u8, 'e' as u8]);

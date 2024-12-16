@@ -18,7 +18,13 @@ use crate::glyph2::Glyph2;
 
 // Helper, returns Range<usize> for a given char_index, and panics if index is not valid
 
-pub fn validate_charindex(s: &str, char_index: usize) -> (Range<usize>, char) {
+#[derive(Debug, PartialEq)]
+pub struct ByteRangeChar{
+    pub byte_range: Range<usize>,
+    pub char: char,
+}
+
+pub fn validate_charindex(s: &str, char_index: usize) -> ByteRangeChar {
     let mut ix = 0;
     let mut it = s.char_indices();
 
@@ -32,9 +38,9 @@ pub fn validate_charindex(s: &str, char_index: usize) -> (Range<usize>, char) {
             let ci = ciopt.unwrap();
             let nextopt = it.next();
             if nextopt.is_none() {
-                return (ci.0..s.len(), ci.1);
+                return ByteRangeChar { byte_range: ci.0..s.len(), char: ci.1};
             } else {
-                return (ci.0..nextopt.unwrap().0, ci.1);
+                return ByteRangeChar { byte_range:ci.0..nextopt.unwrap().0, char: ci.1};
             }
         }
 
@@ -46,7 +52,7 @@ pub fn validate_charindex(s: &str, char_index: usize) -> (Range<usize>, char) {
 // get char
 
 pub fn get_char_from_charindex(s: &str, char_index: usize) -> char {
-    validate_charindex(s, char_index).1
+    validate_charindex(s, char_index).char
 }
 
 pub fn get_charoption_from_charindex(s: &str, char_index: usize) -> Option<char> {
@@ -81,21 +87,21 @@ pub fn get_glyphoption_from_charindex(s: &str, char_index: usize) -> Option<Glyp
 // get byte slice
 
 pub fn get_byteslice_from_charindex(s: &str, char_index: usize) -> &[u8] {
-    &s.as_bytes()[validate_charindex(s, char_index).0]
+    &s.as_bytes()[validate_charindex(s, char_index).byte_range]
 }
 
 // ------------------------
 // get byte vector
 
 pub fn get_bytevector_from_charindex(s: &str, char_index: usize) -> Vec<u8> {
-    Vec::from(&s[validate_charindex(s, char_index).0])
+    Vec::from(&s[validate_charindex(s, char_index).byte_range])
 }
 
 // ------------------------
 // get char vector
 
 pub fn get_charvector_from_charindex(s: &str, char_index: usize) -> Vec<char> {
-    Vec::from_iter((&s[validate_charindex(s, char_index).0]).chars())
+    Vec::from_iter((&s[validate_charindex(s, char_index).byte_range]).chars())
 }
 
 // ------------------------
@@ -109,14 +115,14 @@ pub fn get_glyphvector_from_charindex(s: &str, char_index: usize) -> Vec<Glyph2>
 // get byte iterator
 
 pub fn get_byteiterator_from_charindex<'a>(s: &'a str, char_index: usize) -> impl Iterator<Item = u8> + 'a {
-    s[validate_charindex(s, char_index).0].bytes()
+    s[validate_charindex(s, char_index).byte_range].bytes()
 }
 
 // ------------------------
 // get char iterator
 
 pub fn get_chariterator_from_charindex<'a>(s: &'a str, char_index: usize) -> impl Iterator<Item = char> + 'a {
-    Vec::from_iter((&s[validate_charindex(s, char_index).0]).chars()).into_iter()
+    Vec::from_iter((&s[validate_charindex(s, char_index).byte_range]).chars()).into_iter()
 }
 
 // ------------------------
@@ -130,12 +136,12 @@ pub fn get_glyphiterator_from_charindex<'a>(s: &'a str, char_index: usize) -> im
 // get strref
 
 pub fn get_strref_from_charindex<'a>(s: &'a str, char_index: usize) -> &'a str {
-    &s[validate_charindex(s, char_index).0]
+    &s[validate_charindex(s, char_index).byte_range]
 }
 
 // ------------------------
 // get string
 
 pub fn get_string_from_charindex(s: &str, char_index: usize) -> String {
-    s[validate_charindex(s, char_index).0].to_string()
+    s[validate_charindex(s, char_index).byte_range].to_string()
 }
