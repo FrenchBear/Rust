@@ -93,24 +93,18 @@ pub mod charrange_tests {
     }
 
     // ------------------------
-    // get_bytevector, copying bytes
+    // get byte vector
 
-    /*
-    // Returning a Vec<u8> is Ok, but it duplicates characters
     #[test]
     pub fn test_bytevector_from_charrange() {
-        assert_eq!(get_bytevector_from_charrange("Hello", 2..4), vec!['l' as u8, 'l' as u8]);
-        assert_eq!(get_bytevector_from_charrange("Hello", 2..=4), vec!['l' as u8, 'l' as u8, 'o' as u8]);
-        assert_eq!(get_bytevector_from_charrange("Hello", 2..), vec!['l' as u8, 'l' as u8, 'o' as u8]);
-        assert_eq!(get_bytevector_from_charrange("Hello", 0..3), vec!['H' as u8, 'e' as u8, 'l' as u8]);
-        assert_eq!(
-            get_bytevector_from_charrange("Hello", 0..=3),
-            vec!['H' as u8, 'e' as u8, 'l' as u8, 'l' as u8]
-        );
-        assert_eq!(
-            get_bytevector_from_charrange("Hello", ..),
-            vec!['H' as u8, 'e' as u8, 'l' as u8, 'l' as u8, 'o' as u8]
-        );
+        let s = "Aé♫山𝄞🐗🐻‍❄️";
+        assert_eq!(get_bytevector_from_charrange(s, 1..3), vec![0xC3, 0xA9, 0xE2, 0x99, 0xAB]);
+        assert_eq!(get_bytevector_from_charrange(s, 2..2), vec![]);
+        assert_eq!(get_bytevector_from_charrange(s, ..),   vec![0x41, 0xC3, 0xA9, 0xE2, 0x99, 0xAB, 0xE5, 0xB1, 0xB1, 0xF0, 0x9D, 0x84, 0x9E, 0xF0, 0x9F, 0x90, 0x97, 0xF0, 0x9F, 0x90, 0xBB, 0xE2, 0x80, 0x8D, 0xE2, 0x9D, 0x84, 0xEF, 0xB8, 0x8F,] );
+        assert_eq!(get_bytevector_from_charrange("", ..),  vec![]);
+        assert_eq!(get_bytevector_from_charrange(s, 5..),  vec![0xF0, 0x9F, 0x90, 0x97, 0xF0, 0x9F, 0x90, 0xBB, 0xE2, 0x80, 0x8D, 0xE2, 0x9D, 0x84, 0xEF, 0xB8, 0x8F,]);
+        assert_eq!(get_bytevector_from_charrange(s, ..2),  vec![0x41, 0xC3, 0xA9]);
+        assert_eq!(get_bytevector_from_charrange(s, ..=2), vec![0x41, 0xC3, 0xA9, 0xE2, 0x99, 0xAB]);
     }
 
     // ------------------------
@@ -118,17 +112,20 @@ pub mod charrange_tests {
 
     #[test]
     pub fn test_charvector_from_charrange() {
-        assert_eq!(get_charvector_from_charrange("Aé♫山𝄞🐗", 3..9), vec!['♫', '山']);
-        assert_eq!(get_charvector_from_charrange("Aé♫山𝄞🐗", 3..=8), vec!['♫', '山']);
-        assert_eq!(get_charvector_from_charrange("Aé♫山𝄞🐗", ..3), vec!['A', 'é']);
-        assert_eq!(get_charvector_from_charrange("Aé♫山𝄞🐗", ..=2), vec!['A', 'é']);
-        assert_eq!(get_charvector_from_charrange("Aé♫山𝄞🐗", ..), vec!['A', 'é', '♫', '山', '𝄞', '🐗']);
-        assert_eq!(get_charvector_from_charrange("Aé♫山𝄞🐗", 0..0), vec![]);
+        let s = "Aé♫山𝄞🐗🐻‍❄️";
+        assert_eq!(get_charvector_from_charrange(s, 1..3), vec!['é', '♫']);
+        assert_eq!(get_charvector_from_charrange(s, 2..2), vec![]);
+        assert_eq!(get_charvector_from_charrange(s, ..),   vec!['A', 'é', '♫', '山', '𝄞', '🐗', '🐻', '\u{200D}', '❄', '\u{FE0F}' ]);
+        assert_eq!(get_charvector_from_charrange("", ..),  vec![]);
+        assert_eq!(get_charvector_from_charrange(s, 5..),  vec!['🐗', '🐻', '\u{200D}', '❄', '\u{FE0F}' ]);
+        assert_eq!(get_charvector_from_charrange(s, ..2),  vec!['A', 'é']);
+        assert_eq!(get_charvector_from_charrange(s, ..=2), vec!['A', 'é', '♫']);
     }
 
     // ------------------------
     // get glyph vector
 
+    /*
     #[test]
     pub fn test_glyphvector_from_charrange() {
         assert_eq!(

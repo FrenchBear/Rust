@@ -88,15 +88,14 @@ pub fn get_byteslice_from_endcharcount<'a>(s: &'a str, char_count: usize) -> &'a
 // ------------------------
 // get byte vector, copying bytes
 
-/*
 // Returning a Vec<u8> is Ok, but it duplicates characters
 pub fn get_bytevector_from_charrange<R>(s: &str, char_range: R) -> Vec<u8>
 where
     R: RangeBounds<usize>,
 {
     // ToDo: Check which version is the most efficient
-    //Vec::from(&s.as_bytes()[validate_charrange(s, char_range)])
-    s[validate_charrange(s, char_range)].bytes().collect()
+    //Vec::from_iter((&s[validate_charrange(s, char_range)]).bytes())
+    (&s[validate_charrange(s, char_range)]).bytes().collect()
 }
 
 // ------------------------
@@ -106,13 +105,14 @@ pub fn get_charvector_from_charrange<R>(s: &str, char_range: R) -> Vec<char>
 where
     R: RangeBounds<usize>,
 {
-    //Vec::from_iter(s[validate_charrange(s, char_range)].chars());
+    //Vec::from_iter(s[validate_charrange(s, char_range)].chars())
     s[validate_charrange(s, char_range)].chars().collect()
 }
 
 // ------------------------
 // get glyph vector
 
+/*
 pub fn get_glyphvector_from_charrange<R>(s: &str, char_range: R) -> Vec<Glyph2>
 where R: RangeBounds<usize>,
 {
