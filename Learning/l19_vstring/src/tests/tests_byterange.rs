@@ -61,69 +61,65 @@ pub mod byterange_tests {
 
     #[test]
     pub fn test_byteslice_from_byterange_normal() {
-        assert_eq!(get_byteslice_from_byterange("Hello", 1usize..3usize), ['e' as u8, 'l' as u8]);
-        assert_eq!(get_byteslice_from_byterange("Hello", 2usize..=2usize), ['l' as u8]);
-        assert_eq!(get_byteslice_from_byterange("Hello", 2usize..2usize), []);
-        // assert_eq!(get_byteslice_from_byterange("Hello", ..), ['H' as u8, 'e' as u8, 'l' as u8, 'l' as u8, 'o' as u8]);
-        // assert_eq!(get_byteslice_from_byterange("", ..), []);
-        // assert_eq!( get_byteslice_from_byterange("Hello", 1usize..=3usize), ['e' as u8, 'l' as u8, 'l' as u8] ); assert_eq!(get_byteslice_from_byterange("Hello", 2usize..=2usize), ['l' as u8]);
-        // assert_eq!(get_byteslice_from_byterange("Hello", 2usize..), ['l' as u8, 'l' as u8, 'o' as u8]);
-        // assert_eq!(get_byteslice_from_byterange("Hello", ..2usize), ['H' as u8, 'e' as u8]);
-        // assert_eq!( get_byteslice_from_byterange("Hello", ..=2usize), ['H' as u8, 'e' as u8, 'l' as u8] );
+        assert_eq!(get_byteslice_from_byterange("Hello", 1..3), ['e' as u8, 'l' as u8]);
+        assert_eq!(get_byteslice_from_byterange("Hello", 2..=2), ['l' as u8]);
+        assert_eq!(get_byteslice_from_byterange("Hello", 2..2), []);
+
+        assert_eq!(
+            get_byteslice_from_byterange("Hello", ..),
+            ['H' as u8, 'e' as u8, 'l' as u8, 'l' as u8, 'o' as u8]
+        );
+        assert_eq!(get_byteslice_from_byterange("", ..), []);
+        assert_eq!(get_byteslice_from_byterange("Hello", 1..=3), ['e' as u8, 'l' as u8, 'l' as u8]);
+        assert_eq!(get_byteslice_from_byterange("Hello", 2..=2), ['l' as u8]);
+        assert_eq!(get_byteslice_from_byterange("Hello", 2..), ['l' as u8, 'l' as u8, 'o' as u8]);
+        assert_eq!(get_byteslice_from_byterange("Hello", ..2), ['H' as u8, 'e' as u8]);
+        assert_eq!(get_byteslice_from_byterange("Hello", ..=2), ['H' as u8, 'e' as u8, 'l' as u8]);
     }
 
     #[test]
     #[should_panic]
     pub fn test_byteslice_from_byterange_panic_invalid_range() {
-        let _ = get_byteslice_from_byterange("Hello", 3usize..1usize);
+        let _ = get_byteslice_from_byterange("Hello", 3..1);
     }
 
     #[test]
     #[should_panic]
     pub fn test_byteslice_from_byterange_panic_invalid_range_start() {
-        let _ = get_byteslice_from_byterange("Hello", 10usize..12usize);
+        let _ = get_byteslice_from_byterange("Hello", 10..12);
     }
 
     #[test]
     #[should_panic]
     pub fn test_byteslice_from_byterange_panic_invalid_range_end() {
-        let _ = get_byteslice_from_byterange("Hello", 2usize..12usize);
+        let _ = get_byteslice_from_byterange("Hello", 2..12);
     }
 
     #[test]
     pub fn test_bytesliceoption_from_byterange() {
-        assert_eq!(
-            get_bytesliceoption_from_byterange("Hello", 1usize..3usize),
-            Some(&['e' as u8, 'l' as u8][..])
-        );
-        assert_eq!(get_bytesliceoption_from_byterange("Hello", 2usize..2usize), Some(&[][..]));
-        assert_eq!(get_bytesliceoption_from_byterange("Hello", 3usize..1usize), None);
-        assert_eq!(get_bytesliceoption_from_byterange("Hello", 10usize..12usize), None);
-        assert_eq!(get_bytesliceoption_from_byterange("Hello", 2usize..12usize), None);
+        assert_eq!(get_bytesliceoption_from_byterange("Hello", 1..3), Some(&['e' as u8, 'l' as u8][..]));
+        assert_eq!(get_bytesliceoption_from_byterange("Hello", 2..2), Some(&[][..]));
+        assert_eq!(get_bytesliceoption_from_byterange("Hello", 3..1), None);
+        assert_eq!(get_bytesliceoption_from_byterange("Hello", 10..12), None);
+        assert_eq!(get_bytesliceoption_from_byterange("Hello", 2..12), None);
     }
 
     #[test]
     pub fn test_bytesliceresult_from_byterange() {
-        assert_eq!(
-            get_bytesliceresult_from_byterange("Hello", 1usize..3usize),
-            Ok(&['e' as u8, 'l' as u8][..])
-        );
-        assert_eq!(get_bytesliceresult_from_byterange("Hello", 2usize..2usize), Ok(&[][..]));
-        assert!(get_bytesliceresult_from_byterange("Hello", 3usize..1usize).is_err());
-        assert!(get_bytesliceresult_from_byterange("Hello", 10usize..12usize).is_err());
-        assert!(get_bytesliceresult_from_byterange("Hello", 2usize..12usize).is_err());
+        assert_eq!(get_bytesliceresult_from_byterange("Hello", 1..3), Ok(&['e' as u8, 'l' as u8][..]));
+        assert_eq!(get_bytesliceresult_from_byterange("Hello", 2..2), Ok(&[][..]));
+        assert!(get_bytesliceresult_from_byterange("Hello", 3..1).is_err());
+        assert!(get_bytesliceresult_from_byterange("Hello", 10..12).is_err());
+        assert!(get_bytesliceresult_from_byterange("Hello", 2..12).is_err());
     }
 
     #[test]
     pub fn test_byteslicetolerant_from_byterange() {
-        assert_eq!(get_byteslicetolerant_from_byterange("Hello", 1usize..3usize), ['e' as u8, 'l' as u8]);
-        assert_eq!(get_byteslicetolerant_from_byterange("Hello", 2usize..2usize), []);
-        assert_eq!(get_byteslicetolerant_from_byterange("Hello", 3usize..1usize), []);
-        assert_eq!(get_byteslicetolerant_from_byterange("Hello", 10usize..12usize), []);
-        assert_eq!(
-            get_byteslicetolerant_from_byterange("Hello", 2usize..12usize),
-            ['l' as u8, 'l' as u8, 'o' as u8]
-        );
+        assert_eq!(get_byteslicetolerant_from_byterange("Hello", 1..3), ['e' as u8, 'l' as u8]);
+        assert_eq!(get_byteslicetolerant_from_byterange("Hello", 2..2), []);
+        assert_eq!(get_byteslicetolerant_from_byterange("Hello", 3..1), []);
+        assert_eq!(get_byteslicetolerant_from_byterange("Hello", 10..12), []);
+        assert_eq!(get_byteslicetolerant_from_byterange("Hello", 2..12), ['l' as u8, 'l' as u8, 'o' as u8]);
     }
 
     #[test]

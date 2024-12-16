@@ -91,12 +91,11 @@ pub fn get_bytevector_from_charindex(s: &str, char_index: usize) -> Vec<u8> {
     Vec::from(&s[validate_charindex(s, char_index).0])
 }
 
-/*
 // ------------------------
 // get char vector
 
 pub fn get_charvector_from_charindex(s: &str, char_index: usize) -> Vec<char> {
-    vec![s[char_index..].chars().next().unwrap()]
+    Vec::from_iter((&s[validate_charindex(s, char_index).0]).chars())
 }
 
 // ------------------------
@@ -110,53 +109,33 @@ pub fn get_glyphvector_from_charindex(s: &str, char_index: usize) -> Vec<Glyph2>
 // get byte iterator
 
 pub fn get_byteiterator_from_charindex<'a>(s: &'a str, char_index: usize) -> impl Iterator<Item = u8> + 'a {
-    s[char_index..=char_index].bytes()
+    s[validate_charindex(s, char_index).0].bytes()
 }
 
 // ------------------------
 // get char iterator
 
 pub fn get_chariterator_from_charindex<'a>(s: &'a str, char_index: usize) -> impl Iterator<Item = char> + 'a {
-    s[char_index..].chars().take(1)
+    Vec::from_iter((&s[validate_charindex(s, char_index).0]).chars()).into_iter()
 }
 
 // ------------------------
 // get glyph iterator
 
 pub fn get_glyphiterator_from_charindex<'a>(s: &'a str, char_index: usize) -> impl Iterator<Item = Glyph2> + 'a {
-    if char_index >= s.len() {
-        panic!("index out of bounds: the len is {} but the index is {}", s.len(), char_index);
-    }
-
-    for g in Glyph2::glyph2_indices(s) {
-        if char_index == *g.byte_range.start() {
-            return vec![g].into_iter(); // Consuming iterator, takes ownership of local vector
-        }
-        if char_index <= *g.byte_range_inclusive.end() {
-            // Similar panic message when we try to slice a str in the middle of multibyte UTF-8 character
-            panic!(
-                "char index {} is not a glyph boundary; it is inside '{}' (bytes {}..={})",
-                char_index,
-                &s[g.byte_range_inclusive.clone()],
-                *g.byte_range.start(),
-                *g.byte_range_inclusive.end()
-            );
-        }
-    }
-    panic!("Internal error, see https://xkcd.com/2200/"); // Should bever get here actually
+    get_glyphvector_from_charindex(s, char_index).into_iter()
 }
 
 // ------------------------
 // get strref
 
 pub fn get_strref_from_charindex<'a>(s: &'a str, char_index: usize) -> &'a str {
-    &s[char_index..=char_index]
+    &s[validate_charindex(s, char_index).0]
 }
 
 // ------------------------
 // get string
 
 pub fn get_string_from_charindex(s: &str, char_index: usize) -> String {
-    s[char_index..=char_index].to_string()
+    s[validate_charindex(s, char_index).0].to_string()
 }
-*/

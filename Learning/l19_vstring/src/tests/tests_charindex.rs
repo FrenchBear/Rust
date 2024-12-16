@@ -95,5 +95,99 @@ pub mod charindex_tests {
         assert_eq!(get_bytevector_from_charindex("Où ça?", 3), vec![0xC3u8, 0xA7u8]);
     }
 
+    // ------------------------
+    // test char vector
+
+    #[test]
+    pub fn test_charvector_from_charindex() {
+        assert_eq!(get_charvector_from_charindex("Où ça?", 3), vec!['ç']);
+    }
+
+    // ------------------------
+    // test glyph vector
+
+    #[test]
+    pub fn test_glyphvector_from_charindex() {
+        assert_eq!(
+            get_glyphvector_from_charindex("<e\u{0301}>", 1),
+            vec![Glyph2 {
+                byte_range: 1..4,
+                char_range: 1..3
+            }]
+        );
+    }
+
+    // ------------------------
+    // test byte iterator
+
+    #[test]
+    pub fn test_byteiterator_from_charindex() {
+        let s = "Aé♫山𝄞🐗";
+
+        let mut it = get_byteiterator_from_charindex(s, 1); // é
+        assert_eq!(it.next(), Some(0xC3u8));
+        assert_eq!(it.next(), Some(0xA9u8));
+        assert!(it.next().is_none());
+
+        let mut it = get_byteiterator_from_charindex(s, 4); // 𝄞
+        assert_eq!(it.next(), Some(0xF0u8));
+        assert_eq!(it.next(), Some(0x9Du8));
+        assert_eq!(it.next(), Some(0x84u8));
+        assert_eq!(it.next(), Some(0x9Eu8));
+        assert!(it.next().is_none());
+    }
+
+    // ------------------------
+    // test char iterator
+
+    #[test]
+    pub fn test_chariterator_from_charindex() {
+        let s = "Aé♫山𝄞🐗";
+
+        let mut it = get_chariterator_from_charindex(s, 1); // é
+        assert_eq!(it.next(), Some('é'));
+        assert!(it.next().is_none());
+
+        let mut it = get_chariterator_from_charindex(s, 4); // 𝄞
+        assert_eq!(it.next(), Some('𝄞'));
+        assert!(it.next().is_none());
+    }
+
+    // ------------------------
+    // test glyph iterator
+
+    #[test]
+    pub fn test_glyphiterator_from_charindex() {
+        let mut it = get_glyphiterator_from_charindex("<e\u{0301}>", 1);
+        assert_eq!(
+            it.next(),
+            Some(Glyph2 {
+                byte_range: 1..4,
+                char_range: 1..3
+            })
+        );
+        assert!(it.next().is_none());
+    }
+
+    // ------------------------
+    // test str&
+
+    #[test]
+    pub fn test_strref_from_charindex() {
+        let s = "Aé♫山𝄞🐗";
+        assert_eq!(get_strref_from_charindex(s, 1), "é");
+        assert_eq!(get_strref_from_charindex(s, 5), "🐗");
+    }
+
+    // ------------------------
+    // test String
+
+    #[test]
+    pub fn test_string_from_charindex() {
+        let s = "Aé♫山𝄞🐗";
+        assert_eq!(get_string_from_charindex(s, 1), "é".to_string());
+        assert_eq!(get_string_from_charindex(s, 5), "🐗".to_string());
+    }
+
 
 }
