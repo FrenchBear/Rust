@@ -176,17 +176,21 @@ pub mod charrange_tests {
 
     // ----------------------------------
     // get byte iterator
-    /*
 
     #[test]
     pub fn test_byteiterator_from_charrange() {
-        let mut it = get_byteiterator_from_charrange("Hello", 2..5);
-        assert_eq!(it.next(), Some('l' as u8));
-        assert_eq!(it.next(), Some('l' as u8));
-        assert_eq!(it.next(), Some('o' as u8));
+        let s = "Aé♫山𝄞🐗";
+
+        let mut it = get_byteiterator_from_charrange(s, 2..4);
+        assert_eq!(it.next(), Some(0xE2));
+        assert_eq!(it.next(), Some(0x99));
+        assert_eq!(it.next(), Some(0xAB));
+        assert_eq!(it.next(), Some(0xE5));
+        assert_eq!(it.next(), Some(0xB1));
+        assert_eq!(it.next(), Some(0xB1));
         assert!(it.next().is_none());
 
-        let mut it = get_byteiterator_from_charrange("Aé♫山𝄞🐗", 3..3);
+        let mut it = get_byteiterator_from_charrange(s, 3..3);
         assert!(it.next().is_none());
     }
 
@@ -195,13 +199,15 @@ pub mod charrange_tests {
 
     #[test]
     pub fn test_chariterator_from_charrange() {
-        let mut it = get_chariterator_from_charrange("Aé♫山𝄞🐗", 3..=12);
+        let s = "Aé♫山𝄞🐗";
+
+        let mut it = get_chariterator_from_charrange(s, 2..=4);
         assert_eq!(it.next(), Some('♫'));
         assert_eq!(it.next(), Some('山'));
         assert_eq!(it.next(), Some('𝄞'));
         assert!(it.next().is_none());
 
-        let mut it = get_byteiterator_from_charrange("Aé♫山𝄞🐗", 3..3);
+        let mut it = get_byteiterator_from_charrange(s, 3..3);
         assert!(it.next().is_none());
     }
 
@@ -210,7 +216,7 @@ pub mod charrange_tests {
 
     #[test]
     pub fn test_glyphiterator_from_charrange() {
-        let mut it = get_glyphiterator_from_charrange("🐻‍❄️e\u{0301}👨🏾‍❤️‍💋‍👨🏻", 13..16);
+        let mut it = get_glyphiterator_from_charrange("🐻‍❄️e\u{0301}👨🏾‍❤️‍💋‍👨🏻", 4..6);
         assert_eq!(
             it.next(),
             Some(Glyph2 {
@@ -238,13 +244,21 @@ pub mod charrange_tests {
         assert!(it.next().is_none());
     }
 
+    #[test]
+    #[should_panic(expected="Char range start 3 is not a glyph boundary; it is inside glyph '🐻‍❄️' (characters 0..4, bytes 0..13)")]
+    pub fn test_glyphiterator_from_charrange_panic_start_not_at_glyph_boundary() {
+        let _ = get_glyphiterator_from_charrange("🐻‍❄️e\u{0301}👨🏾‍❤️‍💋‍👨🏻", 3..6);
+    }
+
     // ------------------------
     // get &str
 
     #[test]
     pub fn test_refstr_from_charrange() {
-        assert_eq!(get_strref_from_charrange("Aé♫山𝄞🐗", 3..=12), "♫山𝄞");
-        assert_eq!(get_strref_from_charrange("Aé♫山𝄞🐗", 3..3), "");
+        let s="Aé♫山𝄞🐗";
+
+        assert_eq!(get_strref_from_charrange(s, 2..=4), "♫山𝄞");
+        assert_eq!(get_strref_from_charrange(s, 6..6), "");
     }
 
     // ------------------------
@@ -252,8 +266,9 @@ pub mod charrange_tests {
 
     #[test]
     pub fn test_string_from_charrange() {
-        assert_eq!(get_string_from_charrange("Aé♫山𝄞🐗", 3..=12), "♫山𝄞".to_string());
-        assert!(String::is_empty(&get_string_from_charrange("Aé♫山𝄞🐗", 3..3)));
+        let s="Aé♫山𝄞🐗";
+
+        assert_eq!(get_string_from_charrange(s, 2..5), "♫山𝄞".to_string());
+        assert!(String::is_empty(&get_string_from_charrange(s, 3..3)));
     }
-    */
 }

@@ -34,8 +34,14 @@ pub fn test_vstrings() {
     println!("get_glyph_length={}", get_glyph_length(s));
     println!();
 
-    for g in get_glyphvector_from_charrange("👨‍❤‍👩e\u{0301}🐻‍❄️", 6..7) {
-        print!("{:?}, ", g)
+    let s = "Aé♫山𝄞🐗";
+    for b in get_byteiterator_from_charrange(s, 2..4){
+        println!("{:#02X}", b);        
     }
     println!();
+
+    // for g in get_glyphvector_from_charrange("👨‍❤‍👩e\u{0301}🐻‍❄️", 6..7) {
+    //     print!("{:?}, ", g)
+    // }
+    // println!();
 }

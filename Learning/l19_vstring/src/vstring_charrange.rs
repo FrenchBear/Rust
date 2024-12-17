@@ -172,16 +172,15 @@ where
 // ------------------------
 // get byte iterator
 
-/*
 pub fn get_byteiterator_from_charrange<'a, R>(s: &'a str, char_range: R) -> impl Iterator<Item = u8> + 'a where R: RangeBounds<usize>, {
-    s[validate_charrange(s, char_range)].bytes()
+    s[validate_charrange(s, char_range).byte_range].bytes()
 }
 
 // ------------------------
 // get char iterator
 
 pub fn get_chariterator_from_charrange<'a, R>(s: &'a str, char_range: R) -> impl Iterator<Item = char> + 'a where R: RangeBounds<usize>, {
-    s[validate_charrange(s, char_range)].chars()
+    s[validate_charrange(s, char_range).byte_range].chars()
 }
 
 // ------------------------
@@ -198,7 +197,7 @@ pub fn get_strref_from_charrange<'a, R>(s: &'a str, char_range: R) -> &'a str
 where
     R: RangeBounds<usize>,
 {
-    &s[validate_charrange(s, char_range)]
+    &s[validate_charrange(s, char_range).byte_range]
 }
 
 // ------------------------
@@ -208,7 +207,5 @@ pub fn get_string_from_charrange<R>(s: &str, char_range: R) -> String
 where
     R: RangeBounds<usize>,
 {
-    s[validate_charrange(s, char_range)].to_string()
+    s[validate_charrange(s, char_range).byte_range].to_string()
 }
-
-*/

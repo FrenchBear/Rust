@@ -214,13 +214,15 @@ pub mod byterange_tests {
 
     #[test]
     pub fn test_chariterator_from_byterange() {
-        let mut it = get_chariterator_from_byterange("Aé♫山𝄞🐗", 3..=12);
+        let s = "Aé♫山𝄞🐗";
+
+        let mut it = get_chariterator_from_byterange(s, 3..=12);
         assert_eq!(it.next(), Some('♫'));
         assert_eq!(it.next(), Some('山'));
         assert_eq!(it.next(), Some('𝄞'));
         assert!(it.next().is_none());
 
-        let mut it = get_byteiterator_from_byterange("Aé♫山𝄞🐗", 3..3);
+        let mut it = get_byteiterator_from_byterange(s, 3..3);
         assert!(it.next().is_none());
     }
 
@@ -262,8 +264,10 @@ pub mod byterange_tests {
 
     #[test]
     pub fn test_refstr_from_byterange() {
-        assert_eq!(get_strref_from_byterange("Aé♫山𝄞🐗", 3..=12), "♫山𝄞");
-        assert_eq!(get_strref_from_byterange("Aé♫山𝄞🐗", 3..3), "");
+        let s = "Aé♫山𝄞🐗";
+
+        assert_eq!(get_strref_from_byterange(s, 3..=12), "♫山𝄞");
+        assert_eq!(get_strref_from_byterange(s, 3..3), "");
     }
 
     // ------------------------
@@ -271,7 +275,9 @@ pub mod byterange_tests {
 
     #[test]
     pub fn test_string_from_byterange() {
-        assert_eq!(get_string_from_byterange("Aé♫山𝄞🐗", 3..=12), "♫山𝄞".to_string());
-        assert!(String::is_empty(&get_string_from_byterange("Aé♫山𝄞🐗", 3..3)));
+        let s = "Aé♫山𝄞🐗";
+
+        assert_eq!(get_string_from_byterange(s, 3..=12), "♫山𝄞".to_string());
+        assert!(String::is_empty(&get_string_from_byterange(s, 3..3)));
     }
 }
