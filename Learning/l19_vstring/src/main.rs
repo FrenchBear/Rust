@@ -25,6 +25,11 @@ fn main() {
 
 pub fn test_vstrings() {
 
+    for i in vec![240, 159, 145, 168, 226, 128, 141, 240, 159, 154, 146] {
+        print!("{:#02X}, ", i)
+    }
+    println!();
+
     let s = "Aé♫山𝄞🐗🐻‍❄️";
     println!("s={s}");
 

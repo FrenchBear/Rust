@@ -65,10 +65,10 @@ pub mod glyphindex_tests {
 
     // ------------------------
     // test byte slice
-/*
+
     #[test]
     pub fn test_byteslice_from_glyphindex() {
-        assert_eq!(get_byteslice_from_glyphindex("Où ça?", 3), [0xC3u8, 0xA7u8]);
+        assert_eq!(get_byteslice_from_glyphindex("Ou\u{0300}?", 1), [0x75, 0xCC, 0x80]);
     }
 
     // ------------------------
@@ -76,7 +76,8 @@ pub mod glyphindex_tests {
 
     #[test]
     pub fn test_bytevector_from_glyphindex() {
-        assert_eq!(get_bytevector_from_glyphindex("Où ça?", 3), vec![0xC3u8, 0xA7u8]);
+        let s = "👨‍🚒"; // {MAN}{ZERO WIDTH JOINER}{FIRE ENGINE}
+        assert_eq!(get_bytevector_from_glyphindex(s, 0), vec![0xF0, 0x9F, 0x91, 0xA8, 0xE2, 0x80, 0x8D, 0xF0, 0x9F, 0x9A, 0x92,]);
     }
 
     // ------------------------
@@ -84,7 +85,8 @@ pub mod glyphindex_tests {
 
     #[test]
     pub fn test_charvector_from_glyphindex() {
-        assert_eq!(get_charvector_from_glyphindex("Où ça?", 3), vec!['ç']);
+        let s = "<👨‍🚒>"; // {MAN}{ZERO WIDTH JOINER}{FIRE ENGINE}
+        assert_eq!(get_charvector_from_glyphindex(s, 1), vec!['\u{1F468}','\u{200D}','\u{1F692}',]);
     }
 
     // ------------------------
@@ -108,16 +110,11 @@ pub mod glyphindex_tests {
     pub fn test_byteiterator_from_glyphindex() {
         let s = "Aé♫山𝄞🐗";
 
-        let mut it = get_byteiterator_from_glyphindex(s, 1); // é
-        assert_eq!(it.next(), Some(0xC3u8));
-        assert_eq!(it.next(), Some(0xA9u8));
-        assert!(it.next().is_none());
-
         let mut it = get_byteiterator_from_glyphindex(s, 4); // 𝄞
-        assert_eq!(it.next(), Some(0xF0u8));
-        assert_eq!(it.next(), Some(0x9Du8));
-        assert_eq!(it.next(), Some(0x84u8));
-        assert_eq!(it.next(), Some(0x9Eu8));
+        assert_eq!(it.next(), Some(0xF0));
+        assert_eq!(it.next(), Some(0x9D));
+        assert_eq!(it.next(), Some(0x84));
+        assert_eq!(it.next(), Some(0x9E));
         assert!(it.next().is_none());
     }
 
@@ -126,14 +123,16 @@ pub mod glyphindex_tests {
 
     #[test]
     pub fn test_chariterator_from_glyphindex() {
-        let s = "Aé♫山𝄞🐗";
+        let s = "<👨‍🚒>"; // {MAN}{ZERO WIDTH JOINER}{FIRE ENGINE}
 
         let mut it = get_chariterator_from_glyphindex(s, 1); // é
-        assert_eq!(it.next(), Some('é'));
+        assert_eq!(it.next(), Some('\u{1F468}'));
+        assert_eq!(it.next(), Some('\u{200D}'));
+        assert_eq!(it.next(), Some('\u{1F692}'));
         assert!(it.next().is_none());
 
-        let mut it = get_chariterator_from_glyphindex(s, 4); // 𝄞
-        assert_eq!(it.next(), Some('𝄞'));
+        let mut it = get_chariterator_from_glyphindex(s, 2); // 𝄞
+        assert_eq!(it.next(), Some('>'));
         assert!(it.next().is_none());
     }
 
@@ -142,12 +141,13 @@ pub mod glyphindex_tests {
 
     #[test]
     pub fn test_glyphiterator_from_glyphindex() {
-        let mut it = get_glyphiterator_from_glyphindex("<e\u{0301}>", 1);
+        let s = "<👨‍🚒>"; // {MAN}{ZERO WIDTH JOINER}{FIRE ENGINE}
+        let mut it = get_glyphiterator_from_glyphindex(s, 1);
         assert_eq!(
             it.next(),
             Some(Glyph2 {
-                byte_range: 1..4,
-                char_range: 1..3
+                byte_range: 1..12,
+                char_range: 1..4
             })
         );
         assert!(it.next().is_none());
@@ -158,9 +158,9 @@ pub mod glyphindex_tests {
 
     #[test]
     pub fn test_strref_from_glyphindex() {
-        let s = "Aé♫山𝄞🐗";
-        assert_eq!(get_strref_from_glyphindex(s, 1), "é");
-        assert_eq!(get_strref_from_glyphindex(s, 5), "🐗");
+        let s = "<👨‍🚒>"; // {MAN}{ZERO WIDTH JOINER}{FIRE ENGINE}
+        assert_eq!(get_strref_from_glyphindex(s, 1), "👨‍🚒");
+        assert_eq!(get_strref_from_glyphindex(s, 2), ">");
     }
 
     // ------------------------
@@ -168,10 +168,8 @@ pub mod glyphindex_tests {
 
     #[test]
     pub fn test_string_from_glyphindex() {
-        let s = "Aé♫山𝄞🐗";
-        assert_eq!(get_string_from_glyphindex(s, 1), "é".to_string());
-        assert_eq!(get_string_from_glyphindex(s, 5), "🐗".to_string());
+        let s = "<👨‍🚒>"; // {MAN}{ZERO WIDTH JOINER}{FIRE ENGINE}
+        assert_eq!(get_string_from_glyphindex(s, 1), "👨‍🚒".to_string());
+        assert_eq!(get_string_from_glyphindex(s, 2), ">".to_string());
     }
-
-*/
 }

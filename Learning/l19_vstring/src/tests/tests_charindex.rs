@@ -89,7 +89,7 @@ pub mod charindex_tests {
 
     #[test]
     pub fn test_byteslice_from_charindex() {
-        assert_eq!(get_byteslice_from_charindex("Où ça?", 3), [0xC3u8, 0xA7u8]);
+        assert_eq!(get_byteslice_from_charindex("Où ça?", 3), [0xC3, 0xA7]);
     }
 
     // ------------------------
@@ -97,7 +97,7 @@ pub mod charindex_tests {
 
     #[test]
     pub fn test_bytevector_from_charindex() {
-        assert_eq!(get_bytevector_from_charindex("Où ça?", 3), vec![0xC3u8, 0xA7u8]);
+        assert_eq!(get_bytevector_from_charindex("Où ça?", 3), vec![0xC3, 0xA7]);
     }
 
     // ------------------------
@@ -130,15 +130,15 @@ pub mod charindex_tests {
         let s = "Aé♫山𝄞🐗";
 
         let mut it = get_byteiterator_from_charindex(s, 1); // é
-        assert_eq!(it.next(), Some(0xC3u8));
-        assert_eq!(it.next(), Some(0xA9u8));
+        assert_eq!(it.next(), Some(0xC3));
+        assert_eq!(it.next(), Some(0xA9));
         assert!(it.next().is_none());
 
         let mut it = get_byteiterator_from_charindex(s, 4); // 𝄞
-        assert_eq!(it.next(), Some(0xF0u8));
-        assert_eq!(it.next(), Some(0x9Du8));
-        assert_eq!(it.next(), Some(0x84u8));
-        assert_eq!(it.next(), Some(0x9Eu8));
+        assert_eq!(it.next(), Some(0xF0));
+        assert_eq!(it.next(), Some(0x9D));
+        assert_eq!(it.next(), Some(0x84));
+        assert_eq!(it.next(), Some(0x9E));
         assert!(it.next().is_none());
     }
 

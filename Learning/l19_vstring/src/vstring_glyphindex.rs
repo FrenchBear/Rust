@@ -51,7 +51,6 @@ pub fn get_glyphoption_from_glyphindex(s: &str, glyph_index: usize) -> Option<Gl
 
 // ------------------------
 // get byte slice
-/*
 pub fn get_byteslice_from_glyphindex(s: &str, glyph_index: usize) -> &[u8] {
     &s.as_bytes()[validate_glyphindex(s, glyph_index).byte_range]
 }
@@ -111,4 +110,3 @@ pub fn get_strref_from_glyphindex<'a>(s: &'a str, glyph_index: usize) -> &'a str
 pub fn get_string_from_glyphindex(s: &str, glyph_index: usize) -> String {
     s[validate_glyphindex(s, glyph_index).byte_range].to_string()
 }
- */
