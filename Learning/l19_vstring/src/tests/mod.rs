@@ -8,6 +8,7 @@ mod tests_byteindex;
 mod tests_byterange;
 mod tests_charindex;
 mod tests_charrange;
+mod tests_glyphindex;
 
 
 /*

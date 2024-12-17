@@ -11,9 +11,14 @@ pub mod charindex_tests {
 
     #[test]
     fn test_validate_charindex() {
-        validate_byterange(2, 1..2);
-        assert_eq!(validate_charindex("ABC", 1), ByteRangeAndChar { byte_range: 1..2, char: 'B'});
-        assert_eq!(validate_charindex("Aé♫山𝄞🐗", 4), ByteRangeAndChar { byte_range: 9..13, char: '𝄞'});
+        assert_eq!(validate_charindex("ABC", 1), 1..2);
+        assert_eq!(validate_charindex("Aé♫山𝄞🐗", 4), 9..13);
+    }
+
+    #[test]
+    #[should_panic(expected="char index out of bounds: &str contains 3 character(s), but the index is 5")]
+    fn test_validate_charindex_panic_out_of_bounds() {
+        let _ = validate_charindex("ABC", 5);
     }
 
     // ------------------------
@@ -60,7 +65,7 @@ pub mod charindex_tests {
         );
     }
 
-    #[should_panic(expected = "char index out of bounds: s contains 3 characters, but the index is 5")]
+    #[should_panic(expected = "char index out of bounds: &str contains 3 character(s), but the index is 5")]
     #[test]
     fn test_glyph_from_charindex_panic_out_of_bounds() {
         let _ = get_char_from_charindex("abc", 5);

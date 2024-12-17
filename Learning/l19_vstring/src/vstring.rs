@@ -22,6 +22,11 @@ pub use vstring_charindex::*;
 pub mod vstring_charrange;
 pub use vstring_charrange::*;
 
+#[path = "vstring_glyphindex.rs"]
+pub mod vstring_glyphindex;
+pub use vstring_glyphindex::*;
+
+
 use std::str;
 
 use crate::glyph2::Glyph2;
