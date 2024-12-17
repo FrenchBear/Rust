@@ -181,6 +181,19 @@ pub mod byterange_tests {
         );
     }
 
+    #[test]
+    #[should_panic(expected="Byte range start 10 is not a glyph boundary; it is inside glyph '🐻‍❄️' (bytes 0..13)")]
+    pub fn test_glyphvector_from_byterange_fail_start_not_at_glyph_boundary() {
+        let _ = get_glyphvector_from_byterange("🐻‍❄️e\u{0301}👨🏾‍❤️‍💋‍👨🏻", 10..16);
+    }
+
+    #[test]
+    #[should_panic(expected="Byte range end 15 is not a glyph boundary; it is inside glyph 'e\u{301}' (bytes 13..16)")]
+    pub fn test_glyphvector_from_byterange_fail_end_not_at_glyph_boundary() {
+        let _ = get_glyphvector_from_byterange("🐻‍❄️e\u{0301}👨🏾‍❤️‍💋‍👨🏻", 13..15);
+    }
+
+
     // ----------------------------------
     // get byte iterator
 

@@ -156,8 +156,18 @@ where R: RangeBounds<usize>,
         if r.start > g.byte_range.start && r.start < g.byte_range.end {
             // Similar panic message when we try to slice a str in the middle of multibyte UTF-8 character
             panic!(
-                "Range.start {} is not a glyph boundary; it is inside '{}' (bytes {}..{})",
+                "Byte range start {} is not a glyph boundary; it is inside glyph '{}' (bytes {}..{})",
                 r.start,
+                &s[g.byte_range.clone()],
+                g.byte_range.start,
+                g.byte_range.end
+            );
+        }
+
+        if r.end > g.byte_range.start && r.end < g.byte_range.end {
+            panic!(
+                "Byte range end {} is not a glyph boundary; it is inside glyph '{}' (bytes {}..{})",
+                r.end,
                 &s[g.byte_range.clone()],
                 g.byte_range.start,
                 g.byte_range.end

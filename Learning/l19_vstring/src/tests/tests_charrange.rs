@@ -28,18 +28,18 @@ pub mod charrange_tests {
         //                   10    30
         
 
-        assert_eq!(validate_charrange(s, 5..7), 13..21);
-        assert_eq!(validate_charrange(s, 5..10), 13..30);
-        assert_eq!(validate_charrange(s, 5..=7), 13..24);
-        assert_eq!(validate_charrange(s, 5..=5), 13..17);
-        assert_eq!(validate_charrange(s, 5..=9), 13..30);
-        assert_eq!(validate_charrange(s, 5..), 13..30);
-        assert_eq!(validate_charrange(s, ..4), 0..9);
-        assert_eq!(validate_charrange(s, ..=4), 0..13);
-        assert_eq!(validate_charrange(s, ..), 0..30);
-        assert_eq!(validate_charrange(s, 3..3), 6..6); // An empty range is accepted
-        assert_eq!(validate_charrange(s, 10..10), 30..30); // An empty range at end position is accepted
-        assert_eq!(validate_charrange(s, 0..0), 0..0); // An empty range is accepted ==> crash, return a "normal" range
+        assert_eq!(validate_charrange(s, 5..7),  ByteRangeAndCharRange { byte_range:13..21, char_range: 5..7 });
+        assert_eq!(validate_charrange(s, 5..10), ByteRangeAndCharRange { byte_range:13..30, char_range: 5..10 });
+        assert_eq!(validate_charrange(s, 5..=7), ByteRangeAndCharRange { byte_range:13..24, char_range: 5..8 });
+        assert_eq!(validate_charrange(s, 5..=5), ByteRangeAndCharRange { byte_range:13..17, char_range: 5..6 });
+        assert_eq!(validate_charrange(s, 5..=9), ByteRangeAndCharRange { byte_range:13..30, char_range: 5..10 });
+        assert_eq!(validate_charrange(s, 5..),   ByteRangeAndCharRange { byte_range:13..30, char_range: 5..10 });
+        assert_eq!(validate_charrange(s, ..4),   ByteRangeAndCharRange { byte_range:0..9, char_range: 0..4 });
+        assert_eq!(validate_charrange(s, ..=4),  ByteRangeAndCharRange { byte_range:0..13, char_range: 0..5 });
+        assert_eq!(validate_charrange(s, ..),    ByteRangeAndCharRange { byte_range:0..30, char_range: 0..10 });
+        assert_eq!(validate_charrange(s, 3..3),  ByteRangeAndCharRange { byte_range:6..6, char_range: 3..3 }); // An empty range is accepted
+        assert_eq!(validate_charrange(s, 10..10),ByteRangeAndCharRange { byte_range:30..30, char_range: 10..10 }); // An empty range at end position is accepted
+        assert_eq!(validate_charrange(s, 0..0),  ByteRangeAndCharRange { byte_range:0..0, char_range: 0..0 }); // An empty range is accepted ==> crash, return a "normal" range
     }
 
     #[test]
@@ -125,14 +125,21 @@ pub mod charrange_tests {
     // ------------------------
     // get glyph vector
 
-    /*
     #[test]
     pub fn test_glyphvector_from_charrange() {
         assert_eq!(
-            get_glyphvector_from_charrange("🐻‍❄️e\u{0301}👨🏾‍❤️‍💋‍👨🏻", 13..16),
+            get_glyphvector_from_charrange("e\u{0301}", 0..2),
             vec![Glyph2 {
-                byte_range: 13..16,
-                char_range: 4..6
+                byte_range: 0..3,
+                char_range: 0..2
+            }]
+        );
+
+        assert_eq!(
+            get_glyphvector_from_charrange("👨‍❤‍👩e\u{0301}🐻‍❄️", 5..7),
+            vec![Glyph2 {
+                byte_range: 17..20,
+                char_range: 5..7
             }]
         );
 
@@ -155,8 +162,21 @@ pub mod charrange_tests {
         );
     }
 
+    #[test]
+    #[should_panic(expected="Char range start 6 is not a glyph boundary; it is inside glyph 'é' (characters 5..7, bytes 17..20)")]
+    pub fn test_glyphvector_from_charrange_panic_start_not_at_glyph_blundary() {
+        let _ = get_glyphvector_from_charrange("👨‍❤‍👩e\u{0301}🐻‍❄️", 6..7);
+    }
+
+    #[test]
+    #[should_panic(expected="Char range end 9 is not a glyph boundary; it is inside glyph '🐻‍❄️' (characters 7..11, bytes 20..33)")]
+    pub fn test_glyphvector_from_charrange_panic_end_not_at_glyph_blundary() {
+        let _ = get_glyphvector_from_charrange("👨‍❤‍👩e\u{0301}🐻‍❄️", 7..9);
+    }
+
     // ----------------------------------
     // get byte iterator
+    /*
 
     #[test]
     pub fn test_byteiterator_from_charrange() {

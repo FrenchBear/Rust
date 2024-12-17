@@ -19,33 +19,40 @@ use crate::glyph2::Glyph2;
 
 use std::ops::Bound::*;
 
+#[derive(Debug, PartialEq)]
+pub struct ByteRangeAndCharRange{
+    pub byte_range: Range<usize>,
+    pub char_range: Range<usize>,
+}
+
+
 // Checks that char_range is compatible with s, accepts all variations of Range
 // Panics in case of invalid range or incompatibility
-// If Ok, return a bytes index Range<usize> representing all forms of ranges
-pub fn validate_charrange<R>(s: &str, char_range: R) -> Range<usize>
+// If Ok, return both a byte range and a char range Range<usize> representing all forms of ranges
+pub fn validate_charrange<R>(s: &str, char_range: R) -> ByteRangeAndCharRange
 where
     R: RangeBounds<usize>,
 {
     let count = s.chars().count();
-    let start = match char_range.start_bound() {
+    let startcharindex = match char_range.start_bound() {
         Included(&n) => n,
         Excluded(&n) => n + 1,
         Unbounded => 0,
     };
-    let end = match char_range.end_bound() {
+    let endcharindex = match char_range.end_bound() {
         Included(&n) => n + 1,
         Excluded(&n) => n,
         Unbounded => count,
     };
 
-    if start > end {
-        panic!("Invalid range, start {} is greater than end {}", start, end);
+    if startcharindex > endcharindex {
+        panic!("Invalid range, start {} is greater than end {}", startcharindex, endcharindex);
     }
-    if start > count {
-        panic!("Invalid range, start {} is greater than chars count {}", start, count);
+    if startcharindex > count {
+        panic!("Invalid range, start {} is greater than chars count {}", startcharindex, count);
     }
-    if end > count {
-        panic!("Invalid range, end {} is greater than chars count {}", end, count);
+    if endcharindex > count {
+        panic!("Invalid range, end {} is greater than chars count {}", endcharindex, count);
     }
 
     // Convert char indexes into bytes indexes
@@ -53,16 +60,16 @@ where
     let mut endbyteindex = s.len();
     let mut charindex = 0;
     for (ix, _) in s.char_indices() {
-        if charindex == start {
+        if charindex == startcharindex {
             startbyteindex = ix;
         }
-        if charindex == end {
+        if charindex == endcharindex {
             endbyteindex = ix;
         }
         charindex += 1;
     }
 
-    startbyteindex..endbyteindex
+    ByteRangeAndCharRange { byte_range: startbyteindex..endbyteindex, char_range: startcharindex..endcharindex }
 }
 
 // ------------------------
@@ -73,7 +80,7 @@ pub fn get_byteslice_from_charrange<'a, R>(s: &'a str, char_range: R) -> &'a [u8
 where
     R: RangeBounds<usize>,
 {
-    &s[validate_charrange(s, char_range)].as_bytes()
+    &s[validate_charrange(s, char_range).byte_range].as_bytes()
 }
 
 // Specialized variants to extract by slice at the beginning or at the end
@@ -95,7 +102,7 @@ where
 {
     // ToDo: Check which version is the most efficient
     //Vec::from_iter((&s[validate_charrange(s, char_range)]).bytes())
-    (&s[validate_charrange(s, char_range)]).bytes().collect()
+    (&s[validate_charrange(s, char_range).byte_range]).bytes().collect()
 }
 
 // ------------------------
@@ -106,41 +113,55 @@ where
     R: RangeBounds<usize>,
 {
     //Vec::from_iter(s[validate_charrange(s, char_range)].chars())
-    s[validate_charrange(s, char_range)].chars().collect()
+    s[validate_charrange(s, char_range).byte_range].chars().collect()
 }
 
 // ------------------------
 // get glyph vector
 
-/*
 pub fn get_glyphvector_from_charrange<R>(s: &str, char_range: R) -> Vec<Glyph2>
-where R: RangeBounds<usize>,
+where
+    R: RangeBounds<usize>,
 {
     // Validate range and convert all varians into inclusive byte indexes for start and end
+    // Don't need matching bytes range, argument char_range is enouth to analyse Glyph2 values returned bu iterator
     let r = validate_charrange(s, char_range);
 
     let mut accumulate = false;
     let mut res = Vec::new();
     for g in Glyph2::glyph2_indices(s) {
-        if r.start == g.char_range.start {
+        if r.char_range.start == g.char_range.start {
             accumulate = true;
         };
 
-        if r.start > g.char_range.start && r.start < g.char_range.end {
+        if r.char_range.start > g.char_range.start && r.char_range.start < g.char_range.end {
             // Similar panic message when we try to slice a str in the middle of multibyte UTF-8 character
             panic!(
-                "Range.start {} is not a glyph boundary; it is inside '{}' (bytes {}..{})",
-                r.start,
-                &s[g.char_range.clone()],
+                "Char range start {} is not a glyph boundary; it is inside glyph '{}' (characters {}..{}, bytes {}..{})",
+                r.char_range.start,
+                &s[g.byte_range.clone()],
                 g.char_range.start,
-                g.char_range.end
+                g.char_range.end,
+                g.byte_range.start,
+                g.byte_range.end
+            );
+        }
+        if r.char_range.end > g.char_range.start && r.char_range.end < g.char_range.end {
+            panic!(
+                "Char range end {} is not a glyph boundary; it is inside glyph '{}' (characters {}..{}, bytes {}..{})",
+                r.char_range.end,
+                &s[g.byte_range.clone()],
+                g.char_range.start,
+                g.char_range.end,
+                g.byte_range.start,
+                g.byte_range.end
             );
         }
 
         if accumulate {
             let e = g.char_range.end;
             res.push(g);
-            if r.end == e {
+            if r.char_range.end == e {
                 return res;
             }
         }
@@ -151,6 +172,7 @@ where R: RangeBounds<usize>,
 // ------------------------
 // get byte iterator
 
+/*
 pub fn get_byteiterator_from_charrange<'a, R>(s: &'a str, char_range: R) -> impl Iterator<Item = u8> + 'a where R: RangeBounds<usize>, {
     s[validate_charrange(s, char_range)].bytes()
 }

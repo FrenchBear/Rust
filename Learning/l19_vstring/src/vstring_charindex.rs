@@ -19,12 +19,12 @@ use crate::glyph2::Glyph2;
 // Helper, returns Range<usize> for a given char_index, and panics if index is not valid
 
 #[derive(Debug, PartialEq)]
-pub struct ByteRangeChar{
+pub struct ByteRangeAndChar{
     pub byte_range: Range<usize>,
     pub char: char,
 }
 
-pub fn validate_charindex(s: &str, char_index: usize) -> ByteRangeChar {
+pub fn validate_charindex(s: &str, char_index: usize) -> ByteRangeAndChar {
     let mut ix = 0;
     let mut it = s.char_indices();
 
@@ -38,9 +38,9 @@ pub fn validate_charindex(s: &str, char_index: usize) -> ByteRangeChar {
             let ci = ciopt.unwrap();
             let nextopt = it.next();
             if nextopt.is_none() {
-                return ByteRangeChar { byte_range: ci.0..s.len(), char: ci.1};
+                return ByteRangeAndChar { byte_range: ci.0..s.len(), char: ci.1};
             } else {
-                return ByteRangeChar { byte_range:ci.0..nextopt.unwrap().0, char: ci.1};
+                return ByteRangeAndChar { byte_range:ci.0..nextopt.unwrap().0, char: ci.1};
             }
         }
 

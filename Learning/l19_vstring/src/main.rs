@@ -32,9 +32,10 @@ pub fn test_vstrings() {
     println!("get_byte_length={}", get_byte_length(s));
     println!("get_char_length={}", get_char_length(s));
     println!("get_glyph_length={}", get_glyph_length(s));
+    println!();
 
-    for b in get_byteiterator_from_byterange(s, ..) {
-        print!("{0:#02X}, ", b)
+    for g in get_glyphvector_from_charrange("👨‍❤‍👩e\u{0301}🐻‍❄️", 6..7) {
+        print!("{:?}, ", g)
     }
     println!();
 }

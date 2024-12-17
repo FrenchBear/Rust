@@ -12,8 +12,8 @@ pub mod charindex_tests {
     #[test]
     fn test_validate_charindex() {
         validate_byterange(2, 1..2);
-        assert_eq!(validate_charindex("ABC", 1), ByteRangeChar { byte_range: 1..2, char: 'B'});
-        assert_eq!(validate_charindex("Aé♫山𝄞🐗", 4), ByteRangeChar { byte_range: 9..13, char: '𝄞'});
+        assert_eq!(validate_charindex("ABC", 1), ByteRangeAndChar { byte_range: 1..2, char: 'B'});
+        assert_eq!(validate_charindex("Aé♫山𝄞🐗", 4), ByteRangeAndChar { byte_range: 9..13, char: '𝄞'});
     }
 
     // ------------------------
