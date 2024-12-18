@@ -100,6 +100,15 @@ fn test_string_from_bytevectorref() {
 }
 
 #[test]
+fn test_string_from_byteiterator() {
+    for s in vec!["", "Aé♫山𝄞🐗", "e\u{0301}🐻‍❄️👨🏾‍❤️‍💋‍👨🏻"] {
+        assert_eq!(s.to_string(), get_string_from_byteiterator(get_byteiterator_from_byterange(s, ..)));
+        assert_eq!(s.to_string(), get_string_from_byteiterator(get_byteiterator_from_charrange(s, ..)));
+        assert_eq!(s.to_string(), get_string_from_byteiterator(get_byteiterator_from_glyphrange(s, ..)));
+    }
+}
+
+#[test]
 fn test_string_from_charvector() {
     for s in vec!["", "Aé♫山𝄞🐗", "e\u{0301}🐻‍❄️👨🏾‍❤️‍💋‍👨🏻"] {
         assert_eq!(s.to_string(), get_string_from_charvector(get_charvector_from_byterange(s, ..)));
@@ -108,12 +117,20 @@ fn test_string_from_charvector() {
     }
 }
 
-
 #[test]
 fn test_string_from_charvectorref() {
     for s in vec!["", "Aé♫山𝄞🐗", "e\u{0301}🐻‍❄️👨🏾‍❤️‍💋‍👨🏻"] {
         assert_eq!(s.to_string(), get_string_from_charvectorref(&get_charvector_from_byterange(s, ..)));
         assert_eq!(s.to_string(), get_string_from_charvectorref(&get_charvector_from_charrange(s, ..)));
         assert_eq!(s.to_string(), get_string_from_charvectorref(&get_charvector_from_glyphrange(s, ..)));
+    }
+}
+
+#[test]
+fn test_string_from_chariterator() {
+    for s in vec!["", "Aé♫山𝄞🐗", "e\u{0301}🐻‍❄️👨🏾‍❤️‍💋‍👨🏻"] {
+        assert_eq!(s.to_string(), get_string_from_chariterator(get_chariterator_from_charrange(s, ..)));
+        assert_eq!(s.to_string(), get_string_from_chariterator(get_chariterator_from_charrange(s, ..)));
+        assert_eq!(s.to_string(), get_string_from_chariterator(get_chariterator_from_glyphrange(s, ..)));
     }
 }

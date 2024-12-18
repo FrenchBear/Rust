@@ -84,6 +84,11 @@ pub fn get_string_from_bytevectorref(bytevectorref: &Vec<u8>) -> String {
     str::from_utf8(bytevectorref).unwrap().to_string()
 }
 
+// Returns String from byte iterator
+pub fn get_string_from_byteiterator(byteiterator: impl Iterator<Item = u8>) -> String {
+    String::from_utf8(byteiterator.collect::<Vec<u8>>()).unwrap()
+}
+
 // Returns String from char vector, takes ownership
 pub fn get_string_from_charvector(charvector: Vec<char>) -> String {
     //charvector.iter().collect()
@@ -94,4 +99,10 @@ pub fn get_string_from_charvector(charvector: Vec<char>) -> String {
 pub fn get_string_from_charvectorref(charvectorref: &Vec<char>) -> String {
     charvectorref.iter().collect()
     //String::from_iter(charvectorref)
+}
+
+// Returns String from char iterator
+pub fn get_string_from_chariterator(chariterator: impl Iterator<Item = char>) -> String {
+    //chariterator.collect()
+    String::from_iter(chariterator)
 }
