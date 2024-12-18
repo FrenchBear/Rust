@@ -9,9 +9,9 @@ mod tests_byterange;
 mod tests_charindex;
 mod tests_charrange;
 mod tests_glyphindex;
+mod tests_glyphrange;
 
 
-/*
 #[cfg(test)]
 use super::*;
 pub mod length_tests {
@@ -53,4 +53,3 @@ pub mod length_tests {
             //  U+1F3FB	EMOJI MODIFIER FITZPATRICK TYPE-1-2
     }
 }
- */

@@ -25,28 +25,16 @@ fn main() {
 
 pub fn test_vstrings() {
 
-    for i in vec![240, 159, 145, 168, 226, 128, 141, 240, 159, 154, 146] {
-        print!("{:#02X}, ", i)
-    }
-    println!();
+    // let s = "Aé♫山𝄞🐗🐻‍❄️";
+    // println!("s={s}");
+
+    // println!("\nBytes functions");
+    // println!("get_byte_length={}", get_byte_length(s));
+    // println!("get_char_length={}", get_char_length(s));
+    // println!("get_glyph_length={}", get_glyph_length(s));
+    // println!();
 
     let s = "Aé♫山𝄞🐗🐻‍❄️";
-    println!("s={s}");
+    println!("{:?}", validate_glyphrange(s, 4..4));
 
-    println!("\nBytes functions");
-    println!("get_byte_length={}", get_byte_length(s));
-    println!("get_char_length={}", get_char_length(s));
-    println!("get_glyph_length={}", get_glyph_length(s));
-    println!();
-
-    let s = "Aé♫山𝄞🐗";
-    for b in get_byteiterator_from_charrange(s, 2..4){
-        println!("{:#02X}", b);        
-    }
-    println!();
-
-    // for g in get_glyphvector_from_charrange("👨‍❤‍👩e\u{0301}🐻‍❄️", 6..7) {
-    //     print!("{:?}, ", g)
-    // }
-    // println!();
 }

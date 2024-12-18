@@ -14,22 +14,22 @@ use crate::glyph2::Glyph2;
 // ==========================================================================================
 // From charrange
 
+
 // ------------------------
 // Helpers
 
 use std::ops::Bound::*;
 
 #[derive(Debug, PartialEq)]
-pub struct ByteRangeAndCharRange{
+pub struct ByteCharRange{
     pub byte_range: Range<usize>,
     pub char_range: Range<usize>,
 }
 
-
 // Checks that char_range is compatible with s, accepts all variations of Range
 // Panics in case of invalid range or incompatibility
 // If Ok, return both a byte range and a char range Range<usize> representing all forms of ranges
-pub fn validate_charrange<R>(s: &str, char_range: R) -> ByteRangeAndCharRange
+pub fn validate_charrange<R>(s: &str, char_range: R) -> ByteCharRange
 where
     R: RangeBounds<usize>,
 {
@@ -46,13 +46,13 @@ where
     };
 
     if startcharindex > endcharindex {
-        panic!("Invalid range, start {} is greater than end {}", startcharindex, endcharindex);
+        panic!("Invalid char range, start {} is greater than end {}", startcharindex, endcharindex);
     }
     if startcharindex > count {
-        panic!("Invalid range, start {} is greater than chars count {}", startcharindex, count);
+        panic!("Invalid char range, start {} is greater than char count {}", startcharindex, count);
     }
     if endcharindex > count {
-        panic!("Invalid range, end {} is greater than chars count {}", endcharindex, count);
+        panic!("Invalid char range, end {} is greater than char count {}", endcharindex, count);
     }
 
     // Convert char indexes into bytes indexes
@@ -65,11 +65,12 @@ where
         }
         if charindex == endcharindex {
             endbyteindex = ix;
+            break;
         }
         charindex += 1;
     }
 
-    ByteRangeAndCharRange { byte_range: startbyteindex..endbyteindex, char_range: startcharindex..endcharindex }
+    ByteCharRange { byte_range: startbyteindex..endbyteindex, char_range: startcharindex..endcharindex }
 }
 
 // ------------------------

@@ -28,35 +28,35 @@ pub mod charrange_tests {
         //                   10    30
         
 
-        assert_eq!(validate_charrange(s, 5..7),  ByteRangeAndCharRange { byte_range:13..21, char_range: 5..7 });
-        assert_eq!(validate_charrange(s, 5..10), ByteRangeAndCharRange { byte_range:13..30, char_range: 5..10 });
-        assert_eq!(validate_charrange(s, 5..=7), ByteRangeAndCharRange { byte_range:13..24, char_range: 5..8 });
-        assert_eq!(validate_charrange(s, 5..=5), ByteRangeAndCharRange { byte_range:13..17, char_range: 5..6 });
-        assert_eq!(validate_charrange(s, 5..=9), ByteRangeAndCharRange { byte_range:13..30, char_range: 5..10 });
-        assert_eq!(validate_charrange(s, 5..),   ByteRangeAndCharRange { byte_range:13..30, char_range: 5..10 });
-        assert_eq!(validate_charrange(s, ..4),   ByteRangeAndCharRange { byte_range:0..9, char_range: 0..4 });
-        assert_eq!(validate_charrange(s, ..=4),  ByteRangeAndCharRange { byte_range:0..13, char_range: 0..5 });
-        assert_eq!(validate_charrange(s, ..),    ByteRangeAndCharRange { byte_range:0..30, char_range: 0..10 });
-        assert_eq!(validate_charrange(s, 3..3),  ByteRangeAndCharRange { byte_range:6..6, char_range: 3..3 }); // An empty range is accepted
-        assert_eq!(validate_charrange(s, 10..10),ByteRangeAndCharRange { byte_range:30..30, char_range: 10..10 }); // An empty range at end position is accepted
-        assert_eq!(validate_charrange(s, 0..0),  ByteRangeAndCharRange { byte_range:0..0, char_range: 0..0 }); // An empty range is accepted ==> crash, return a "normal" range
+        assert_eq!(validate_charrange(s, 5..7),  ByteCharRange { byte_range: 13..21, char_range: 5..7 });
+        assert_eq!(validate_charrange(s, 5..10), ByteCharRange { byte_range: 13..30, char_range: 5..10 });
+        assert_eq!(validate_charrange(s, 5..=7), ByteCharRange { byte_range: 13..24, char_range: 5..8 });
+        assert_eq!(validate_charrange(s, 5..=5), ByteCharRange { byte_range: 13..17, char_range: 5..6 });
+        assert_eq!(validate_charrange(s, 5..=9), ByteCharRange { byte_range: 13..30, char_range: 5..10 });
+        assert_eq!(validate_charrange(s, 5..),   ByteCharRange { byte_range: 13..30, char_range: 5..10 });
+        assert_eq!(validate_charrange(s, ..4),   ByteCharRange { byte_range: 0..9, char_range: 0..4 });
+        assert_eq!(validate_charrange(s, ..=4),  ByteCharRange { byte_range: 0..13, char_range: 0..5 });
+        assert_eq!(validate_charrange(s, ..),    ByteCharRange { byte_range: 0..30, char_range: 0..10 });
+        assert_eq!(validate_charrange(s, 3..3),  ByteCharRange { byte_range: 6..6, char_range: 3..3 }); // An empty range is accepted
+        assert_eq!(validate_charrange(s, 10..10),ByteCharRange { byte_range: 30..30, char_range: 10..10 }); // An empty range at end position is accepted
+        assert_eq!(validate_charrange(s, 0..0),  ByteCharRange { byte_range: 0..0, char_range: 0..0 }); // An empty range is accepted ==> crash, return a "normal" range
     }
 
     #[test]
-    #[should_panic(expected = "Invalid range, start 3 is greater than end 2")]
+    #[should_panic(expected = "Invalid char range, start 3 is greater than end 2")]
     pub fn test_validate_charrange_panic_invalid_range_1() {
         validate_charrange("HelloWorld", 3..2);
     }
 
 
     #[test]
-    #[should_panic(expected = "Invalid range, start 12 is greater than chars count 10")]
+    #[should_panic(expected = "Invalid char range, start 12 is greater than char count 10")]
     pub fn test_validate_charrange_panic_invalid_range_2() {
         validate_charrange("HelloWorld", 12..20);
     }
 
     #[test]
-    #[should_panic(expected = "Invalid range, end 11 is greater than chars count 10")]
+    #[should_panic(expected = "Invalid char range, end 11 is greater than char count 10")]
     pub fn test_validate_charrange_panic_invalid_range_3() {
         validate_charrange("HelloWorld", 3..11);
     }
@@ -87,7 +87,7 @@ pub mod charrange_tests {
     }
 
     #[test]
-    pub fn test_charslice_from_endcharcount() {
+    pub fn test_byteslice_from_endcharcount() {
         let s = "Aé♫山𝄞🐗🐻‍❄️";
         assert_eq!(get_byteslice_from_endcharcount(s, 3), [0xE2, 0x80, 0x8D, 0xE2, 0x9D, 0x84, 0xEF, 0xB8, 0x8F]);
     }
