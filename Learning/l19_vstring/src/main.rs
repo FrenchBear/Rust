@@ -34,7 +34,9 @@ pub fn test_vstrings() {
     // println!("get_glyph_length={}", get_glyph_length(s));
     // println!();
 
-    let s = "Aé♫山𝄞🐗🐻‍❄️";
-    println!("{:?}", validate_glyphrange(s, 4..4));
+    let s = "👨‍❤‍👩e\u{0301}🐻‍❄️";
 
+    for c in get_chariterator_from_glyphrange(s, 2..) {
+        println!("assert_eq!(it.next(), Some('{}'));", c);
+    }
 }

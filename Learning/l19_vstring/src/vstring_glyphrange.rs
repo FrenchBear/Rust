@@ -99,7 +99,6 @@ pub fn get_byteslice_from_endglyphcount<'a>(s: &'a str, glyph_count: usize) -> &
 // get byte vector, copying bytes
 
 // Returning a Vec<u8> is Ok, but it duplicates characters
-/*
 pub fn get_bytevector_from_glyphrange<R>(s: &str, glyph_range: R) -> Vec<u8>
 where
     R: RangeBounds<usize>,
@@ -140,7 +139,7 @@ where
 
         if accumulate {
             res.push(g);
-            if r.glyph_range.end == ix {
+            if r.glyph_range.end == ix+1 {
                 return res;
             }
         }
@@ -190,4 +189,3 @@ where
 {
     s[validate_glyphrange(s, glyph_range).byte_range].to_string()
 }
- */
