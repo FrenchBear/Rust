@@ -21,6 +21,9 @@ use vstring::*;
 
 fn main() {
     test_vstrings();
+
+    let s1 = get_byteslice_from_byterange("ABC", ..);
+    let v1 = get_bytevector_from_byterange("ABC", ..);
 }
 
 pub fn test_vstrings() {

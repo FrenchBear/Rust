@@ -31,7 +31,7 @@ pub mod vstring_glyphrange;
 pub use vstring_glyphrange::*;
 
 
-use std::{ops::Range, str};
+use core::str;
 
 use crate::glyph2::Glyph2;
 
@@ -51,9 +51,47 @@ pub fn get_glyph_length(s: &str) -> usize {
 }
 
 // ==========================================================================================
-// Misc helpers
+// Conversion to &str
 
-// Returns str from bytes slice
-pub fn get_strref_from_byteslice<'a>(bytes: &'a [u8]) -> &'a str {
-    str::from_utf8(bytes).unwrap()
+// Returns &str from bytes slice
+pub fn get_strref_from_byteslice<'a>(byteslice: &'a [u8]) -> &'a str {
+    str::from_utf8(byteslice).unwrap()
+}
+
+// Returns str from bytes vector
+pub fn get_strref_from_bytevector<'a>(bytevector: &'a Vec<u8>) -> &'a str {
+    str::from_utf8(bytevector.as_slice()).unwrap()
+}
+
+// ==========================================================================================
+// Conversion to String
+
+// Returns String from byte slice &[u8]
+pub fn get_string_from_byteslice(byteslice: &[u8]) -> String {
+    //String::from_utf8(byteslice.to_vec()).unwrap()
+    //str::from_utf8(byteslice).unwrap().to_string()
+    String::from(str::from_utf8(byteslice).unwrap())
+}
+
+// Returns String from byte vector Vec<u8> (takes ownership of vector)
+pub fn get_string_from_bytevector(bytevector: Vec<u8>) -> String {
+    String::from_utf8(bytevector).unwrap()
+}
+
+// Returns String from byte vector ref &vec[u8]
+pub fn get_string_from_bytevectorref(bytevectorref: &Vec<u8>) -> String {
+    //String::from_utf8(bytevectorref.clone()).unwrap()       // Inefficient because of clone()
+    str::from_utf8(bytevectorref).unwrap().to_string()
+}
+
+// Returns String from char vector, takes ownership
+pub fn get_string_from_charvector(charvector: Vec<char>) -> String {
+    //charvector.iter().collect()
+    String::from_iter(charvector)
+}
+
+// Returns String from char vector ref
+pub fn get_string_from_charvectorref(charvectorref: &Vec<char>) -> String {
+    charvectorref.iter().collect()
+    //String::from_iter(charvectorref)
 }
