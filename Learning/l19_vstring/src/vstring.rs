@@ -81,12 +81,26 @@ pub fn get_string_from_bytevector(bytevector: Vec<u8>) -> String {
 // Returns String from byte vector ref &vec[u8]
 pub fn get_string_from_bytevectorref(bytevectorref: &Vec<u8>) -> String {
     //String::from_utf8(bytevectorref.clone()).unwrap()       // Inefficient because of clone()
-    str::from_utf8(bytevectorref).unwrap().to_string()
+    //str::from_utf8(bytevectorref).unwrap().to_string()
+    String::from(str::from_utf8(bytevectorref).unwrap())
 }
 
 // Returns String from byte iterator
 pub fn get_string_from_byteiterator(byteiterator: impl Iterator<Item = u8>) -> String {
     String::from_utf8(byteiterator.collect::<Vec<u8>>()).unwrap()
+}
+
+// DOn't know if unsafe variant is faster
+pub unsafe  fn get_string_from_byteiterator_unsafe(byteiterator: impl Iterator<Item = u8>) -> String {
+    String::from_utf8_unchecked(byteiterator.collect::<Vec<u8>>())
+}
+
+// ----
+
+// Returns String from slice &[char]
+pub fn get_string_from_charslice(charslice: &[char]) -> String {
+    //charslice.iter().collect()
+    String::from_iter(charslice)
 }
 
 // Returns String from char vector, takes ownership
@@ -97,8 +111,8 @@ pub fn get_string_from_charvector(charvector: Vec<char>) -> String {
 
 // Returns String from char vector ref
 pub fn get_string_from_charvectorref(charvectorref: &Vec<char>) -> String {
-    charvectorref.iter().collect()
-    //String::from_iter(charvectorref)
+    //charvectorref.iter().collect()
+    String::from_iter(charvectorref)
 }
 
 // Returns String from char iterator

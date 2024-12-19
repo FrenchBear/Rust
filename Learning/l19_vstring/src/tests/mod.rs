@@ -108,6 +108,13 @@ fn test_string_from_byteiterator() {
     }
 }
 
+// ------------------------
+
+#[test]
+fn test_string_from_charslice() {
+    assert_eq!(get_string_from_charslice(&['A', 'é', '♫', '山', '𝄞', '🐗']), "Aé♫山𝄞🐗".to_string());
+}
+
 #[test]
 fn test_string_from_charvector() {
     for s in vec!["", "Aé♫山𝄞🐗", "e\u{0301}🐻‍❄️👨🏾‍❤️‍💋‍👨🏻"] {
