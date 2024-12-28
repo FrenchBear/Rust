@@ -97,6 +97,8 @@ fn take_ownership() {
     let list = vec![1, 2, 3];
     println!("Before defining closure: {list:?}");
 
+    // Without moving value in the closure, thread executing yake_ownership() could terminate before spawned thread execures,
+    // making list reference invalid (closure may outlive current function)
     thread::spawn(move || println!("From thread: {list:?}"))
         .join()
         .unwrap();
