@@ -45,7 +45,7 @@ fn get_glyphresult_from_byteindex(s: &str, byte_index: usize, should_panic: bool
         }
     }
 
-    let mut lmax: usize = 0;
+    //let mut lmax: usize = 0;
     for g in Glyph2::glyph2_indices(s) {
         if byte_index == *g.byte_range.start() {
             return Some(g);
@@ -62,7 +62,7 @@ fn get_glyphresult_from_byteindex(s: &str, byte_index: usize, should_panic: bool
             }
             return None;
         }
-        lmax = *g.byte_range.end() + 1;
+        //lmax = *g.byte_range.end() + 1;
     }
     None    // Actually we should never get here
 }
