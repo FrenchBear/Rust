@@ -6,6 +6,8 @@
 
 #![allow(unused_mut, unused_imports)]
 
+// With path attribute, submodule source can be placed in the same folder as vstring.rs
+// Without that, rust would search in vstring/vstring_byteindex.rs, or vstring/vstring_byteindex/mod.rs
 #[path = "vstring_byteindex.rs"]
 pub mod vstring_byteindex;
 pub use vstring_byteindex::*;
