@@ -1,5 +1,5 @@
 [package]
-name = "r20_smart_pointers"
+name = "r21_rc"
 version = "0.1.0"
 edition = "2021"
 
