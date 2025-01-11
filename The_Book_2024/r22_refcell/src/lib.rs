@@ -100,7 +100,10 @@ mod tests {
     impl Messenger for MockMessenger {
         fn send(&self, message: &str) {
             //self.sent_messages.push(String::from(message));     // Not allowed if sent_messages is a Vec<String>
-            self.sent_messages.borrow_mut().push(String::from(message));     // Not allowed if sent_messages is a Vec<String>
+
+            // RefCell allow many immutable borrows or a single mutable borrow an any point in time
+            // This if checked at run-tipe, not as compile time
+            self.sent_messages.borrow_mut().push(String::from(message));
         }
     }
 
