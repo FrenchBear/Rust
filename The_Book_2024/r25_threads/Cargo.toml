@@ -1,5 +1,5 @@
 [package]
-name = "r24_tree_weak"
+name = "r25_threads"
 version = "0.1.0"
 edition = "2021"
 
