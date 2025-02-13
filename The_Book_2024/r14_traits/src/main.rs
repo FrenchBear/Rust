@@ -2,6 +2,7 @@
 // Learning rust 2024, The Book §10, 10 Generic Types, Traits, and Lifetimes
 //
 // 2024-11-21   PV
+// 2025-02-13   PV      Added example showing how to declare a variable of type Trait
 
 #![allow(dead_code, unused_variables)]
 
@@ -180,6 +181,23 @@ impl<T: Display + PartialOrd> Pair<T> {
 
 // ----------------------------------------------------------
 
+pub trait MonTrait {
+    fn say_hello(&self);
+}
+
+pub struct Machin
+{
+    pub x: i32,
+}
+
+impl  MonTrait for Machin {
+    fn say_hello(&self) {
+        println!("Hello!");
+    }
+}
+
+// ----------------------------------------------------------
+
 fn main() {
     let c = Circle {
         center: Point { x: 2.0, y: 3.0 },
@@ -203,4 +221,11 @@ fn main() {
 
     let s2 = returns_surface();
     print_surface_1(&s2);
+
+
+    // Use trait Trait: dyn Trait
+    let ma = Machin {x:3};
+    let mb: Box<dyn MonTrait> = Box::new(Machin {x:3});     // Use Box<dyn Trait> to get a reference (and because the size for any type implementing Box isn't known at compile time of this line)
+    let x1: &dyn MonTrait = &ma;
+    let x2: &dyn MonTrait = &(*mb);     // Can't use directly mb, need to dereference the box and then take the address
 }

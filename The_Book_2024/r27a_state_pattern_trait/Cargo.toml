@@ -1,0 +1,6 @@
+[package]
+name = "r27a_state_pattern_trait"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
