@@ -1,0 +1,6 @@
+[package]
+name = "r30_advanced_traits"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
