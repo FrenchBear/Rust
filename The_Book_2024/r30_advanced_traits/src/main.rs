@@ -8,6 +8,7 @@
 use std::ops::Add;
 
 mod disambiguation;
+mod supertraits;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 struct Point {
@@ -57,4 +58,6 @@ fn main() {
 
     disambiguation::disambiguation_methods();
     disambiguation::disambiguation_associated_functions();
+
+    supertraits::supertraits_example();
 }

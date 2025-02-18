@@ -67,7 +67,7 @@ pub fn disambiguation_associated_functions() {
 
     // To disambiguate and tell Rust that we want to use the implementation of Animal for Dog as opposed to the implementation of Animal
     // for some other type, we need to use fully qualified syntax. 
-    println!("A baby dog is called a {}", <Dog as Animal>::baby_name());
+    println!("A baby dog is called a {}", <Dog as Animal>::baby_name());        // "Cast" a type, not a variable
 
     // fully qualified syntax is defined as follows:
     // <Type as Trait>::function(receiver_if_method, next_arg, ...);
