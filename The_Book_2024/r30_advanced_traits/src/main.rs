@@ -9,6 +9,7 @@ use std::ops::Add;
 
 mod disambiguation;
 mod supertraits;
+mod newtype;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 struct Point {
@@ -57,7 +58,9 @@ fn main() {
     );
 
     disambiguation::disambiguation_methods();
-    disambiguation::disambiguation_associated_functions();
+    disambiguation::main();
 
-    supertraits::supertraits_example();
+    supertraits::main();
+
+    newtype::main();
 }

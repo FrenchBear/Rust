@@ -61,7 +61,7 @@ impl Animal for Dog {
     }
 }
 
-pub fn disambiguation_associated_functions() {
+pub fn main() {
     println!("A baby dog is called a {}", Dog::baby_name());        // Calls the function defined on Dog directly (Spot)
     //println!("A baby dog is called a {}", Animal::baby_name());   // cannot call associated function on trait without specifying the corresponding `impl` type
 

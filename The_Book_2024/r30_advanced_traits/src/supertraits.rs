@@ -30,7 +30,7 @@ impl fmt::Display for Point {
 
 impl OutlinePrint for Point {}
 
-pub fn supertraits_example() {
+pub fn main() {
     let p = Point { x: 1, y: 3 };
     p.outline_print();
     //OutlinePrint::outline_print(&p);      // Same thing
