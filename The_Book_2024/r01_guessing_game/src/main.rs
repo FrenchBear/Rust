@@ -2,6 +2,7 @@
 // Learning rust
 //
 // 2024-11-02   PV      Re-restart Rust learning
+// 2025-02-21   PV      Comment on continue
 
 use rand::Rng;
 use std::cmp::Ordering;
@@ -28,7 +29,7 @@ fn main() {
             Ok(num) => num,
             Err(_) => {
                 println!("Entrez une valeur numérique! entre 1 et 100!");
-                continue;
+                continue;       // Rust expects continue o return a u32...  But it returns ! (never return) so it's Ok
             }
         };
 
