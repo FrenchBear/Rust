@@ -116,6 +116,7 @@ impl FromStr for Point2Di32 {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let re = Regex::new(r"\( *(\d+) *, *(\d+) *\)").unwrap();
+
         let ca = match re.captures(s) {
             Some(ca) => ca,
             None => {
@@ -140,7 +141,7 @@ impl FromStr for Point2Di32 {
                 });
             }
         };
-        Ok(Point2Di32 { x: x, y: y })
+        Ok(Point2Di32 { x, y })     // Note: skip labels x: and y: since they match variable names
     }
 }
 
@@ -217,4 +218,10 @@ fn main() {
     println!("a1 = {:?}", a2);
     let a3 = "(1234567890123456, 7)".parse::<Point2Di32>();
     println!("a1 = {:?}", a3);
+
+    let Ok(a4) = "(1,2)".parse::<Point2Di32>() else {
+        // A let else must diverge: break, return, panic! (returning !)
+        panic!("Y'a un problème");
+    };
+
 }
