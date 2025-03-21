@@ -12,3 +12,4 @@
 # Specific file for l26_file_hierarchy, since it's not build using cargo
 Learning/l26_file_hierarchy/split.exe
 Learning/l26_file_hierarchy/library.rlib
+Learning/l26_file_hierarchy/split.pdb

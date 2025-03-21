@@ -1,0 +1,1 @@
+del split.exe library.rlib split.pdb 2>NUL
