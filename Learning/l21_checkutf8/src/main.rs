@@ -1,6 +1,7 @@
 // checkutf8: Check that files have utf-8 encoding
 //
 // 2025-03-16	PV      First version
+// 2025-03-23   PV      check_filenames
 
 // https://docs.rs/glob/latest/glob/index.html
 // https://docs.rs/walkdir/latest/walkdir/
@@ -13,19 +14,66 @@
 // standard library imports
 use std::fs::{self, File};
 use std::io::{self, BufReader, ErrorKind, Read, Write};
-use std::path::{Path, PathBuf};
 use std::os::windows::prelude::*;
+use std::path::{Path, PathBuf};
 
 // external crates imports
 // use getopt::Opt;
 use encoding_rs::{Encoding, UTF_8, UTF_16LE, WINDOWS_1252};
 use glob::{MatchOptions, glob_with};
 use ignore::Walk;
+use std::fmt::Display;
+use unicode_categories::UnicodeCategories;
 use walkdir::WalkDir;
 
 fn main() {
     //test_walkdir();
-    test_ignore();
+    //test_ignore();
+    check_filenames();
+}
+
+fn check_filenames() {
+    let mut cnt = 0;
+    // cnt += check(r"C:\Development\GitVSTS");
+    // cnt += check(r"C:\Development\GitHub");
+    cnt += check(r"C:\Development");
+
+    println!("\n{} files checked", cnt);
+}
+
+// CHeck for non-standard characters in development paths
+fn check(path: &str) -> i32 {
+    let mut cnt = 0;
+    for result in Walk::new(path) {
+        // Each item yielded by the iterator is either a directory entry or an
+        // error, so either print the path or the error.
+        match result {
+            Ok(entry) => {
+                let ft = entry.file_type().unwrap(); // file_type() returns Option<FileType>
+                if ft.is_dir() || ft.is_file() {
+                    let filename = entry.file_name().to_string_lossy();
+                    check_unicode(&filename, entry.path().display());
+                    cnt += 1;
+                } else if ft.is_symlink() {
+                    //println!("SymLink: {}", entry.path().display());
+                }
+            }
+            Err(_e) => {
+                //println!("Err: {}", _e);
+            }
+        }
+    }
+
+    cnt
+}
+
+fn check_unicode(path: &str, fp: impl Display) {
+    for c in path.chars() {
+        if !(c.is_alphanumeric() || (32..127).contains(&(c as i32)) || (160..256).contains(&(c as i32)) || c=='®' || c=='–' /* EN DASH */ || c=='—' /* EM DASH */ || c=='×' || c=='\u{00b7}'/* MIDDLE DOT */)
+        {
+            println!("{} -> char {:04X} {}", fp, c as i32, c);
+        }
+    }
 }
 
 fn test_ignore() {
