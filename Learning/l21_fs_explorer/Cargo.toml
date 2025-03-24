@@ -1,5 +1,5 @@
 [package]
-name = "checkutf8"
+name = "l21_fs_explorer"
 version = "0.1.0"
 edition = "2024"
 
@@ -9,3 +9,5 @@ encoding_rs = "0.8.35"
 walkdir = "2"
 ignore = "0.4"
 unicode_categories = "0.1.1"
+rust_search = "2.1.0"
+globmatch = "0.3.0"

@@ -1,4 +1,4 @@
-// checkutf8: Check that files have utf-8 encoding
+// l21_fs_explorer: Various code to test exploring filesystem
 //
 // 2025-03-16	PV      First version
 // 2025-03-23   PV      check_filenames
@@ -9,7 +9,7 @@
 
 // https://rust-lang-nursery.github.io/rust-cookbook/file/dir.html
 
-#![allow(unused_imports, dead_code)]
+#![allow(unused_imports, dead_code, unused_variables)]
 
 // standard library imports
 use std::fs::{self, File};
@@ -18,18 +18,102 @@ use std::os::windows::prelude::*;
 use std::path::{Path, PathBuf};
 
 // external crates imports
+use encoding_rs::{Encoding, UTF_8, UTF_16LE, WINDOWS_1252};
+use glob::{MatchOptions, glob_with};
+use ignore::{DirEntry, Walk as WalkIgnore, WalkBuilder};
+use rust_search::{DirEntry as RSDirEntry, FilterExt, FilterFn, SearchBuilder};
 use std::fmt::Display;
 use std::time::Instant;
 use unicode_categories::UnicodeCategories;
-use encoding_rs::{Encoding, UTF_8, UTF_16LE, WINDOWS_1252};
-use glob::{MatchOptions, glob_with};
-use ignore::Walk as WalkIgnore;
 use walkdir::WalkDir as WalkSimple;
+use globmatch;
 
 fn main() {
     //test_walkdir();
     //test_ignore();
-    check_filenames();
+    //check_filenames();
+
+    //test_glob_explore_and_eliminate_unwanted();
+    //test_rust_search();
+    test_globmatch();
+}
+
+fn test_globmatch() {
+    let builder = globmatch::Builder::new(r"**/cargo.toml")
+        .case_sensitive(false)
+        .build(r"C:\Development").unwrap();
+    for p in builder
+            .into_iter()
+            // Doesn't exlude files in $RECYCLE.BIN (can filter on path), but since it's done after getting iterator, it's too late
+            .filter_entry(|p| !globmatch::is_hidden_entry(p)) 
+            {
+                match p {
+                    Ok(path) => println!("{}", path.display()),
+                    Err(_) => {},
+                }
+    }
+}
+
+fn test_rust_search() {
+    let fi:FilterFn = |dir| dir.metadata().unwrap().is_file();
+
+    let search: Vec<String> = SearchBuilder::default()
+        .location(r"C:\Development")
+        .search_input("cargo.toml")
+        //.search_input("kargo")
+        .ignore_case()
+        //.filter(rust_search::filter::FilterType::Custom(fi))          // Nothing works here
+        .build()
+        .collect();
+
+    for path in search {
+        println!("{}", path);
+    }
+}
+
+fn test_glob_explore_and_eliminate_unwanted() {
+    let pattern = r"C:\Development\**\cargo.toml";
+
+    let mo = MatchOptions {
+        case_sensitive: false,
+        require_literal_separator: false,
+        require_literal_leading_dot: false,
+    };
+
+    match glob_with(pattern, mo) {
+        Ok(paths) => {
+            for entry in paths {
+                match entry {
+                    Ok(pb) => {
+                        if is_ignored(&pb) {
+                            println!(">>> {}", pb.display());
+                        } else {
+                            println!("{}", pb.display());
+                        }
+                    }
+                    Err(err) => {
+                        println!("*** Entry error {}", err);
+                    }
+                };
+            }
+        }
+        Err(err) => {
+            println!("*** Pattern error {}", err);
+        }
+    }
+}
+
+fn is_ignored(path: &Path) -> bool {
+    use std::os::windows::fs::MetadataExt; // Import Windows-specific metadata
+    if let Ok(metadata) = fs::metadata(path) {
+        let attributes = metadata.file_attributes();
+
+        (attributes & 0x2) != 0 || // Hidden attribute
+            path.as_os_str().to_str().unwrap().contains("$RECYCLE.BIN")
+        //path.file_name().and_then(|s| s.to_str()).unwrap().contains("$RECYCLE.BIN") // recycle bin
+    } else {
+        false
+    }
 }
 
 fn check_filenames() {
@@ -76,7 +160,6 @@ fn check_ignore(path: &str) -> i32 {
     cnt
 }
 
-
 fn check_simple(path: &str) -> i32 {
     let mut cnt = 0;
     for result in WalkSimple::new(path) {
@@ -122,10 +205,11 @@ fn test_ignore() {
                     //println!("Dir: {}", entry.path().display());
                 } else if ft.is_file() {
                     let filename = entry.file_name().to_string_lossy();
-                    if filename.ends_with(".cs") {
-                        check_file(entry.path());
-                        //println!("File: {}", entry.path().display());
-                    }
+                    println!("File: {}", filename);
+                    // if filename.ends_with(".cs") {
+                    //     check_file(entry.path());
+                    //     //println!("File: {}", entry.path().display());
+                    // }
                 } else if ft.is_symlink() {
                     //println!("SymLink: {}", entry.path().display());
                 }
