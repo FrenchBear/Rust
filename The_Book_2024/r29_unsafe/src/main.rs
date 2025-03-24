@@ -12,9 +12,8 @@ use std::slice;
 static mut COUNTER: u32 = 0;
 
 fn main() {
-
     // We can create raw pointers in safe code, we can't dereference them outside an unsafe block
-    // Note that we can have at the same time a mutable and an immutable reference pointing to the same location, 
+    // Note that we can have at the same time a mutable and an immutable reference pointing to the same location,
     // this is not allowed with standard Rust references
     let mut num = 5;
     let r1 = &num as *const i32;
@@ -43,12 +42,11 @@ fn main() {
     assert_eq!(a, &mut [1, 2, 3]);
     assert_eq!(b, &mut [4, 5, 6]);
 
-
     // Using extern to call external code
-    extern "C" {
-        fn abs(input: i32) -> i32;
+    unsafe extern "C" {
+        unsafe fn abs(input: i32) -> i32;
     }
-    
+
     unsafe {
         println!("Absolute value of -3 according to C: {}", abs(-3));
     }
@@ -58,19 +56,19 @@ fn main() {
     unsafe {
         println!("COUNTER: {COUNTER}");
     }
-
-
 }
 
 // Unsafe function (body of an unsafe function is an unsafe block)
-unsafe fn dangerous() { 
+unsafe fn dangerous() {
     let mut num = 5;
     let r1 = &num as *const i32;
     let r2 = &mut num as *mut i32;
 
-    println!("Value of *r1 before update through *r2: {}", *r1);
-    *r2 = 7;
-    println!("Value of *r1 after update through *r2: {}", *r1);
+    unsafe {
+        println!("Value of *r1 before update through *r2: {}", *r1);
+        *r2 = 7;
+        println!("Value of *r1 after update through *r2: {}", *r1);
+    }
 }
 
 // Rust does not know we're borrowing different parts of the slice, and that's Ok because parts are non-overlapping
@@ -80,7 +78,7 @@ fn split_at_mut(values: &mut [i32], mid: usize) -> (&mut [i32], &mut [i32]) {
     assert!(mid <= len);
     unsafe {
         (
-            slice::from_raw_parts_mut(ptr, mid),        // Takes a raw pointer and a length to build a slice
+            slice::from_raw_parts_mut(ptr, mid), // Takes a raw pointer and a length to build a slice
             slice::from_raw_parts_mut(ptr.add(mid), len - mid),
         )
     }
@@ -94,11 +92,10 @@ fn add_to_count(inc: u32) {
 }
 
 // FUnction that can be called from other languages
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn call_from_c() {
     println!("Just called a Rust function from C!");
 }
-
 
 // Unsafe traits
 unsafe trait Foo {
