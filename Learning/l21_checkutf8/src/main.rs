@@ -18,13 +18,13 @@ use std::os::windows::prelude::*;
 use std::path::{Path, PathBuf};
 
 // external crates imports
-// use getopt::Opt;
+use std::fmt::Display;
+use std::time::Instant;
+use unicode_categories::UnicodeCategories;
 use encoding_rs::{Encoding, UTF_8, UTF_16LE, WINDOWS_1252};
 use glob::{MatchOptions, glob_with};
-use ignore::Walk;
-use std::fmt::Display;
-use unicode_categories::UnicodeCategories;
-use walkdir::WalkDir;
+use ignore::Walk as WalkIgnore;
+use walkdir::WalkDir as WalkSimple;
 
 fn main() {
     //test_walkdir();
@@ -34,22 +34,57 @@ fn main() {
 
 fn check_filenames() {
     let mut cnt = 0;
+    let start = Instant::now();
+
     // cnt += check(r"C:\Development\GitVSTS");
     // cnt += check(r"C:\Development\GitHub");
-    cnt += check(r"C:\Development");
+    // cnt += check_ignore(r"C:\Development");
+    // cnt += check_simple(r"\\terazalt\books\Livres");
+    // cnt += check_simple(r"\\terazalt\books\BD");
+    // cnt += check_simple(r"\\terazalt\books");
+    //cnt += check_simple(r"\\terazalt\Photo");
+    //cnt += check_simple(r"D:\Pierre\OneDrive\MusicOD");
+    cnt += check_simple(r"D:\Pierre\OneDrive\DocumentsOD");
 
-    println!("\n{} files checked", cnt);
+    let duration = start.elapsed();
+    println!("\n{} files checked in {:.3}s", cnt, duration.as_secs_f64());
 }
 
 // CHeck for non-standard characters in development paths
-fn check(path: &str) -> i32 {
+fn check_ignore(path: &str) -> i32 {
     let mut cnt = 0;
-    for result in Walk::new(path) {
+    for result in WalkIgnore::new(path) {
         // Each item yielded by the iterator is either a directory entry or an
         // error, so either print the path or the error.
         match result {
             Ok(entry) => {
-                let ft = entry.file_type().unwrap(); // file_type() returns Option<FileType>
+                let ft = entry.file_type().unwrap(); // ignore file_type() returns Option<FileType>
+                if ft.is_dir() || ft.is_file() {
+                    let filename = entry.file_name().to_string_lossy();
+                    check_unicode(&filename, entry.path().display());
+                    cnt += 1;
+                } else if ft.is_symlink() {
+                    //println!("SymLink: {}", entry.path().display());
+                }
+            }
+            Err(_e) => {
+                //println!("Err: {}", _e);
+            }
+        }
+    }
+
+    cnt
+}
+
+
+fn check_simple(path: &str) -> i32 {
+    let mut cnt = 0;
+    for result in WalkSimple::new(path) {
+        // Each item yielded by the iterator is either a directory entry or an
+        // error, so either print the path or the error.
+        match result {
+            Ok(entry) => {
+                let ft = entry.file_type();
                 if ft.is_dir() || ft.is_file() {
                     let filename = entry.file_name().to_string_lossy();
                     check_unicode(&filename, entry.path().display());
@@ -69,7 +104,7 @@ fn check(path: &str) -> i32 {
 
 fn check_unicode(path: &str, fp: impl Display) {
     for c in path.chars() {
-        if !(c.is_alphanumeric() || (32..127).contains(&(c as i32)) || (160..256).contains(&(c as i32)) || c=='®' || c=='–' /* EN DASH */ || c=='—' /* EM DASH */ || c=='×' || c=='\u{00b7}'/* MIDDLE DOT */)
+        if !(c.is_alphanumeric() || (32..127).contains(&(c as i32)) || (160..256).contains(&(c as i32)) || "€®™©–—…×·•∶⧹⧸⚹†‽¿🎜🎝".contains(c))
         {
             println!("{} -> char {:04X} {}", fp, c as i32, c);
         }
@@ -77,7 +112,7 @@ fn check_unicode(path: &str, fp: impl Display) {
 }
 
 fn test_ignore() {
-    for result in Walk::new(r"C:\Development\GitVSTS") {
+    for result in WalkIgnore::new(r"C:\Development\GitVSTS") {
         // Each item yielded by the iterator is either a directory entry or an
         // error, so either print the path or the error.
         match result {
@@ -115,7 +150,7 @@ fn test_walkdir() {
     //     println!("{}", entry.path().display());
     // }
 
-    for result in WalkDir::new(r"C:\Development") {
+    for result in WalkSimple::new(r"C:\Development") {
         match result {
             Ok(entry) => {
                 let ft = entry.file_type();

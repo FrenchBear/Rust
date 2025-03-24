@@ -1,0 +1,1 @@
+for /d %%d in (*.*) do rd /s /q %%d\target 2>NUL

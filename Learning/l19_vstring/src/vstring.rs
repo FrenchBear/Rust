@@ -32,7 +32,6 @@ pub use vstring_glyphindex::*;
 pub mod vstring_glyphrange;
 pub use vstring_glyphrange::*;
 
-
 use core::str;
 
 use crate::glyph2::Glyph2;
@@ -93,8 +92,8 @@ pub fn get_string_from_byteiterator(byteiterator: impl Iterator<Item = u8>) -> S
 }
 
 // DOn't know if unsafe variant is faster
-pub unsafe  fn get_string_from_byteiterator_unsafe(byteiterator: impl Iterator<Item = u8>) -> String {
-    String::from_utf8_unchecked(byteiterator.collect::<Vec<u8>>())
+pub unsafe fn get_string_from_byteiterator_unsafe(byteiterator: impl Iterator<Item = u8>) -> String {
+    unsafe { String::from_utf8_unchecked(byteiterator.collect::<Vec<u8>>()) }
 }
 
 // ----
