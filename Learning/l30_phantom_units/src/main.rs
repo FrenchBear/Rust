@@ -1,4 +1,4 @@
-// l29_phantom_units: Learning Rust, Generics, Example of use of Phantom type parameters
+// l30_phantom_units: Learning Rust, Generics, Example of use of Phantom type parameters
 //
 // 2025-03-24	PV      First version
 

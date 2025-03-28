@@ -1,4 +1,4 @@
-// l11_traits
+// l11a_traits_1
 // Learning Rust again
 //
 // 2023-06-19   PV
@@ -7,7 +7,7 @@
 
 use std::{fmt::Display, iter::Sum};
 
-use l11_traits::{Book, Summary, Tweet};
+use l11a_traits_1::{Book, Summary, Tweet};
 
 fn main() {
     let tweet = Tweet {
