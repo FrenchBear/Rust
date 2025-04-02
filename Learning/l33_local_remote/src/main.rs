@@ -4,13 +4,13 @@ use std::path::Path;
 use windows::Win32::Storage::FileSystem::GetDriveTypeW;
 use windows::core::PCWSTR;
 
-// const DRIVE_UNKNOWN:u32 = 0;
+const DRIVE_UNKNOWN:u32 = 0;
 const DRIVE_NO_ROOT_DIR:u32 = 1;
 const DRIVE_REMOVABLE:u32 = 2;
 const DRIVE_FIXED:u32 = 3;
 const DRIVE_REMOTE:u32 = 4;
-// const DRIVE_CDROM:u32 = 5;
-// const DRIVE_RAMDISK:u32 = 6;
+const DRIVE_CDROM:u32 = 5;
+const DRIVE_RAMDISK:u32 = 6;
 
 fn is_local_or_remote(path: &Path) -> Result<String, String> {
     let root_path = match path.components().next() {
@@ -53,10 +53,12 @@ fn is_local_or_remote(path: &Path) -> Result<String, String> {
 
     unsafe {
         match GetDriveTypeW(PCWSTR(lprootpathname.as_ptr())) {
-            DRIVE_NO_ROOT_DIR => Ok("Unknown".into()),
+            DRIVE_UNKNOWN|DRIVE_NO_ROOT_DIR => Ok("Unknown/Invalid/Inexistent".into()),
             DRIVE_FIXED => Ok("Local".to_string()),
             DRIVE_REMOVABLE => Ok("Removable".to_string()),
             DRIVE_REMOTE => Ok("Remote".to_string()),
+            DRIVE_CDROM => Ok("CD-ROM".to_string()),
+            DRIVE_RAMDISK => Ok("RAM Disk".to_string()),
             n => Ok(format!("Other: {n}")),
         }
     }
