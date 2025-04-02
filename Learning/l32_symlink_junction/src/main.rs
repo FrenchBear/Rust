@@ -35,7 +35,7 @@ fn main() {
     show(r"C:\Backup");             // Simple directory
     show(r"C:\Downloads");          // Directory link
     show(r"C:\Development");        // Junction
-    show(r"D:\Pierre\OneDrive");    // Junction
+    show(r"\\teraz\temp");          // ?
 }
 
 fn show(filename: &str) {
