@@ -1,3 +1,8 @@
+// L33_local_remote
+// Find out if a path is local or remore (or CD-ROM, ...)
+//
+// 2025-04-03   PV      First version
+
 use std::ffi::OsStr;
 use std::os::windows::ffi::OsStrExt;
 use std::path::Path;
