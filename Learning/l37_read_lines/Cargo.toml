@@ -1,0 +1,6 @@
+[package]
+name = "l37_read_lines"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
