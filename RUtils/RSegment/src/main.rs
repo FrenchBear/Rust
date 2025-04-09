@@ -274,7 +274,7 @@ fn main() {
         logln(&mut writer, format!("{} book(s) found, consolidating data", b.books.len()).as_str());
 
         fn getter(book: &BookName) -> &str {
-            &book.base_title
+            &book.authors
         }
         let data_name = "base_title";
 
