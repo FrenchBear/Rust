@@ -1,4 +1,4 @@
-// myglob tests - search
+// MyGlob tests - search
 // Unit tests for MyGlob
 //
 // 2025-04-09   PV
@@ -77,7 +77,7 @@ fn search_1() -> io::Result<()> {
     assert_eq!(search_count(r"C:\Temp\search1\légumes\*"), (3,0));
     assert_eq!(search_count(r"C:\Temp\search1\*s\to[a-z]a{r,s,t}e.t[xX]t"), (2,0));
 
-    //fs::remove_dir_all(r"C:\Temp\search1")?;
+    fs::remove_dir_all(r"C:\Temp\search1")?;
 
     Ok(())
 }

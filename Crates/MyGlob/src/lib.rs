@@ -12,6 +12,7 @@
 // 2025-03-30   PV      1.3.1 Search for constant directory fixed; Append \* to glob ending with **
 // 2025-04-03   PV      1.3.2 is_constant member added to MyGlobSearch
 // 2025-04-09   PV      1.3.3 Fixed bug charindex/byteindex during initial cut of constant part
+// 2025-04-09   PV      1.4.0 New MyGlob API with MyBlobBuilder, version, new, compile and add_ignore_dir.
 
 #![allow(unused_variables, dead_code, unused_imports)]
 
@@ -30,7 +31,7 @@ mod tests;
 // -----------------------------------
 // Globals
 
-const APP_VERSION: &str = "1.3.3";
+const LIB_VERSION: &str = "1.4.0";
 
 // -----------------------------------
 // Structures
@@ -44,11 +45,17 @@ enum Segment {
 }
 
 /// Main struct of myglob, string information such as root part, glob, dirs to ignore, ...
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct MyGlobSearch {
     root: String,
     segments: Vec<Segment>,
     ignore_dirs: Vec<String>,
+}
+
+#[derive(Debug, Default)]
+pub struct MyGlobBuilder {
+    globstr: String,
+    ignore_dirs: Vec<String>, // just plain lowercase dir name, no path, no *
 }
 
 /// Error returned by MyGlob, either a Regex error or an io::Error
@@ -60,14 +67,74 @@ pub enum MyGlobError {
 }
 
 impl MyGlobSearch {
-    /// Constructs a new MyGlobSearch based on pattern glob expression, or return an error if there is Glob/Regex error
+    pub fn version() -> &'static str {
+        LIB_VERSION
+    }
+
+    pub fn new(globstr: &str) -> MyGlobBuilder {
+        MyGlobBuilder {
+            globstr: globstr.to_string(),
+            ignore_dirs: vec![
+                String::from("$recycle.bin"),
+                String::from("system volume information"),
+                String::from(".git"),
+            ],
+            ..Default::default()
+        }
+    }
+
     pub fn build(globstr: &str) -> Result<Self, MyGlobError> {
+        Self::new(globstr).compile()
+    }
+
+    /// Iterator returning all files matching glob pattern
+    pub fn explore_iter(&self) -> impl Iterator<Item = MyGlobMatch> {
+        // Special case, segments is empty, only search for file
+        // It's actually a but faster to process it before iterator loop, so there is no special case to handle at the beginning of each iterator call
+        if self.segments.is_empty() {
+            let p = Path::new(&self.root);
+            let mut stack: Vec<SearchPendingData> = Vec::new();
+            if p.is_file() {
+                stack.push(SearchPendingData::File(p.to_path_buf()));
+            } else if p.is_dir() {
+                stack.push(SearchPendingData::Dir(p.to_path_buf()));
+            }
+            return MyGlobIteratorState {
+                stack,
+                segments: &self.segments,
+                ignore_dirs: &self.ignore_dirs,
+            };
+        }
+
+        // Normal case, start iterator at root
+        MyGlobIteratorState {
+            stack: vec![SearchPendingData::DirToExplore(Path::new(&self.root).to_path_buf(), 0, false)],
+            segments: &self.segments,
+            ignore_dirs: &self.ignore_dirs,
+        }
+    }
+
+    /// Returns true if glob is valid, but it's just a constant, no filter segment and no recurse segment
+    /// Note that this shouls always be called on a compiled MyGlob; calling on a non-compiled MyGlob will always return false
+    pub fn is_constant(&self) -> bool {
+        self.segments.is_empty()
+    }
+}
+
+impl MyGlobBuilder {
+    pub fn add_ignore_dir(mut self, dir: &str) -> Self {
+        self.ignore_dirs.push(dir.to_lowercase());
+        self
+    }
+
+    /// Constructs a new MyGlobSearch based on pattern glob expression, or return an error if there is Glob/Regex error
+    pub fn compile(self) -> Result<MyGlobSearch, MyGlobError> {
         // For now, reject a pattern ending with / or \, although it could also be understood as a search for folder only...
-        if globstr.ends_with('\\') || globstr.ends_with('/') {
+        if self.globstr.ends_with('\\') || self.globstr.ends_with('/') {
             return Err(MyGlobError::GlobError("Glob pattern can't end with \\ or /".to_string()));
         }
         // Trick: add a final \ so that we don't have duplicate code to process last segment
-        let glob = globstr.to_string() + "\\";
+        let glob = self.globstr.clone() + "\\";
 
         // First get root part, the constant segments at the beginning
         let mut cut = 0;
@@ -82,26 +149,22 @@ impl MyGlobSearch {
             }
             pos += c.len_utf8();
         }
-        let mut root = globstr[..cut].to_string();
+        let mut root = glob[..cut].to_string();
         if root.is_empty() {
             root.push('.');
         }
 
         // Then build segments
-        let segments = if pos >= globstr.len() {
-            Vec::<Segment>::new()
-        } else {
+        let segments = if pos < glob.len() {
             Self::glob_to_segments(&glob[if cut == 0 { 0 } else { cut + 1 }..])?
+        } else {
+            Vec::new()
         };
 
         Ok(MyGlobSearch {
-            root,
-            segments,
-            ignore_dirs: vec![
-                String::from("$recycle.bin"),
-                String::from("system volume information"),
-                String::from(".git"),
-            ],
+            root: root,
+            segments: segments,
+            ignore_dirs: self.ignore_dirs,
         })
     }
 
@@ -222,43 +285,6 @@ impl MyGlobSearch {
 
         Ok(segments)
     }
-
-    /// Iterator returning all files matching glob pattern
-    pub fn explore_iter(&self) -> impl Iterator<Item = MyGlobMatch> {
-        // Special case, segments is empty, only search for file
-        // It's actually a but faster to process it before iterator loop, so there is no special case to handle at the beginning of each iterator call
-        if self.segments.is_empty() {
-            let p = Path::new(&self.root);
-            let mut stack: Vec<SearchPendingData> = Vec::new();
-            if p.is_file() {
-                stack.push(SearchPendingData::File(p.to_path_buf()));
-            } else if p.is_dir() {
-                stack.push(SearchPendingData::Dir(p.to_path_buf()));
-            }
-            return MyGlobIteratorState {
-                stack,
-                segments: &self.segments,
-                ignore_dirs: &self.ignore_dirs,
-            };
-        }
-
-        // Normal case, start iterator at root
-        MyGlobIteratorState {
-            stack: vec![SearchPendingData::DirToExplore(Path::new(&self.root).to_path_buf(), 0, false)],
-            segments: &self.segments,
-            ignore_dirs: &self.ignore_dirs,
-        }
-    }
-
-    /// Returns true if glob is valid, but it's just a constant, no filter segment and no recurse segment
-    pub fn is_constant(&self) -> bool {
-        self.segments.is_empty()
-    }
-    
-    pub fn add_ignore_dir(&mut self, dir: &str) -> &mut Self {
-        self.ignore_dirs.push(dir.to_string());
-        self
-    }
 }
 
 // Enum returned by iterator
@@ -282,7 +308,7 @@ enum SearchPendingData {
     File(PathBuf),                      // Data to return
     Dir(PathBuf),                       // Data to return
     DirToExplore(PathBuf, usize, bool), // Dir not explored yet
-    Error(Error),
+    Error(Error),                       // Returns an error
 }
 
 impl Iterator for MyGlobIteratorState<'_> {
@@ -327,7 +353,7 @@ impl Iterator for MyGlobIteratorState<'_> {
                                                     if entry.file_type().unwrap().is_dir() {
                                                         let p = entry.path();
                                                         let fnlc = p.file_name().unwrap().to_string_lossy().to_lowercase();
-                                                        if !self.ignore_dirs.iter().any(|ie| *ie == fnlc) {
+                                                        if !self.ignore_dirs.iter().any(|ie| *ie == fnlc.to_lowercase()) {
                                                             self.stack.push(SearchPendingData::DirToExplore(p, depth, true));
                                                         }
                                                     }

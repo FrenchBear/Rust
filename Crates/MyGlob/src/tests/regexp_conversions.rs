@@ -2,6 +2,7 @@
 // Mostly tests of conversion glob->regexp and matching strings
 //
 // 2025-03-29   PV
+// 2025-04-08   PV      relative_blob test
 
 #![cfg(test)]
 use crate::*;
@@ -16,7 +17,7 @@ enum ConvResult {
 }
 
 fn glob_one_segment_test(glob_pattern: &str, cr: ConvResult, test_string: &str, is_match: bool) {
-    let res = MyGlobSearch::glob_to_segments((glob_pattern.to_string() + "\\").as_str());
+    let res = MyGlobBuilder::glob_to_segments((glob_pattern.to_string() + "\\").as_str());
     match res {
         Err(e) => {
             assert!(
@@ -239,7 +240,7 @@ fn conversions_tests() {
 #[test]
 fn glob_ending_with_recurse() {
     // Special case, when a glob pattern ends with **, then \* is automatically added
-    let res = MyGlobSearch::glob_to_segments("**\\").unwrap();
+    let res = MyGlobBuilder::glob_to_segments("**\\").unwrap();
     assert_eq!(res.len(), 2);
     match &res[0] {
         Segment::Recurse => {}
@@ -254,7 +255,7 @@ fn glob_ending_with_recurse() {
 #[test]
 fn relative_glob() {
     // glob_to_segments parameter must end with \\
-    let res = MyGlobSearch::glob_to_segments("*\\target\\").unwrap();
+    let res = MyGlobBuilder::glob_to_segments("*\\target\\").unwrap();
     assert_eq!(res.len(), 2);
     match &res[0] {
         Segment::Filter(_) => {}

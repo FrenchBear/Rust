@@ -217,7 +217,20 @@ fn main() {
     // Convert String sources into MyGlobSearch structs
     let mut sources: Vec<(&String, MyGlobSearch)> = Vec::new();
     for source in options.sources.iter() {
-        let resgs = MyGlobSearch::build(source);
+        let resgs = MyGlobSearch::new(source)
+            .add_ignore_dir("Petit futé")
+            .add_ignore_dir("Lonely Planet")
+            .add_ignore_dir("Volcanology 1")
+            .add_ignore_dir("Volcanology 2")
+            .add_ignore_dir("Géochimie 1")
+            .add_ignore_dir("Géochimie 2")
+            .add_ignore_dir("Sedimentology&Stratigraphie 1")
+            .add_ignore_dir("Sedimentology&Stratigraphie 2")
+            .add_ignore_dir("Sedimentology&Stratigraphie 3")
+            .add_ignore_dir("Regional Geology 1")
+            .add_ignore_dir("Regional Geology 2")
+            .add_ignore_dir("Geostatistics")
+            .compile();
         
         match resgs {
             Ok(gs) => sources.push((source, gs)),
@@ -308,11 +321,11 @@ fn main() {
                 // Representant of class is the most encountered element
                 subvec.sort_by(|a, b| b.1.cmp(a.1));
                 let repr = subvec.first().unwrap();
-                let (rkey, rvalue) = *repr;
+                let (rkey, _) = *repr;
                 let srkey = if rkey.is_empty() { "(empty)" } else { *rkey };
                 vec_repr.push((key, srkey));
                 // Print representant and total count
-                log(&mut writer, format!("{}: {}\t", srkey, rvalue).as_str());
+                log(&mut writer, format!("{}: {}\t", srkey, value.0).as_str());
                 // Print all variants and individual count
                 for (vkey, vvalue) in subvec.iter() {
                     let svkey = if vkey.is_empty() { "(empty)" } else { *vkey };

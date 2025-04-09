@@ -9,6 +9,8 @@ use std::time::Instant;
 use myglob::{MyGlobSearch, MyGlobMatch};
 
 fn main() {
+    println!("MyGlob lib version: {}\n", MyGlobSearch::version());
+
     // Simple existing file
     //test_myglob(r"C:\temp\f1.txt");
 
@@ -101,11 +103,10 @@ fn test_exclusion() {
     let start = Instant::now();
 
     let pattern = r"C:\Temp\search1\**\*.txt";
-    let mut resgs = MyGlobSearch::build(pattern);
+    let mut resgs = MyGlobSearch::new(pattern).add_ignore_dir("Légumes").compile();
 
     match resgs {
         Ok(ref mut gs) => {
-            gs.add_ignore_dir(r"légumes");
             let mut nf = 0;
             let mut nd = 0;
             for ma in gs.explore_iter() {
