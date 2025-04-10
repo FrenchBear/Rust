@@ -1,6 +1,6 @@
 // rsegment: Analyze books segments
 //
-// 2025-04-07	PV      First version
+// 2025-04-07	PV      First version, without command line parameters
 
 //#![allow(unused)]
 
@@ -203,7 +203,7 @@ fn main() {
     if options.sources.is_empty() {
         options
             .sources
-            .push(r"W:\Livres\**\**\*.pdf".to_string());
+            .push(r"W:\Livres\**\**\*.{pdf,epub}".to_string());
         //options.sources.push(r"W:\Livres\Informatique\**\*.pdf".to_string());
         //options.sources.push(r"C:\DocumentsOD\A_Lire\**\*[\[]*.pdf".to_string());
     }
@@ -230,6 +230,7 @@ fn main() {
             .add_ignore_dir("Regional Geology 1")
             .add_ignore_dir("Regional Geology 2")
             .add_ignore_dir("Geostatistics")
+            .add_ignore_dir("Engineering Geology for Society and Territory")
             .compile();
         
         match resgs {
@@ -274,9 +275,9 @@ fn main() {
         logln(&mut writer, format!("{} book(s) found, consolidating data", b.books.len()).as_str());
 
         fn getter(book: &BookName) -> &str {
-            &book.authors
+            &book.editor
         }
-        let data_name = "base_title";
+        let data_name = "editor";
 
         // Counters
         //let mut counter = HashMap::<&str, u32>::new();
@@ -353,6 +354,7 @@ fn main() {
     }
 
     let duration = start.elapsed();
+    logln(&mut writer, "");
     log(&mut writer, format!("{} files(s)", b.files_count).as_str());
     log(&mut writer, format!(", {} error(s)", b.errors_count).as_str());
     logln(&mut writer, format!(" found in {:.3}s", duration.as_secs_f64()).as_str());
@@ -414,6 +416,9 @@ fn get_book_name(pb: PathBuf) -> Result<BookName, String> {
         1 => (stem, "", "", ""),
         2 => {
             if t[1].starts_with('[') {
+                if !t[1].ends_with(']') {
+                    return Err(format!("Err: Incorrect ]: {}", file));
+                }
                 (t[0], t[1], "", "")
             } else {
                 (t[0], "", t[1], "")
@@ -438,7 +443,7 @@ fn get_book_name(pb: PathBuf) -> Result<BookName, String> {
 
     // Transform &str in String to free mutable borrow of pb
     let full_title = String::from(full_title);
-    let editor = editor.into();
+    let editor: String = editor.into();
     let authors = authors.into();
     let isbn = isbn.into();
 
@@ -485,6 +490,10 @@ fn get_book_name(pb: PathBuf) -> Result<BookName, String> {
     } else {
         (base_title, String::new())
     };
+
+    if !editor.is_empty() && !editor.starts_with('[') {
+        return Err(format!("Err: Invalid editor: {}", filefp));
+    }
 
     Ok(BookName {
         pb,
