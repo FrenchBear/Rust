@@ -1,0 +1,13 @@
+[package]
+name = "l41_music_dups"
+description = "Detects dups or close dups for music files"
+version = "1.0.0"
+authors = ["Pierre Violent"]
+edition = "2024"
+
+[dependencies]
+myglob = { path = "../../Crates/MyGlob" }
+chrono = "0.4.40"
+termcolor = "1.4.1"
+regex = "1.11.1"
+unicode-normalization = "0.1.24"

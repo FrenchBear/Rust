@@ -1,22 +1,21 @@
-// rsegment: Analyze books segments
+// l40_books_errors: Analyze books segments to detect errors and variations
 //
 // 2025-04-07	PV      First version, without command line parameters
+// 2025-04-11	PV      Moved from RUtils to learning, simple app, no need to make it an utility, removed options code
 
 //#![allow(unused)]
 
-use std::collections::HashMap;
 // standard library imports
+use std::collections::HashMap;
 use std::fmt::Debug;
 use std::path::PathBuf;
 use std::process;
-use std::time::Instant;
-use std::error::Error;
 use std::sync::LazyLock;
+use std::time::Instant;
 
 // external crates imports
 use myglob::{MyGlobMatch, MyGlobSearch};
 use regex::Regex;
-use terminal_size::{Width, terminal_size};
 use unicode_normalization::UnicodeNormalization;
 
 // -----------------------------------
@@ -33,151 +32,6 @@ use logging::*;
 const APP_NAME: &str = "rsegment";
 const APP_VERSION: &str = "1.0.0";
 
-// ==============================================================================================
-// Options processing
-
-// Dedicated struct to store command line arguments
-#[derive(Debug, Default)]
-struct Options {
-    sources: Vec<String>,
-    verbose: bool,
-}
-
-impl Options {
-    fn header() {
-        eprintln!(
-            "{APP_NAME} {APP_VERSION}
-            Check book names"
-        );
-    }
-
-    fn usage() {
-        Options::header();
-        eprintln!(
-            "\nUsage: {APP_NAME} [?|-?|-h|??] [-v] source...
-?|-?|-h     Show this message
-??          Show advanced usage notes
--v          Verbose output
-source      File or folder where to search, glob syntax supported (see advanced notes)"
-        );
-    }
-
-    fn extended_usage() {
-        Options::header();
-        let width = if let Some((Width(w), _)) = terminal_size() {
-            w as usize
-        } else {
-            80usize
-        };
-        let text = "Copyright ©2025 Pierre Violent
-Advanced usage notes
---------------------
-
-(ToDo)";
-
-        println!("{}", Self::format_text(text, width));
-    }
-
-    fn format_text(text: &str, width: usize) -> String {
-        let mut s = String::new();
-        for line in text.split('\n') {
-            if !s.is_empty() {
-                s.push('\n');
-            }
-            s.push_str(Self::format_line(line, width).as_str());
-        }
-        s
-    }
-
-    fn format_line(line: &str, width: usize) -> String {
-        let mut result = String::new();
-        let mut current_line_length = 0;
-
-        let left_margin = if line.starts_with('•') { "  " } else { "" };
-
-        for word in line.split_whitespace() {
-            let word_length = word.len();
-
-            if current_line_length + word_length + 1 <= width {
-                if !result.is_empty() {
-                    result.push(' ');
-                    current_line_length += 1; // Add space
-                }
-                result.push_str(word);
-                current_line_length += word_length;
-            } else {
-                if !result.is_empty() {
-                    result.push('\n');
-                    current_line_length = if !left_margin.is_empty() {
-                        result.push_str(left_margin);
-                        2
-                    } else {
-                        0
-                    };
-                }
-                result.push_str(word);
-                current_line_length += word_length;
-            }
-        }
-        result
-    }
-
-    /// Build a new struct Options analyzing command line parameters.<br/>
-    /// Some invalid/inconsistent options or missing arguments return an error.
-    fn new() -> Result<Options, Box<dyn Error>> {
-        let args: Vec<String> = std::env::args().collect();
-
-        let mut options = Options { ..Default::default() };
-
-        // Since we have non-standard long options, don't use getopt for options processing but a manual loop
-        let mut args_iter = args.iter();
-        args_iter.next(); // Skip application eexecutable
-        while let Some(arg) = args_iter.next() {
-            if arg.starts_with('-') || arg.starts_with('/') {
-                // Options are case insensitive
-                let arglc = arg[1..].to_lowercase();
-
-                match &arglc[..] {
-                    "?" | "h" | "help" | "-help" => {
-                        Self::usage();
-                        return Err("".into());
-                    }
-
-                    "??" => {
-                        Self::extended_usage();
-                        return Err("".into());
-                    }
-
-                    "v" => options.verbose = true,
-
-                    //"print" => options.actions.push(Box::new(actions::ActionPrint::new())),
-                    _ => {
-                        return Err(format!("Invalid/unsupported option {}", arg).into());
-                    }
-                }
-            } else {
-                // Non-option, some values are special
-                match &arg.to_lowercase()[..] {
-                    "?" | "h" | "help" => {
-                        Self::usage();
-                        return Err("".into());
-                    }
-
-                    "??" => {
-                        Self::extended_usage();
-                        return Err("".into());
-                    }
-
-                    // Everything else is considered as a source (a glob pattern), it will be validated later
-                    _ => options.sources.push(arg.clone()),
-                }
-            }
-        }
-
-        Ok(options)
-    }
-}
-
 // -----------------------------------
 // Main
 
@@ -189,34 +43,18 @@ struct DataBag {
 }
 
 fn main() {
-    // Process options
-    let mut options = Options::new().unwrap_or_else(|err| {
-        let msg = format!("{}", err);
-        if msg.is_empty() {
-            process::exit(0);
-        }
-        logln(&mut None, format!("*** {APP_NAME}: Problem parsing arguments: {}", err).as_str());
-        process::exit(1);
-    });
-
-    // Just for dev
-    if options.sources.is_empty() {
-        options
-            .sources
-            .push(r"W:\Livres\**\**\*.{pdf,epub}".to_string());
-        //options.sources.push(r"W:\Livres\Informatique\**\*.pdf".to_string());
-        //options.sources.push(r"C:\DocumentsOD\A_Lire\**\*[\[]*.pdf".to_string());
-    }
+    let mut globstrsources: Vec<String> = Vec::new();
+    globstrsources.push(r"W:\Livres\**\**\*.{pdf,epub}".to_string());
 
     // Prepare log writer
-    let mut writer = logging::new(options.verbose);
+    let mut writer = logging::new(false);
     let mut b = DataBag { ..Default::default() };
 
     let start = Instant::now();
 
     // Convert String sources into MyGlobSearch structs
     let mut sources: Vec<(&String, MyGlobSearch)> = Vec::new();
-    for source in options.sources.iter() {
+    for source in globstrsources.iter() {
         let resgs = MyGlobSearch::new(source)
             .add_ignore_dir("Petit futé")
             .add_ignore_dir("Lonely Planet")
@@ -232,7 +70,7 @@ fn main() {
             .add_ignore_dir("Geostatistics")
             .add_ignore_dir("Engineering Geology for Society and Territory")
             .compile();
-        
+
         match resgs {
             Ok(gs) => sources.push((source, gs)),
             Err(e) => {
@@ -245,11 +83,9 @@ fn main() {
         process::exit(1);
     }
 
-    if options.verbose {
-        log(&mut writer, "\nSources(s): ");
-        for source in sources.iter() {
-            logln(&mut writer, format!("- {}", source.0).as_str());
-        }
+    log(&mut writer, "\nSources(s): ");
+    for source in sources.iter() {
+        logln(&mut writer, format!("- {}", source.0).as_str());
     }
 
     // First collect information on files in DataBag
@@ -261,9 +97,7 @@ fn main() {
                 MyGlobMatch::Dir(_) => {}
 
                 MyGlobMatch::Error(err) => {
-                    if options.verbose {
-                        logln(&mut writer, format!("{APP_NAME}: MyGlobMatch error {}", err).as_str());
-                    }
+                    logln(&mut writer, format!("{APP_NAME}: MyGlobMatch error {}", err).as_str());
                 }
             }
         }
@@ -275,9 +109,9 @@ fn main() {
         logln(&mut writer, format!("{} book(s) found, consolidating data", b.books.len()).as_str());
 
         fn getter(book: &BookName) -> &str {
-            &book.editor
+            &book.authors
         }
-        let data_name = "editor";
+        let data_name = "authors";
 
         // Counters
         //let mut counter = HashMap::<&str, u32>::new();
@@ -337,7 +171,10 @@ fn main() {
         }
 
         // Find close representants
-        logln(&mut writer, format!("\n{data_name}: Possible confusions, Levenshtein distance=1").as_str());
+        logln(
+            &mut writer,
+            format!("\n{data_name}: Possible confusions, Levenshtein distance=1").as_str(),
+        );
         for i in 0..vec_repr.len() {
             let (cnorm1, crepr1) = vec_repr[i];
             for j in i + 1..vec_repr.len() {
