@@ -1,0 +1,11 @@
+[package]
+name = "l42_dups_bd"
+description = "App to find out duplicates BD after reloading in qBitTorrent"
+version = "1.0.0"
+authors = ["Pierre Violent"]
+edition = "2024"
+
+[dependencies]
+myglob = { path = "../../Crates/MyGlob" }
+chrono = "0.4.40"
+trash = "5.2.2"

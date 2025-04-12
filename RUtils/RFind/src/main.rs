@@ -4,16 +4,17 @@
 // 2025-03-31	PV      1.1.0 Action Dir
 // 2025-04-03	PV      1.2.0 Core reorganization, logging module
 // 2025-04-06	PV      1.3.0 Use fs::remove_dir_all instead of fs::remove_dir to delete non-empty directories
+// 2025-04-12	PV      1.4.0 Option -empty
 
 //#![allow(unused)]
 
 // standard library imports
-use std::collections::HashSet;
 use std::error::Error;
 use std::fmt::Debug;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process;
 use std::time::Instant;
+use std::{collections::HashSet, fs};
 
 // external crates imports
 use myglob::{MyGlobMatch, MyGlobSearch};
@@ -22,8 +23,8 @@ use terminal_size::{Width, terminal_size};
 // -----------------------------------
 // Submodules
 
-mod logging;
 mod actions;
+mod logging;
 mod tests;
 
 use logging::*;
@@ -32,7 +33,7 @@ use logging::*;
 // Global constants
 
 const APP_NAME: &str = "rfind";
-const APP_VERSION: &str = "1.3.0";
+const APP_VERSION: &str = "1.4.0";
 
 // -----------------------------------
 // Traits
@@ -52,7 +53,8 @@ struct Options {
     actions_names: HashSet<&'static str>,
     search_files: bool,
     search_dirs: bool,
-    no_recycle: bool,
+    isempty: bool,
+    norecycle: bool,
     noaction: bool,
     verbose: bool,
 }
@@ -68,13 +70,14 @@ impl Options {
     fn usage() {
         Options::header();
         eprintln!(
-"\nUsage: {APP_NAME} [?|-?|-h|??] [-v] [-n] [-f|-type f|-d|-type d] [-[no]recycle] [action...] source...
+            "\nUsage: {APP_NAME} [?|-?|-h|??] [-v] [-n] [-f|-type f|-d|-type d] [-empty] [-[no]recycle] [action...] source...
 ?|-?|-h     Show this message
 ??          Show advanced usage notes
 -v          Verbose output
 -n          No action: display actions, but don't execute them
 -f|-type f  Search for files
 -d|-type d  Search for directories
+-empty      Only find empty files or directories
 -norecycle  Delete forever (default: -recycle, delete local files to recycle bin)
 source      File or folder where to search, glob syntax supported (see advanced notes)
 
@@ -196,8 +199,10 @@ Glob pattern nules:
                         }
                     }
 
-                    "recycle" => options.no_recycle = false,
-                    "norecycle" => options.no_recycle = true,
+                    "empty" => options.isempty = true,
+
+                    "recycle" => options.norecycle = false,
+                    "norecycle" => options.norecycle = true,
 
                     "print" => {
                         options.actions_names.insert("print");
@@ -312,8 +317,8 @@ fn main() {
                 }
             }
             "dir" => actions.push(Box::new(actions::ActionPrint::new(true))),
-            "delete" => actions.push(Box::new(actions::ActionDelete::new(options.no_recycle))),
-            "rmdir" => actions.push(Box::new(actions::ActionRmdir::new(options.no_recycle))),
+            "delete" => actions.push(Box::new(actions::ActionDelete::new(options.norecycle))),
+            "rmdir" => actions.push(Box::new(actions::ActionRmdir::new(options.norecycle))),
             _ => panic!("{APP_NAME}: Internal error, unknown action_name {action_name}"),
         }
     }
@@ -328,6 +333,9 @@ fn main() {
             logln(&mut writer, format!("- {}", (**ba).name()).as_str());
         }
         logln(&mut writer, "");
+        if options.isempty {
+            logln(&mut writer, "Only search for empty files or folders");
+        }
     }
 
     let mut files_count = 0;
@@ -337,20 +345,24 @@ fn main() {
             match ma {
                 MyGlobMatch::File(pb) => {
                     if options.search_files {
-                        files_count += 1;
-                        for ba in actions.iter() {
-                            (**ba).action(&mut writer, &pb, options.noaction, options.verbose);
+                        if !options.isempty || is_file_empty(&pb) {
+                            files_count += 1;
+                            for ba in actions.iter() {
+                                (**ba).action(&mut writer, &pb, options.noaction, options.verbose);
+                            }
                         }
                     }
                 }
 
                 MyGlobMatch::Dir(pb) => {
                     if options.search_dirs {
+                        if !options.isempty || !is_dir_empty(&pb) {
                         dirs_count += 1;
                         for ba in actions.iter() {
                             (**ba).action(&mut writer, &pb, options.noaction, options.verbose);
                         }
                     }
+                }
                 }
 
                 MyGlobMatch::Error(err) => {
@@ -378,5 +390,16 @@ fn main() {
             log(&mut writer, format!("{dirs_count} dir(s)").as_str());
         }
         logln(&mut writer, format!(" found in {:.3}s", duration.as_secs_f64()).as_str());
+    }
+}
+
+fn is_file_empty(path: &PathBuf) -> bool {
+    fs::metadata(path).unwrap().len()>0
+}
+
+fn is_dir_empty(path: &PathBuf) -> bool {
+    match fs::read_dir(path) {
+        Ok(mut p) => p.next().is_some(),
+        Err(_) => false,
     }
 }
