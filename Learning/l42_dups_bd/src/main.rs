@@ -5,10 +5,10 @@
 #![allow(unused)]
 
 // standard library imports
-use std::{collections::HashMap, fs};
 use std::path::PathBuf;
 use std::process;
 use std::time::Instant;
+use std::{collections::HashMap, fs};
 
 // external crates imports
 use myglob::{MyGlobMatch, MyGlobSearch};
@@ -61,7 +61,7 @@ fn main() {
     let duration = start.elapsed();
     println!("{} BD files found in {:.3}s", files.len(), duration.as_secs_f64());
 
-    // Now enumerate files in 
+    // Now enumerate files in
     let resgs2 = MyGlobSearch::build(r"C:\Users\Pierr\Downloads\A_Trier\!A_Trier_BD\**\*.pdf");
     let gs2 = match resgs2 {
         Ok(gs) => gs,
@@ -74,7 +74,10 @@ fn main() {
                 let basename = (pb.file_stem().unwrap().to_str().unwrap().to_lowercase());
                 if files.contains_key(&basename) {
                     let mpb = &files[&basename];
-                    if get_file_size(&pb)==get_file_size(mpb) {
+                    let size1 = get_file_size(&pb);
+                    let size2 = get_file_size(mpb);
+
+                    if size1.abs_diff(size2) < 500u64 {
                         println!("Matching name/size:\n  {}\n  {}\n", pb.display(), mpb.display());
                         trash::delete(pb);
                     } else {

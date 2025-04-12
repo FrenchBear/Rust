@@ -34,7 +34,8 @@ fn main() {
     // env::set_current_dir(r"C:\Development\GitHub\Rust\RUtils").expect("cd failed");
     // test_myglob(r"*\target");
 
-    test_exclusion();
+    test_myglob(r"C:\Pommier");
+    //test_exclusion();
 
     // let globstr = "file.[!0-9]s";
     // let mut iter = globstr.chars().peekable();

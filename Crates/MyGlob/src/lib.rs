@@ -56,6 +56,7 @@ pub struct MyGlobSearch {
 pub struct MyGlobBuilder {
     globstr: String,
     ignore_dirs: Vec<String>, // just plain lowercase dir name, no path, no *
+    autorecurse: bool,  // Applu optional autorecurse transformation
 }
 
 /// Error returned by MyGlob, either a Regex error or an io::Error
@@ -124,6 +125,12 @@ impl MyGlobSearch {
 impl MyGlobBuilder {
     pub fn add_ignore_dir(mut self, dir: &str) -> Self {
         self.ignore_dirs.push(dir.to_lowercase());
+        self
+    }
+
+    // Set autorecurse flag. There is no mechanism to clear it, since it's clear by default.
+    pub fn autorecurse(mut self) -> Self {
+        self.autorecurse = true;
         self
     }
 
