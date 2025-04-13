@@ -20,11 +20,10 @@ fn create_file(path: &str, content: &str) -> io::Result<()> {
     Ok(())
 }
 
-fn search_count(glob: &str) -> (usize, usize) {
+fn search_count_base(resgs: Result<MyGlobSearch, MyGlobError>) -> (usize, usize) {
     let mut nf = 0;
     let mut nd = 0;
 
-    let resgs = MyGlobSearch::build(glob);
     match resgs {
         Ok(gs) => {
             for ma in gs.explore_iter() {
@@ -47,9 +46,26 @@ fn search_count(glob: &str) -> (usize, usize) {
             panic!("{:?}", e);
         }
     }
+
     (nf, nd)
 }
 
+fn search_count(glob_pattern: &str) -> (usize, usize) {
+    search_count_base(MyGlobSearch::build(glob_pattern))
+}
+
+fn search_count_autorecurse(glob_pattern: &str) -> (usize, usize) {
+    search_count_base(MyGlobSearch::new(glob_pattern).autorecurse(true).compile())
+}
+
+fn search_count_ignore(glob_pattern: &str, ignore_dirs: &[&str]) -> (usize, usize) {
+    let mut builder = MyGlobSearch::new(glob_pattern);
+    for ignore_dir in ignore_dirs {
+        builder = builder.add_ignore_dir(ignore_dir);
+    }
+
+    search_count_base(builder.compile())
+}
 
 #[test]
 fn search_1() -> io::Result<()> {
@@ -66,16 +82,25 @@ fn search_1() -> io::Result<()> {
     create_file(r"C:\Temp\search1\légumes\tomate.txt", "Tomate")?;
     create_file(r"C:\Temp\search1\légumes\pomme.de.terre.txt", "Pomme de terre")?;
 
-    assert_eq!(search_count(r"C:\Temp\search1\info"), (1,0));
-    assert_eq!(search_count(r"C:\Temp\search1\*"), (2,2));
-    assert_eq!(search_count(r"C:\Temp\search1\*.*"), (1,0));
-    assert_eq!(search_count(r"C:\Temp\search1\fruits\*"), (4,0));
-    assert_eq!(search_count(r"C:\Temp\search1\{fruits,légumes}\p*"), (3,0));
-    assert_eq!(search_count(r"C:\Temp\search1\**\p*"), (3,0));
-    assert_eq!(search_count(r"C:\Temp\search1\**\*.txt"), (8,0));
-    assert_eq!(search_count(r"C:\Temp\search1\**\*.*.*"), (1,0));
-    assert_eq!(search_count(r"C:\Temp\search1\légumes\*"), (3,0));
-    assert_eq!(search_count(r"C:\Temp\search1\*s\to[a-z]a{r,s,t}e.t[xX]t"), (2,0));
+    assert_eq!(search_count(r"C:\Temp\search1\info"), (1, 0));
+    assert_eq!(search_count(r"C:\Temp\search1\*"), (2, 2));
+    assert_eq!(search_count(r"C:\Temp\search1\*.*"), (1, 0));
+    assert_eq!(search_count(r"C:\Temp\search1\fruits\*"), (4, 0));
+    assert_eq!(search_count(r"C:\Temp\search1\{fruits,légumes}\p*"), (3, 0));
+    assert_eq!(search_count(r"C:\Temp\search1\**\p*"), (3, 0));
+    assert_eq!(search_count(r"C:\Temp\search1\**\*.txt"), (8, 0));
+    assert_eq!(search_count(r"C:\Temp\search1\**\*.*.*"), (1, 0));
+    assert_eq!(search_count(r"C:\Temp\search1\légumes\*"), (3, 0));
+    assert_eq!(search_count(r"C:\Temp\search1\*s\to[a-z]a{r,s,t}e.t[xX]t"), (2, 0));
+
+    // Testing autorecurse
+    assert_eq!(search_count(r"C:\Temp\search1\*.txt"), (1, 0));
+    assert_eq!(search_count_autorecurse(r"C:\Temp\search1\*.txt"), (8, 0));
+    assert_eq!(search_count(r"C:\Temp\search1"), (0, 1));
+    assert_eq!(search_count_autorecurse(r"C:\Temp\search1"), (9, 2));
+
+    // Testing ignore
+    assert_eq!(search_count_ignore(r"C:\Temp\search1\**\*.txt", &vec!["Légumes"]), (5, 0));
 
     fs::remove_dir_all(r"C:\Temp\search1")?;
 

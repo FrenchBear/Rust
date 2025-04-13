@@ -4,27 +4,19 @@
 
 // standard library imports
 use std::error::Error;
-use std::io::{self, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process;
 use std::time::Instant;
 
 // external crates imports
 use getopt::Opt;
-use glob::{MatchOptions, glob_with};
 use myglob::{MyGlobMatch, MyGlobSearch};
-use regex::Regex;
-use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 use terminal_size::{Width, terminal_size};
 
 // -----------------------------------
 // Submodules
 
-mod decode_encoding;
-mod grepiterator;
 pub mod tests;
-
-use decode_encoding::*;
 
 // -----------------------------------
 // Global constants
@@ -226,7 +218,7 @@ MyGlob care rule patters (option -2, default): Include all above patterns, plus:
 
 fn main() {
     // Process options
-    let mut options = Options::new().unwrap_or_else(|err| {
+    let options = Options::new().unwrap_or_else(|err| {
         let msg = format!("{}", err);
         if msg.is_empty() {
             process::exit(0);
@@ -237,223 +229,39 @@ fn main() {
 
     let start = Instant::now();
 
-    // Prepare globs
-    let mut sourcesgs: Vec<MyGlobSearch> = Vec::new();
     for source in options.sources.iter() {
-        
-        // If file is a simple name, no path, no drive, and recurse option is specified, then we search in subfolders
-        let source2 = if options.recurse && !source.contains('/') && !source.contains('\\') && !source.contains(':') {
-            format!("**/{}", source)
-        } else {
-            source.clone()
-        };
-
-        let mut count = 0;
-
-        if options.search_create == 2 {
-            // Use my own crate MyGlob, a bit faster than glob, and ignore $RECYCLE.BIN, System Volume Information and .git folders.
-            // Also supports {} alternations
-            let resgs = MyGlobSearch::build(&source2);
-            match resgs {
-                Ok(gs) => {
-                    for ma in gs.explore_iter() {
-                        match ma {
-                            MyGlobMatch::File(pb) => {
-                                count += 1;
-                                files.push(pb);
-                            }
-
-                            // We ignore matching directories in rgrep, we only look for files
-                            MyGlobMatch::Dir(_) => {}
-
-                            MyGlobMatch::Error(err) => {
-                                if options.verbose > 0 {
-                                    eprintln!("{APP_NAME}: error {}", err);
-                                }
-                            }
+        let resgs = MyGlobSearch::new(source).autorecurse(true).compile();
+        match resgs {
+            Ok(gs) => {
+                for ma in gs.explore_iter() {
+                    match ma {
+                        MyGlobMatch::File(pb) => {
+                            process_file(&pb);
                         }
+
+                        // We ignore matching directories in rgrep, we only look for files
+                        MyGlobMatch::Dir(_) => {}
+
+                        MyGlobMatch::Error(_) => {}
                     }
                 }
-
-                Err(e) => {
-                    eprintln!("{APP_NAME}: Error building MyGlob: {:?}", e);
-                    count = -1; // No need to display "no file found" in this case
-                }
             }
-        } else {
-            // Use standard glob crate, that returns everything, including $RECYCLE.BIN content for instance.
-            // See extended help to see options, or https://docs.rs/glob/latest/glob/struct.Pattern.html
-            match glob_with(source2.as_str(), mo) {
-                Ok(paths) => {
-                    for entry in paths {
-                        match entry {
-                            Ok(pb) => {
-                                if !pb.to_string_lossy().contains("$RECYCLE.BIN") {
-                                    count += 1;
-                                    files.push(pb);
-                                }
-                            }
-                            Err(err) => {
-                                if options.verbose > 0 {
-                                    eprintln!("{APP_NAME}: error {}", err);
-                                }
-                            }
-                        };
-                    }
-                }
-                Err(err) => {
-                    eprintln!("{APP_NAME}: pattern error {}", err);
-                    count = -1; // No need to display "no file found" in this case
-                }
-            }
-        }
 
-        if count == 0 {
-            println!("{APP_NAME}: no file found matching {}", source);
+            Err(e) => {
+                eprintln!("{APP_NAME}: Error building MyGlob: {:?}", e);
+            }
         }
     }
 
-    // Finally processing files, if more than 1 file, prefix output with file
-    if options.sources.is_empty() {
-        if options.verbose > 0 {
-            println!("Reading from stdin");
-        }
-        let s = io::read_to_string(io::stdin()).unwrap();
-        process_text(&re, s.as_str(), "(stdin)", &options);
-    } else {
-        if files.len() > 1 {
-            options.show_path = true;
-        }
-        for pb in &files {
-            if options.verbose > 1 {
-                println!("Process: {}", pb.display());
-            }
-            process_path(&re, pb, &options);
-        }
-    }
     let duration = start.elapsed();
+    println!("\nDuration: {:.3}s", duration.as_secs_f64());
 
-    if options.verbose > 0 {
-        if files.is_empty() {
-            print!("\nstdin");
-        } else {
-            print!("\n{} file", files.len());
-            if files.len() > 1 {
-                print!("s");
-            }
-        }
-        println!(" searched in {:.3}s", duration.as_secs_f64());
-    }
 }
 
-/// Helper, build Regex according to options (case, fixed string, whole word).<br/>
-/// Return an error in case of invalid Regex.
-pub fn build_re(options: &Options) -> Result<Regex, regex::Error> {
-    let spat = if options.fixed_string {
-        regex::escape(options.pattern.as_str())
-    } else if options.whole_word {
-        format!("\\b{}\\b", options.pattern)
-    } else {
-        options.pattern.clone()
-    };
-    let spat = String::from(if options.ignore_case { "(?imR)" } else { "(?mR)" }) + spat.as_str();
-    Regex::new(spat.as_str())
-}
 
-/// First step processing a file, read text content from path and call process_text.
-fn process_path(re: &Regex, path: &Path, options: &Options) {
-    /*
-    let txtres = read_text_file(path);
-    if let Err(e) = txtres {
-        if e.kind() == ErrorKind::InvalidData {
-            // Non-text files are ignored
-            if options.verbose == 1 {
-                //println!("{APP_NAME}: ignored non-text file {}", path.display());
-            };
-        }
-        return;
-    }
-    let txt = &txtres.unwrap()[..];
-    */
+fn process_file(pb: &Path) 
+{
+    println!("Processing {}", pb.display());
 
-    let res = read_text_file_2(path);
-    match res {
-        Ok((Some(s), _)) => {
-            let filename = path.display().to_string();
-            process_text(re, s.as_str(), filename.as_str(), options);
-        }
-        Ok((None, _)) => {
-            // Non-text files are ignored
-            if options.verbose == 1 {
-                println!("{APP_NAME}: ignored non-text file {}", path.display());
-            }
-            return;
-        }
-        Err(e) => {
-            eprintln!("*** Error reading file {}: {}", path.display(), e);
-            return;
-        }
-    }
-}
-
-/// Core rgrep process, search for re in txt, read from filename, according to options.
-fn process_text(re: &Regex, txt: &str, filename: &str, options: &Options) {
-    let mut matchlinecount = 0;
-
-    if atty::is(atty::Stream::Stdout) {
-        let mut stdout = StandardStream::stdout(ColorChoice::Always);
-        let mut match_color = ColorSpec::new();
-        match_color.set_fg(Some(Color::Red)).set_bold(true);
-        let mut file_color = ColorSpec::new();
-        file_color.set_fg(Some(Color::Black)).set_intense(true);
-
-        for gi in grepiterator::GrepLineMatches::new(txt, re) {
-            matchlinecount += 1;
-
-            if options.out_level == 1 {
-                println!("{}", filename);
-                return;
-            }
-
-            if options.out_level == 0 {
-                if options.show_path {
-                    let _ = stdout.set_color(&file_color);
-                    let _ = write!(&mut stdout, "{}: ", filename);
-                    let _ = stdout.reset();
-                }
-
-                let mut p: usize = 0;
-                for ma in gi.ranges {
-                    let e = ma.end;
-                    print!("{}", &gi.line[p..ma.start]);
-                    let _ = stdout.set_color(&match_color);
-                    let _ = write!(&mut stdout, "{}", &gi.line[ma]);
-                    let _ = stdout.reset();
-                    p = e;
-                }
-                println!("{}", &gi.line[p..]);
-            }
-        }
-    } else {
-        for gi in grepiterator::GrepLineMatches::new(txt, re) {
-            matchlinecount += 1;
-
-            if options.out_level == 1 {
-                println!("{}", filename);
-                return;
-            }
-
-            if options.out_level == 0 {
-                if options.show_path {
-                    print!("{}: ", filename);
-                }
-                println!("{}", gi.line);
-            }
-        }
-    }
-
-    // Note: both options -c and -l (out_level==3) is not supported by Linux version
-    if options.out_level == 2 || (options.out_level == 3 && matchlinecount > 0) {
-        println!("{}:{}", filename, matchlinecount);
-    }
+    let 
 }

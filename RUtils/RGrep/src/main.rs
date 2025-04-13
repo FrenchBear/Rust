@@ -429,7 +429,7 @@ fn process_path(re: &Regex, path: &Path, options: &Options) {
     let txt = &txtres.unwrap()[..];
     */
 
-    let res = read_text_file_2(path);
+    let res = read_text_file(path);
     match res {
         Ok((Some(s), _)) => {
             let filename = path.display().to_string();

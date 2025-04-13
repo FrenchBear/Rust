@@ -5,6 +5,7 @@
 // 2025-04-03	PV      1.2.0 Core reorganization, logging module
 // 2025-04-06	PV      1.3.0 Use fs::remove_dir_all instead of fs::remove_dir to delete non-empty directories
 // 2025-04-12	PV      1.4.0 Option -empty
+// 2025-04-13	PV      1.4.1 Use MyGlobSearch autorecurse
 
 //#![allow(unused)]
 
@@ -33,7 +34,7 @@ use logging::*;
 // Global constants
 
 const APP_NAME: &str = "rfind";
-const APP_VERSION: &str = "1.4.0";
+const APP_VERSION: &str = "1.4.1";
 
 // -----------------------------------
 // Traits
@@ -278,7 +279,7 @@ fn main() {
     // Convert String sources into MyGlobSearch structs
     let mut sources: Vec<(&String, MyGlobSearch)> = Vec::new();
     for source in options.sources.iter() {
-        let resgs = MyGlobSearch::build(source);
+        let resgs = MyGlobSearch::new(source).autorecurse(true).compile();
         match resgs {
             Ok(gs) => sources.push((source, gs)),
             Err(e) => {

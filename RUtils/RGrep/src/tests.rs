@@ -9,7 +9,7 @@ pub mod read_text {
 
     #[test]
     fn text_utf8() {
-        let r = crate::read_text_file_2(Path::new(
+        let r = crate::read_text_file(Path::new(
             r"C:\DocumentsOD\Doc tech\Encodings\prenoms-utf8.txt",
         ));
         assert!(r.is_ok());
@@ -21,7 +21,7 @@ pub mod read_text {
 
     #[test]
     fn text_1252() {
-        let r = crate::read_text_file_2(Path::new(
+        let r = crate::read_text_file(Path::new(
             r"C:\DocumentsOD\Doc tech\Encodings\prenoms-ansi,1252.txt",
         ));
         assert!(r.is_ok());
@@ -33,7 +33,7 @@ pub mod read_text {
 
     #[test]
     fn text_utf16() {
-        let r = crate::read_text_file_2(Path::new(
+        let r = crate::read_text_file(Path::new(
             r"C:\DocumentsOD\Doc tech\Encodings\prenoms-utf16lebom.txt",
         ));
         assert!(r.is_ok());
@@ -45,7 +45,7 @@ pub mod read_text {
 
     #[test]
     fn binary_file() {
-        let r = crate::read_text_file_2(Path::new(r"C:\Utils\BookApps\Astructw.exe"));
+        let r = crate::read_text_file(Path::new(r"C:\Utils\BookApps\Astructw.exe"));
         assert!(r.is_ok());
         let res = r.unwrap();
         assert!(res.0.is_none());
@@ -53,7 +53,7 @@ pub mod read_text {
 
     #[test]
     fn inexistent_file() {
-        let r = crate::read_text_file_2(Path::new(r"C:\Utils\BookApps\Astructw.com"));
+        let r = crate::read_text_file(Path::new(r"C:\Utils\BookApps\Astructw.com"));
         assert!(r.is_err());
         let e = r.err().unwrap();
         assert_eq!(e.kind(), io::ErrorKind::NotFound);

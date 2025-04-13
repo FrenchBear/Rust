@@ -13,6 +13,7 @@
 // 2025-04-03   PV      1.3.2 is_constant member added to MyGlobSearch
 // 2025-04-09   PV      1.3.3 Fixed bug charindex/byteindex during initial cut of constant part
 // 2025-04-09   PV      1.4.0 New MyGlob API with MyBlobBuilder, version, new, compile and add_ignore_dir.
+// 2025-04-13   PV      1.5.0 Autorecurse
 
 #![allow(unused_variables, dead_code, unused_imports)]
 
@@ -31,7 +32,7 @@ mod tests;
 // -----------------------------------
 // Globals
 
-const LIB_VERSION: &str = "1.4.0";
+const LIB_VERSION: &str = "1.5.0";
 
 // -----------------------------------
 // Structures
@@ -54,7 +55,7 @@ pub struct MyGlobSearch {
 
 #[derive(Debug, Default)]
 pub struct MyGlobBuilder {
-    globstr: String,
+    glob_pattern: String,
     ignore_dirs: Vec<String>, // just plain lowercase dir name, no path, no *
     autorecurse: bool,  // Applu optional autorecurse transformation
 }
@@ -72,9 +73,9 @@ impl MyGlobSearch {
         LIB_VERSION
     }
 
-    pub fn new(globstr: &str) -> MyGlobBuilder {
+    pub fn new(glob_pattern: &str) -> MyGlobBuilder {
         MyGlobBuilder {
-            globstr: globstr.to_string(),
+            glob_pattern: glob_pattern.to_string(),
             ignore_dirs: vec![
                 String::from("$recycle.bin"),
                 String::from("system volume information"),
@@ -84,8 +85,8 @@ impl MyGlobSearch {
         }
     }
 
-    pub fn build(globstr: &str) -> Result<Self, MyGlobError> {
-        Self::new(globstr).compile()
+    pub fn build(glob_pattern: &str) -> Result<Self, MyGlobError> {
+        Self::new(glob_pattern).compile()
     }
 
     /// Iterator returning all files matching glob pattern
@@ -129,19 +130,22 @@ impl MyGlobBuilder {
     }
 
     // Set autorecurse flag. There is no mechanism to clear it, since it's clear by default.
-    pub fn autorecurse(mut self) -> Self {
-        self.autorecurse = true;
+    pub fn autorecurse(mut self, active: bool) -> Self {
+        self.autorecurse = active;
         self
     }
 
     /// Constructs a new MyGlobSearch based on pattern glob expression, or return an error if there is Glob/Regex error
     pub fn compile(self) -> Result<MyGlobSearch, MyGlobError> {
+        if self.glob_pattern.is_empty() {
+            return Err(MyGlobError::GlobError("Glob pattern can't be empty".to_string()));
+        }
         // For now, reject a pattern ending with / or \, although it could also be understood as a search for folder only...
-        if self.globstr.ends_with('\\') || self.globstr.ends_with('/') {
+        if self.glob_pattern.ends_with('\\') || self.glob_pattern.ends_with('/') {
             return Err(MyGlobError::GlobError("Glob pattern can't end with \\ or /".to_string()));
         }
         // Trick: add a final \ so that we don't have duplicate code to process last segment
-        let glob = self.globstr.clone() + "\\";
+        let glob = self.glob_pattern.clone() + "\\";
 
         // First get root part, the constant segments at the beginning
         let mut cut = 0;
@@ -162,30 +166,47 @@ impl MyGlobBuilder {
         }
 
         // Then build segments
-        let segments = if pos < glob.len() {
+        let mut segments = if pos < glob.len() {
             Self::glob_to_segments(&glob[if cut == 0 { 0 } else { cut + 1 }..])?
         } else {
             Vec::new()
         };
 
+        // Process autorecurse transformation if required
+        if self.autorecurse {
+            // Case of constant pattern that is a valid folder, add  **/*
+            if segments.is_empty() {
+                let rootp = PathBuf::from(&root);
+                if rootp.is_dir() {
+                    segments.push(Segment::Recurse);
+                    segments.push(Segment::Filter(Regex::new("(?i)^.*$").unwrap()));
+                }
+            } else {
+                // Case of non-recursive pattern ending with a filter; insert ** before last segment
+                if !segments.iter().any(|s| matches!(s, Segment::Recurse)) && matches!(segments.last().unwrap(), Segment::Filter(_)) {
+                        segments.insert(segments.len()-1, Segment::Recurse);
+                    }
+            }
+        }
+
         Ok(MyGlobSearch {
-            root: root,
-            segments: segments,
+            root,
+            segments,
             ignore_dirs: self.ignore_dirs,
         })
     }
 
     // Conversion of a glob string into a Vec<Segment>, or an error if glob syntax is invalid
     // This is used internally and for testing, but not called by applications hence pub(crate)
-    pub(crate) fn glob_to_segments(globstr: &str) -> Result<Vec<Segment>, MyGlobError> {
-        // globstr ends with \ so no duplicate code to process last segment
-        assert!(globstr.ends_with('\\'));
+    pub(crate) fn glob_to_segments(glob_pattern: &str) -> Result<Vec<Segment>, MyGlobError> {
+        // glob_pattern ends with \ so no duplicate code to process last segment
+        assert!(glob_pattern.ends_with('\\'));
 
         let mut segments = Vec::<Segment>::new();
         let mut regex_buffer = String::new();
         let mut constant_buffer = String::new();
         let mut brace_depth = 0;
-        let mut iter = globstr.chars().peekable();
+        let mut iter = glob_pattern.chars().peekable();
         while let Some(c) = iter.next() {
             if c != '\\' && c != '/' {
                 constant_buffer.push(c);
@@ -239,14 +260,11 @@ impl MyGlobBuilder {
                     let mut depth = 1;
 
                     // Special case, ! at the beginning of a glob match is converted to a ^ in regex syntax
-                    match iter.peek() {
-                        Some(next_c) => {
-                            if *next_c == '!' {
-                                iter.next();
-                                regex_buffer.push('^');
-                            }
+                    if let Some(next_c) = iter.peek() {
+                        if *next_c == '!' {
+                            iter.next();
+                            regex_buffer.push('^');
                         }
-                        None => {}
                     }
 
                     while let Some(inner_c) = iter.next() {
@@ -282,12 +300,8 @@ impl MyGlobBuilder {
         }
 
         // If last segment is a **, append a Filter * to find everything
-        match &segments[segments.len() - 1] {
-            Segment::Recurse => {
-                //panic!("$1");
-                segments.push(Segment::Filter(Regex::new("(?i)^.*$").unwrap()));
-            }
-            _ => {}
+        if let Segment::Recurse = &segments[segments.len() - 1] {
+            segments.push(Segment::Filter(Regex::new("(?i)^.*$").unwrap()));
         }
 
         Ok(segments)

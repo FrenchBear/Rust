@@ -11,73 +11,6 @@ use std::path::Path;
 // external crates imports
 use encoding_rs::{Encoding, UTF_8, UTF_16LE, WINDOWS_1252};
 
-/*
-/// Helper detecting if path is a text file, detect encoding and return content as an utf-8 String.<br/>
-/// Only UTF-8, UTF-16 LE and Windows 1252 are detected using heuristics (mays not be always correct).<br/>
-/// Unrecognized files return an io::ErrorKind::InvalidData.
-/// First version, reads the whole file, and attemps decoding with various encodings, plus extra heuristics.
-/// Supeseeded by read_text_file_2 that should be faster
-#[allow(unused)]
-pub fn read_text_file(path: &Path) -> Result<String, io::Error> {
-    let file = File::open(path)?;
-    let mut reader = BufReader::new(file);
-    let mut buffer = Vec::new();
-    reader.read_to_end(&mut buffer)?;
-
-    // Define the encodings to try, in order of preference.
-    let encodings: [&'static Encoding; 3] = [UTF_8, UTF_16LE, WINDOWS_1252];
-
-    for encoding in encodings {
-        let (decoded_string, used_encoding, had_errors) = encoding.decode(&buffer);
-        if !had_errors {
-            // For UTF-16, we need to confirm. Count 0 in odd positions, should be >=40% of file size
-            if used_encoding == UTF_16LE {
-                let mut zcount = 0;
-                let mut ix = 1;
-                while ix < buffer.len() {
-                    if buffer[ix] == 0 {
-                        zcount += 1
-                    };
-                    ix += 2;
-                }
-                if zcount * 10 < 4 * buffer.len() {
-                    continue;
-                }
-            }
-
-            // For Windows 1252, we need to confirm. Characters in {0x20..0x7F, 9, 10, 13} should be >=90% of file size
-            // And no \0 in file
-            if used_encoding == WINDOWS_1252 {
-                let mut acount = 0;
-                let mut ix = 0;
-                while ix < buffer.len() {
-                    let b = buffer[ix];
-                    if (32..128).contains(&b) || b == 9 || b == 10 || b == 13 {
-                        acount += 1;
-                    } else if b == 0 {
-                        acount = 0;
-                        break;
-                    }
-                    ix += 1;
-                }
-                if acount * 10 < 9 * buffer.len() {
-                    continue;
-                }
-            }
-
-            // If decoding succeeded without errors, return the string.
-            return Ok(decoded_string.into_owned());
-        }
-    }
-
-    // If none of the encodings worked without errors, return an error.
-    Err(io::Error::new(
-        io::ErrorKind::InvalidData,
-        "File does not appear to be UTF-8, UTF-16 or Windows-1252 encoded.",
-    ))
-}
-*/
-
 /// Detects encoding of a text file.
 /// Faster version than read_text_file, reads only 1000 bytes max at first to detect encoding and
 /// check for heuristics, and read the full file only if this stage is successful. This should be
@@ -85,7 +18,7 @@ pub fn read_text_file(path: &Path) -> Result<String, io::Error> {
 /// Contrary to read_text_file, only returns an error in case of io::Error
 /// If encoding is recognized, returns content as a Ok(String) and encoding as a string
 /// If encoding is not recognized, returns None, and "Not text ?" with ? 1-3 indicates test that failed.
-pub fn read_text_file_2(path: &Path) -> Result<(Option<String>, &str), io::Error> {
+pub fn read_text_file(path: &Path) -> Result<(Option<String>, &str), io::Error> {
     let mut file = File::open(path)?;
     let mut buffer_1000 = [0; 1000];
     // read up to 1000 bytes
