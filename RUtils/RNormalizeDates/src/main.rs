@@ -2,21 +2,27 @@
 //
 // 2025-04-12	PV      First version
 
+#![allow(unused)]
+
 // standard library imports
-use std::error::Error;
 use std::path::Path;
 use std::process;
 use std::time::Instant;
+use std::{error::Error, path::PathBuf};
 
 // external crates imports
 use getopt::Opt;
 use myglob::{MyGlobMatch, MyGlobSearch};
 use terminal_size::{Width, terminal_size};
+use unicode_normalization::UnicodeNormalization;
 
 // -----------------------------------
 // Submodules
 
-pub mod tests;
+mod devdata;
+mod tests;
+
+use devdata::get_dev_data;
 
 // -----------------------------------
 // Global constants
@@ -31,9 +37,9 @@ const APP_VERSION: &str = "1.0.0";
 #[derive(Debug, Default)]
 pub struct Options {
     sources: Vec<String>,
-	final_pause: bool,
-	segment: u8,
-	no_action: bool,
+    final_pause: bool,
+    segment: u8,
+    no_action: bool,
     verbose: bool,
 }
 
@@ -146,9 +152,7 @@ MyGlob care rule patters (option -2, default): Include all above patterns, plus:
             }
         }
 
-        let mut options = Options {
-            ..Default::default()
-        };
+        let mut options = Options { ..Default::default() };
         let mut opts = getopt::Parser::new(&args, "h?npvs:");
 
         loop {
@@ -173,7 +177,7 @@ MyGlob care rule patters (option -2, default): Include all above patterns, plus:
                     }
 
                     Opt('s', Some(arg)) => {
-                        if options.segment>0 {
+                        if options.segment > 0 {
                             return Err("Option -s # can only be used once".into());
                         }
                         let segres = arg.parse::<u8>();
@@ -183,7 +187,7 @@ MyGlob care rule patters (option -2, default): Include all above patterns, plus:
                                 continue;
                             }
                         }
-                        return Err("Option -s requires a numerical argument in 1..5".into())
+                        return Err("Option -s requires a numerical argument in 1..5".into());
                     }
 
                     _ => unreachable!(),
@@ -216,7 +220,14 @@ MyGlob care rule patters (option -2, default): Include all above patterns, plus:
 // -----------------------------------
 // Main
 
+// Dev tests
 fn main() {
+    for filefp in get_dev_data() {
+        process_file(&PathBuf::from(filefp));
+    }
+}
+
+fn zz_main() {
     // Process options
     let options = Options::new().unwrap_or_else(|err| {
         let msg = format!("{}", err);
@@ -255,13 +266,83 @@ fn main() {
 
     let duration = start.elapsed();
     println!("\nDuration: {:.3}s", duration.as_secs_f64());
+}
+
+fn process_file(pb: &Path) {
+    //println!("Processing {}", pb.display());
+
+    let basename_original = pb.file_stem().expect("No stem??").to_string_lossy().into_owned();
+
+    let mut base_name: String = basename_original.nfc().collect();
+    base_name = base_name.replace('_', " ");
+    base_name = base_name.replace("..", "$");   // Keep double dots
+    base_name = base_name.replace(".", " ");    // But replace simple dots by spaces
+    base_name = base_name.replace("$", "..");
+    base_name = base_name.replace("\u{FFFD}", " ");     // Replacement character
+
+
+    // Add starting/ending space to simplyfy some detections
+    base_name=format!(" {} ", base_name);
+    loop {
+        let mut update = false;
+
+        if base_name.contains("  ") {
+            base_name=base_name.replace("  ", " ");
+            update = true;
+        }
+        if base_name.contains("- -") {
+            base_name=base_name.replace("- -", "-");
+            update = true;
+        }
+        if base_name.contains("--") {
+            base_name=base_name.replace("--", "-");
+            update = true;
+        }
+        if icontains(&base_name, "PDF-NOTAG") {
+            base_name=ireplace(&base_name, "PDF-NOTAG", "");
+            update = true;
+        }
+        if icontains(&base_name, " FRENCH ") {
+            base_name=ireplace(&base_name, " FRENCH ", " ");
+            update = true;
+        }
+        if icontains(&base_name, " francais ") {
+            base_name=ireplace(&base_name, " francais ", " ");
+            update = true;
+        }
+
+        if !update {break;}
+    }
+
+    //base_name=base_name.trim().into();
+
+    println!("{:70} «{}»", basename_original, base_name);
 
 }
 
+// Case-insensitive version of contains
+fn icontains(s: &str, pattern: &str) -> bool {
+    s.to_lowercase().contains(&pattern.to_lowercase())
+}
 
-fn process_file(pb: &Path) 
-{
-    println!("Processing {}", pb.display());
+// Case-insensitive version of replace
+fn ireplace(s: &str, search: &str, replace: &str) -> String {
+    if search.is_empty() {panic!("search can't be empty");}
+    let mut result = String::new();
+    let lower_s = s.to_lowercase();
+    let lower_search = search.to_lowercase();
+    let mut i = 0;
 
-    let 
+    while i < s.len() {
+        if lower_s[i..].starts_with(&lower_search) {
+            result.push_str(replace);
+            i += search.len();
+        } else {
+            let ch = &s[i..].chars().next().unwrap();
+            result.push(*ch);
+            i += ch.len_utf8();
+        }
+    }
+
+    result
 }

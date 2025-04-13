@@ -8,6 +8,5 @@ edition = "2024"
 [dependencies]
 myglob = { path = "../../Crates/MyGlob" }
 getopt = "1.1.7"
-termcolor = "1.4.1"
 terminal_size = "0.4.2"
-atty = "0.2.14"
+unicode-normalization = "0.1.24"

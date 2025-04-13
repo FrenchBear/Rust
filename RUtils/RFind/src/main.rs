@@ -6,6 +6,7 @@
 // 2025-04-06	PV      1.3.0 Use fs::remove_dir_all instead of fs::remove_dir to delete non-empty directories
 // 2025-04-12	PV      1.4.0 Option -empty
 // 2025-04-13	PV      1.4.1 Use MyGlobSearch autorecurse
+// 2025-04-13	PV      1.4.2 Option -noa[utorecurse]
 
 //#![allow(unused)]
 
@@ -34,7 +35,7 @@ use logging::*;
 // Global constants
 
 const APP_NAME: &str = "rfind";
-const APP_VERSION: &str = "1.4.1";
+const APP_VERSION: &str = "1.4.2";
 
 // -----------------------------------
 // Traits
@@ -56,6 +57,7 @@ struct Options {
     search_dirs: bool,
     isempty: bool,
     norecycle: bool,
+    noautorecurse: bool,
     noaction: bool,
     verbose: bool,
 }
@@ -71,22 +73,23 @@ impl Options {
     fn usage() {
         Options::header();
         eprintln!(
-            "\nUsage: {APP_NAME} [?|-?|-h|??] [-v] [-n] [-f|-type f|-d|-type d] [-empty] [-[no]recycle] [action...] source...
-?|-?|-h     Show this message
-??          Show advanced usage notes
--v          Verbose output
--n          No action: display actions, but don't execute them
--f|-type f  Search for files
--d|-type d  Search for directories
--empty      Only find empty files or directories
--norecycle  Delete forever (default: -recycle, delete local files to recycle bin)
-source      File or folder where to search, glob syntax supported (see advanced notes)
+            "\nUsage: {APP_NAME} [?|-?|-h|??] [-v] [-n] [-f|-type f|-d|-type d] [-empty] [-[no]r[ecycle]] [-noa[utorecurse]] [action...] source...
+?|-?|-h          Show this message
+??               Show advanced usage notes
+-v               Verbose output
+-n               No action: display actions, but don't execute them
+-f|-type f       Search for files
+-d|-type d       Search for directories
+-empty           Only find empty files or directories
+-[no]r[ecycle]   Delete forever (default: -r[ecycle], delete local files to recycle bin)
+-noa[utorecurse] Glob pattern does not use autorecuse transformation
+source           File or folder where to search (autorecurse glob pattern, see advanced notes)
 
 Actions:
--print      Default, print matching files names and dir names (dir names end with \\)
--dir        Variant of -print, with last modification date and size
--delete     Delete matching files
--rmdir      Delete matching directories, whether empty or not"
+-print           Default, print matching files names and dir names (dir names end with \\)
+-dir             Variant of -print, with last modification date and size
+-delete          Delete matching files
+-rmdir           Delete matching directories, whether empty or not"
         );
     }
 
@@ -100,7 +103,7 @@ Actions:
         let text =
 "Copyright ©2025 Pierre Violent\n
 Advanced usage notes\n--------------------\n
-Glob pattern nules:
+Glob pattern rules:
 •   ? matches any single character.
 •   * matches any (possibly empty) sequence of characters.
 •   ** matches the current directory and arbitrary subdirectories. To match files in arbitrary subdiretories, use **\\*. This sequence must form a single path component, so both **a and b** are invalid and will result in an error.
@@ -108,7 +111,11 @@ Glob pattern nules:
 •   [!...] is the negation of [...], i.e. it matches any characters not in the brackets.
 •   The metacharacters ?, *, [, ] can be matched by using brackets (e.g. [?]). When a ] occurs immediately following [ or [! then it is interpreted as being part of, rather then ending, the character set, so ] and NOT ] can be matched by []] and [!]] respectively. The - character can be specified inside a character sequence pattern by placing it at the start or the end, e.g. [abc-].
 •   {choice1,choice2...}  match any of the comma-separated choices between braces. Can be nested, and include ?, * and character classes.
-•   Character classes [ ] accept regex syntax, see https://docs.rs/regex/latest/regex/#character-classes for character classes and escape sequences supported.";
+•   Character classes [ ] accept regex syntax such as [\\d] to match a single digit, see https://docs.rs/regex/latest/regex/#character-classes for character classes and escape sequences supported.
+
+Autorecurse glob pattern transformation (active by default, use -noa[utorecurse] to deactivate):
+•   Constant pattern (no filter, no **) pointing to a folder: \\**\\* is appended at the end to search all files of all seubfolders.
+•   Patterns without ** and ending with a filter: \\** is inserted before final filter to find all matching files of all subfolders.";
 
         println!("{}", Self::format_text(text, width));
     }
@@ -202,8 +209,10 @@ Glob pattern nules:
 
                     "empty" => options.isempty = true,
 
-                    "recycle" => options.norecycle = false,
-                    "norecycle" => options.norecycle = true,
+                    "r"|"recycle" => options.norecycle = false,
+                    "nor"|"norecycle" => options.norecycle = true,
+
+                    "noa"|"noautorecurse" => options.noautorecurse = true,
 
                     "print" => {
                         options.actions_names.insert("print");
@@ -279,7 +288,7 @@ fn main() {
     // Convert String sources into MyGlobSearch structs
     let mut sources: Vec<(&String, MyGlobSearch)> = Vec::new();
     for source in options.sources.iter() {
-        let resgs = MyGlobSearch::new(source).autorecurse(true).compile();
+        let resgs = MyGlobSearch::new(source).autorecurse(!options.noautorecurse).compile();
         match resgs {
             Ok(gs) => sources.push((source, gs)),
             Err(e) => {
