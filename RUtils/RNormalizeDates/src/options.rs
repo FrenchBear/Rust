@@ -34,7 +34,7 @@ impl Options {
 -p       Final pause
 -v       Verbose output
 -s #     Only process segment # (starting at 1) delimited by ' - '
-source   folder containing PDF files (and recurse) or simple file"
+source   folder containing PDF files (and recurse) or simple file, default: C:\\Downloads\\A_Trier\\!A_Trier_Revues\\*.pdf"
         );
     }
 
@@ -183,9 +183,10 @@ MyGlob care rule patters (option -2, default): Include all above patterns, plus:
         }
 
         if options.sources.is_empty() {
-            options.sources.push(r"C:\Users\Pierr\Downloads\A_Trier\!A_Trier_Revues".into());
+            options.sources.push(r"C:\Downloads\A_Trier\!A_Trier_Revues\*.pdf".into());
         }
 
         Ok(options)
     }
 }
+
