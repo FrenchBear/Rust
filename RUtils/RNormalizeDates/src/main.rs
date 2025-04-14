@@ -201,8 +201,8 @@ impl DatePatterns {
             Regex::new((String::from("(?i)") + "^" + year + r"[ _\-]" + r"(0[1-9]|10|11|12)" + r"[_\-]" + day + r"[ _]*").as_str()).unwrap();
 
         let re_date_dmdmy =
-            Regex::new((String::from("(?i)") + day + r" +" + month + r" *(Au)? *" + day + r" +" + month + r" +" + year).as_str()).unwrap();
-        let re_date_mymy = Regex::new((String::from("(?i)") + month + r" +" + year + r"( |-)+" + month + r" +" + year).as_str()).unwrap();
+            Regex::new((String::from("(?i)") + day + r" +" + month + r" *(au)? *" + day + r" +" + month + r" +" + year).as_str()).unwrap();
+        let re_date_mymy = Regex::new((String::from("(?i)") + month + r" +" + year + r"( |-|à)+" + month + r" +" + year).as_str()).unwrap();
         let re_date_mmy = Regex::new((String::from("(?i)") + month + r"( |-|à)+" + month + r" +" + year).as_str()).unwrap();
         let re_date_dmy = Regex::new((String::from("(?i)") + day + r" +" + month + r" +" + year).as_str()).unwrap();
         let re_date_my = Regex::new((String::from("(?i)") + month + r" +" + year).as_str()).unwrap();
