@@ -3,10 +3,11 @@
 //
 // 2025-03-25   PV  First version
 
-//#![allow(unused_variables)]
+//#![allow(unused)]
 
 use myglob::{MyGlobMatch, MyGlobSearch};
 use std::time::Instant;
+use regex as _;
 
 fn main() {
     println!("MyGlob lib version: {}\n", MyGlobSearch::version());
