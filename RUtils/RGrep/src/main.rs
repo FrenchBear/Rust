@@ -415,20 +415,6 @@ pub fn build_re(options: &Options) -> Result<Regex, regex::Error> {
 
 /// First step processing a file, read text content from path and call process_text.
 fn process_path(re: &Regex, path: &Path, options: &Options) {
-    /*
-    let txtres = read_text_file(path);
-    if let Err(e) = txtres {
-        if e.kind() == ErrorKind::InvalidData {
-            // Non-text files are ignored
-            if options.verbose == 1 {
-                //println!("{APP_NAME}: ignored non-text file {}", path.display());
-            };
-        }
-        return;
-    }
-    let txt = &txtres.unwrap()[..];
-    */
-
     let res = read_text_file(path);
     match res {
         Ok((Some(s), _)) => {

@@ -134,7 +134,7 @@ fn apply_initial_transformations(stem_original: &str) -> String {
     stem = stem.replace("£", "..");
     stem = stem.replace("\u{FFFD}", " "); // Replacement character
 
-    // Add starting/ending space to simplyfy some detections
+    // Add starting/ending space to simplify some detections
     stem = format!(" {} ", stem);
     loop {
         let mut update = false;
@@ -195,7 +195,7 @@ fn apply_date_transformations(stem_original: &str, dp: &DatePatterns, verbose: b
         stem = format!("{}‹{}›{}", &stem[..nstart], &caps[0], &stem[nstart + nlen..]);
     }
 
-    // If name starts with a Ymd date, then move it to the end, and analyse remaining patterns
+    // If name starts with a ymd date, then move it to the end, and analyze remaining patterns
     if let Some(caps) = dp.re_date_ymd_head.captures(&stem) {
         let cf = &caps[0];
         let y = get_year_num(&caps[1]);

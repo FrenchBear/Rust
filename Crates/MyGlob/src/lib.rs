@@ -45,7 +45,7 @@ enum Segment {
     Filter(Regex),
 }
 
-/// Main struct of myglob, string information such as root part, glob, dirs to ignore, ...
+/// Main struct of MyGlob, string information such as root part, glob, dirs to ignore, ...
 #[derive(Debug, Default)]
 pub struct MyGlobSearch {
     root: String,
@@ -57,7 +57,7 @@ pub struct MyGlobSearch {
 pub struct MyGlobBuilder {
     glob_pattern: String,
     ignore_dirs: Vec<String>, // just plain lowercase dir name, no path, no *
-    autorecurse: bool,  // Applu optional autorecurse transformation
+    autorecurse: bool,  // Apply optional autorecurse transformation
 }
 
 /// Error returned by MyGlob, either a Regex error or an io::Error
@@ -117,7 +117,7 @@ impl MyGlobSearch {
     }
 
     /// Returns true if glob is valid, but it's just a constant, no filter segment and no recurse segment
-    /// Note that this shouls always be called on a compiled MyGlob; calling on a non-compiled MyGlob will always return false
+    /// Note that this should always be called on a compiled MyGlob; calling on a non-compiled MyGlob will always return false
     pub fn is_constant(&self) -> bool {
         self.segments.is_empty()
     }

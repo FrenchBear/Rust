@@ -28,14 +28,13 @@ impl ActionPrint {
 
 impl Action for ActionPrint {
     fn action(&self, lw: &mut LogWriter, path: &Path, _do_it: bool, _verbose: bool) {
-        //println!("Action Print\n  Path: {}\n  do_it: {do_it}\n  verbose: {verbose}", path.display());
         if path.is_file() {
             if self.detailed_output {
                 match path.metadata() {
                     Ok(meta) => {
                         // File size formatting
                         let file_size = meta.len();
-                        let formatted_size = file_size.to_formatted_string(&Locale::fr); //Use en for now. Later we will find the user locale.
+                        let formatted_size = file_size.to_formatted_string(&Locale::fr); //Use French locale for now. Later we will find the user locale.
 
                         // Last modified time formatting
                         let modified_time = meta.modified().unwrap(); // Get last modified time

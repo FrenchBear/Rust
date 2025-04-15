@@ -1,4 +1,4 @@
-// myglob tests - regexp_conversions
+// MyGlob tests - regexp_conversions
 // Mostly tests of conversion glob->regexp and matching strings
 //
 // 2025-03-29   PV
@@ -138,7 +138,7 @@ fn conversions_tests() {
     glob_one_segment_test("file.[-+]s", ConvResult::Filter, "file.+s", true);
     glob_one_segment_test("file.[-]s", ConvResult::Filter, "file.-s", true);
 
-    // A ! (or a ^) at the bebinning of a class inverts filtering
+    // A ! (or a ^) at the beginning of a class inverts filtering
     glob_one_segment_test("file.[!abc]s", ConvResult::Filter, "file.rs", true);
     glob_one_segment_test("file.[!abc]s", ConvResult::Filter, "file.cs", false);
     glob_one_segment_test("file.[!0-9]s", ConvResult::Filter, "file.3s", false);
@@ -164,7 +164,7 @@ fn conversions_tests() {
     glob_one_segment_test(r"file[\D].cs", ConvResult::Filter, "filed.cs", true);
     glob_one_segment_test(r"file[\p{Greek}].cs", ConvResult::Filter, "fileζ.cs", true);
 
-    // Actually, stuff between [ ] is directy passed into regex (only a ! at the beginning is replaced by ^), so it accepts other regex classes constructs
+    // Actually, stuff between [ ] is directly passed into regex (only a ! at the beginning is replaced by ^), so it accepts other regex classes constructs
     //   [x[^xyz]]     Nested/grouping character class (matching any character except y and z)
     //   [a-y&&xyz]    Intersection (matching x or y)
     //   [0-9&&[^4]]   Subtraction using intersection and negation (matching 0-9 except 4)

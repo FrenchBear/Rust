@@ -14,7 +14,7 @@ pub struct GrepLineMatches {
 }
 
 impl GrepLineMatches {
-    /// Build a line iterator over txt, returning lines with at leat a match, grouping all matches of a line together.<br/>
+    /// Build a line iterator over txt, returning lines with at least a match, grouping all matches of a line together.<br/>
     /// A line is returned with all its matches.
     pub fn new<'a>(txt: &'a str, re: &'a Regex) -> impl Iterator<Item = GrepLineMatches> + 'a {
         GrepIteratorState {

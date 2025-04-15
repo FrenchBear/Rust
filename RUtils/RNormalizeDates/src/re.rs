@@ -120,7 +120,7 @@ pub struct DatePatterns {
 impl DatePatterns {
     pub fn new() -> Self {
         // Prepare regex
-        // Note: \b est une ancre de limite de mot (mais backspace dans une [classe])
+        // Note: \b is a word-limit anchor, but backspace in a [class]
         let mut month = String::new();
         let mut months_sorted = MONTHS.clone();
         months_sorted.sort_by_key(|k| -(k.0.len() as i32));
@@ -172,8 +172,6 @@ impl DatePatterns {
         let re_date_ym = Regex::new((String::from("(?i)") + year + "[ -]+" + month).as_str()).unwrap();
         // let re_date_my = Regex::new((String::from("(?i)") + r"(\d[ -])?" + month + "[ -]+" + year + r"([ -]\d)?").as_str()).unwrap();
         // let re_date_ym = Regex::new((String::from("(?i)") + r"(\d[ -])?" + year + "[ -]+" + month + r"([ -]\d)?").as_str()).unwrap();
-
-        // If name starts with a Ymd date, then move it to the end, and analyse remaining patterns
 
         DatePatterns {
             re_date_ymd_head,

@@ -1,4 +1,4 @@
-// myglob tests
+// MyGlob tests
 
 #![cfg(test)]
 

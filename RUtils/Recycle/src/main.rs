@@ -2,7 +2,6 @@
 //
 // 2025-04-03	PV      First version
 
-
 #![allow(unused)]
 
 // standard library imports
@@ -143,15 +142,7 @@ fn main() {
 
     let start = Instant::now();
 
-    // for source in options.sources.iter() {
-    //     println!("{} -> {:?}", source, drive_type(&Path::new(source)));
-    //     println!("{} -> {:?}", source, reparse_type(&Path::new(source)));
-    // }
-    // process::exit(0);
-
     for source in options.sources.iter() {
-        //logln(&mut writer, &format!("Analyzing {}", source));
-
         let p = Path::new(&source);
         if p.is_file() {
             recycle_file(&mut writer, p, &mut files_count, &options);

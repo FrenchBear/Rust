@@ -173,7 +173,7 @@ Autorecurse glob pattern transformation (active by default, use -noa[utorecurse]
 
         // Since we have non-standard long options, don't use getopt for options processing but a manual loop
         let mut args_iter = args.iter();
-        args_iter.next(); // Skip application eexecutable
+        args_iter.next(); // Skip application executable
         while let Some(arg) = args_iter.next() {
             if arg.starts_with('-') || arg.starts_with('/') {
                 // Options are case insensitive

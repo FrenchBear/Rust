@@ -27,7 +27,7 @@ pub fn read_text_file(path: &Path) -> Result<(Option<String>, &str), io::Error> 
     let mut buffer_full = Vec::new();
     let mut buffer_full_read = false;
 
-    // Check that string s doesn't contain a nul char and contains at least 90% of ASCII 32..127, CR, LF, TAB
+    // Check that string s doesn't contain a null char and contains at least 90% of ASCII 32..127, CR, LF, TAB
     // Type std::str::Chars<'_> is just an iterable on chars
     fn ok_string2(chars: std::str::Chars<'_>) -> bool {
         let mut acount = 0;
@@ -56,7 +56,7 @@ pub fn read_text_file(path: &Path) -> Result<(Option<String>, &str), io::Error> 
         let test_buffer = if encoding == UTF_8 {
             // Since we potentially truncated a UTF-8 sequence at the end, we may have to reduce buffer size to avoid a
             // truncated sequence that would render buffer invalid for UTF-8.
-            // A quick way is just en ensure that the buffer ends with a byte<128, any value >=128 could be in the middle
+            // A quick way is just to ensure that the buffer ends with a byte<128, any value >=128 could be in the middle
             // of a 2-4 bytes sequence. We could check if the sequence is complete or truncated, but the quick way is good enough.
             if n == 1000 {
                 let mut pa = 999;
@@ -72,10 +72,10 @@ pub fn read_text_file(path: &Path) -> Result<(Option<String>, &str), io::Error> 
                 &buffer_1000[..n]
             }
         } else if encoding == UTF_16LE {
-            // We have to check whether we truncated reading in the middle of a surrogate sequence when readind 1000 bytes max.
+            // We have to check whether we truncated reading in the middle of a surrogate sequence when reading 1000 bytes max.
             // Lead surrogate is 0xD800-0xDBFF (and tail surrogate is 0xDC00-0xDFFF), if the byte at index 998 is 0xD8, then
             // we cut a surrogate. Note that optional byte order header (0xFF, 0xFE) is two bytes long, so all UTF-16 words
-            // start at en even index.
+            // start at even index.
             if n == 1000 {
                 let mut pa = 998;
                 while pa > 0 && buffer_1000[pa] >= 0xD8 && buffer_1000[pa] <= 0xDB {

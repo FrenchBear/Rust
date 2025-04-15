@@ -292,7 +292,6 @@ fn process_folder(
         if fixit {
             logln(writer, &format!("  --> rename folder \"{new_name}\""));
             let newpath = pb.parent().unwrap().join(Path::new(&new_name));
-            //logln(pwriter, &format!("  --> \"{}\"", newpath.display()));
             match fs::rename(&pb, &newpath) {
                 Ok(_) => {
                     folders_stats.fix += 1;
@@ -331,7 +330,6 @@ fn process_file(p: &Path, files_stats: &mut Statistics, fixit: bool, writer: &mu
         if fixit {
             logln(writer, &format!("  --> rename file \"{new_name}\""));
             let newpath = p.parent().unwrap().join(Path::new(&new_name));
-            //logln(pwriter, &format!("  --> \"{}\"", newpath.display()));
             match fs::rename(p, &newpath) {
                 Ok(_) => files_stats.fix += 1,
                 Err(e) => logln(writer, &format!("*** Error {e}")), // Rename failed
@@ -344,7 +342,7 @@ fn check_basename(p: &Path, pt: &str, stats: &mut Statistics, writer: &mut LogWr
     let fp = p.display();
     let file = p.file_name();
     if file.is_none() {
-        // This is the case with network paths such as \\terazalt\photo, file_name() is None, that's normal
+        // This is the case with network paths such as \\teraz\photo, file_name() is None, that's normal
         return None;
     }
     let file = file.unwrap().to_str();
@@ -367,7 +365,7 @@ fn check_basename(p: &Path, pt: &str, stats: &mut Statistics, writer: &mut LogWr
     if !is_nfc(&file) {
         logln(writer, &format!("Non-normalized {pt} name {fp}"));
         stats.nnn += 1;
-        // Normalize it for the rest to avoind complaining on combining accents as invalid characters
+        // Normalize it for the rest to avoid complaining on combining accents as invalid characters
         file = file.nfc().collect();
     }
 
