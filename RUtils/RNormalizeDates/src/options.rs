@@ -27,13 +27,13 @@ impl Options {
     fn usage() {
         Options::header();
         eprintln!(
-            "\nUsage: {APP_NAME} [?|-?|-h|??] [-n] [-p] [-s #] [-v] source...
+            "\nUsage: {APP_NAME} [?|-?|-h|??] [-n] [-p] [-v] [-s #] source...
 ?|-?|-h  Show this message
 ??       Show advanced usage notes
 -n       Do not actually rename (no action)
 -p       Final pause
 -v       Verbose output
--s #     Only process segment # (starting at 1) delimited by ' - '
+-s #     Only process segment # (starting at 1) delimited by ' - '    *** NOT IMPLEMENTED YET
 source   folder containing PDF files (and recurse) or simple file, default: C:\\Downloads\\A_Trier\\!A_Trier_Revues\\*.pdf"
         );
     }
@@ -48,19 +48,22 @@ source   folder containing PDF files (and recurse) or simple file, default: C:\\
         let text =
 "Copyright ©2025 Pierre Violent\n
 Advanced usage notes\n--------------------\n
-Options -c (show count of matching lines) and -l (show matching file names only) can be used together to show matching lines count only for matching files.\n
-Glob supports recursive search without using option, for instance, C:\\Development\\GitVSTS\\**\\Net[7-9]\\**\\*.cs\n
-Only UTF-8, UTF-16 LE and Windows 1252 text files are currently supported, but automatic format detection using heuristics may not be always correct. Other formats are silently ignored.\n
-Glob crate pattern nules (option -1):
+
+Without argument, default folder is C:\\Downloads\\A_Trier\\!A_Trier_Revues\\**\\*.pdf
+
+Glob pattern rules:
 •   ? matches any single character.
 •   * matches any (possibly empty) sequence of characters.
 •   ** matches the current directory and arbitrary subdirectories. To match files in arbitrary subdiretories, use **\\*. This sequence must form a single path component, so both **a and b** are invalid and will result in an error.
 •   [...] matches any character inside the brackets. Character sequences can also specify ranges of characters, as ordered by Unicode, so e.g. [0-9] specifies any character between 0 and 9 inclusive. An unclosed bracket is invalid.
 •   [!...] is the negation of [...], i.e. it matches any characters not in the brackets.
-•   The metacharacters ?, *, [, ] can be matched by using brackets (e.g. [?]). When a ] occurs immediately following [ or [! then it is interpreted as being part of, rather then ending, the character set, so ] and NOT ] can be matched by []] and [!]] respectively. The - character can be specified inside a character sequence pattern by placing it at the start or the end, e.g. [abc-].\n
-MyGlob care rule patters (option -2, default): Include all above patterns, plus:
+•   The metacharacters ?, *, [, ] can be matched by using brackets (e.g. [?]). When a ] occurs immediately following [ or [! then it is interpreted as being part of, rather then ending, the character set, so ] and NOT ] can be matched by []] and [!]] respectively. The - character can be specified inside a character sequence pattern by placing it at the start or the end, e.g. [abc-].
 •   {choice1,choice2...}  match any of the comma-separated choices between braces. Can be nested, and include ?, * and character classes.
-•   Character classes [ ] accept regex syntax, see https://docs.rs/regex/latest/regex/#character-classes for character classes and escape sequences supported.";
+•   Character classes [ ] accept regex syntax such as [\\d] to match a single digit, see https://docs.rs/regex/latest/regex/#character-classes for character classes and escape sequences supported.
+
+Autorecurse glob pattern transformation is active:
+•   Constant pattern (no filter, no **) pointing to a folder: \\**\\* is appended at the end to search all files of all seubfolders.
+•   Patterns without ** and ending with a filter: \\** is inserted before final filter to find all matching files of all subfolders.";
 
         println!("{}", Self::format_text(text, width));
     }
@@ -157,6 +160,7 @@ MyGlob care rule patters (option -2, default): Include all above patterns, plus:
                         if let Ok(s) = segres {
                             if (1..5).contains(&s) {
                                 options.segment = s;
+                                eprint!("*** OPTION -S NOT IMPLEMENTED YET");
                                 continue;
                             }
                         }

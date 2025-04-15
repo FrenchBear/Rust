@@ -1,2 +1,2 @@
 cargo build --release
-COPY /Y target\release\rgrep.exe C:\Utils
+COPY /Y target\release\rnormalizedates.exe C:\Utils
