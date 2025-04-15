@@ -2,6 +2,7 @@
 // Regular expressions build and helpers
 //
 // 2024-15-04   PV      Moved to a separate file to reduce size of main.rs
+// 2025-04-16   PV      Better normalization of n°
 
 use regex::Regex;
 
@@ -141,7 +142,7 @@ impl DatePatterns {
         // Special patterns
         let re_date_ymd_head = Regex::new((String::from("(?i)") + "^ " + year + "[ -]" + "(0[1-9]|10|11|12)" + "[ -]" + day + " ").as_str()).unwrap();
         let re_date_ynm = Regex::new((String::from("(?i)") + year + r" +(Volume \d+ +)?№(\d+) +" + month).as_str()).unwrap();
-        let re_no = Regex::new(r"(?i)( n°? *\d+)").unwrap();
+        let re_no = Regex::new(r"(?i) n[o°]? *(\d+)").unwrap();
 
         let re_date_mymy = Regex::new((String::from("(?i)") + month + "[ -]+" + year + "[ à-]+" + month + "[ -]+" + year).as_str()).unwrap();
         let re_date_ymym = Regex::new((String::from("(?i)") + year + "[ -]+" + month + "[ -]+" + year + "[ -]+" + month).as_str()).unwrap();

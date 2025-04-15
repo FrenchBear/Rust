@@ -2,6 +2,7 @@
 // Test global transformation
 //
 // 2025-04-14   PV
+// 2025-04-16   PV      Better normalization of n°
 
 #![cfg(test)]
 
@@ -172,7 +173,7 @@ fn tests_transformations() {
     t(&dp, "What Hi-Fi France - Janvier 2025" ,"What Hi-Fi - 2025-01");
     t(&dp, "VTT Magazine - 02-03.2025" ,"VTT Magazine - 2025-02..03");
     t(&dp, "Cerveau___Psycho_-_Avril_2018" ,"Cerveau & Psycho - 2018-04");
-    t(&dp, "Cerveau & Psycho No.95 (Janvier  2018)" ,"Cerveau & Psycho No 95 (2018-01)");
+    t(&dp, "Cerveau & Psycho No.95 (Janvier  2018)" ,"Cerveau & Psycho n°95 (2018-01)");
     t(&dp, "Que Choisir - 12.2024" ,"Que Choisir - 2024-12");
     t(&dp, "Cerveau_Psycho_2020_01" ,"Cerveau & Psycho - 2020-01");
     t(&dp, "Cerveau___Psycho_-_Juillet-Ao_t_2020" ,"Cerveau & Psycho - 2020-07..08");
@@ -302,7 +303,7 @@ fn tests_transformations() {
     t(&dp, "Jeux Vidéo Magazine - 02.2025" ,"Jeux Vidéo Magazine - 2025-02");
     t(&dp, "BBC Wildlife 2024 №01 January 2025" ,"BBC Wildlife n°01 - 2024-01 - 2025");
     t(&dp, "L’Auto-Journal - Le guide - 01-02-03.2025" ,"Le guide de l'Auto-Journal - 2025-01..03");
-    t(&dp, "JV Le Mag - n112 - Décembre 2024" ,"JV Le Mag - n112 - 2024-12");
+    t(&dp, "JV Le Mag - n112 - Décembre 2024" ,"JV Le Mag - n°112 - 2024-12");
     t(&dp, "Geo Histoire - 01-02.2025" ,"Géo Histoire - 2025-01..02");
     t(&dp, "Moto Revue - 02.2025" ,"Moto Revue - 2025-02");
     t(&dp, "Détours en France - 02-03.2025" ,"Détours en France - 2025-02..03");

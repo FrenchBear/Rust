@@ -1,6 +1,7 @@
 // rnormalizedates: Rust version of NormalizeDates, Normalizes dates in filenames, replace 'January 2020' by '2020-01'
 //
 // 2025-04-12	PV      First version
+// 2025-04-16   PV      Better normalization of n°
 
 //#![allow(unused)]
 
@@ -33,7 +34,7 @@ use re::*;
 // Global constants
 
 const APP_NAME: &str = "rnormalizedates";
-const APP_VERSION: &str = "1.0.0";
+const APP_VERSION: &str = "1.0.1";
 
 // -----------------------------------
 // Main
@@ -167,10 +168,10 @@ fn apply_initial_transformations(stem_original: &str) -> String {
             stem = ireplace(&stem, " francais ", " ");
             update = true;
         }
-        if stem.contains(" N°") {
-            stem = stem.replace(" N°", " n°");
-            update = true;
-        }
+        // if stem.contains(" N°") {
+        //     stem = stem.replace(" N°", " n°");
+        //     update = true;
+        // }
 
         if !update {
             break;
@@ -189,10 +190,11 @@ fn apply_date_transformations(stem_original: &str, dp: &DatePatterns, verbose: b
     let mut trans: &'static str = "";
 
     // Protect n° so it won't interfere with date processing
+    // Note that US/UK № is not protected
     if let Some(caps) = dp.re_no.captures(&stem) {
         let nstart = caps.get(0).unwrap().start();
         let nlen = caps.get(0).unwrap().len();
-        stem = format!("{}‹{}›{}", &stem[..nstart], &caps[0], &stem[nstart + nlen..]);
+        stem = format!("{}‹ n°{}›{}", &stem[..nstart], &caps[1], &stem[nstart + nlen..]);
     }
 
     // If name starts with a ymd date, then move it to the end, and analyze remaining patterns
