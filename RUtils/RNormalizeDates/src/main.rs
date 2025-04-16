@@ -2,6 +2,7 @@
 //
 // 2025-04-12	PV      First version
 // 2025-04-16   PV      Better normalization of n°
+// 2025-04-16   PV      1.1 Final counts, DataBag, Implementation of option -S, improved filtering of HS
 
 //#![allow(unused)]
 
@@ -34,18 +35,27 @@ use re::*;
 // Global constants
 
 const APP_NAME: &str = "rnormalizedates";
-const APP_VERSION: &str = "1.0.1";
+const APP_VERSION: &str = "1.1.0";
 
 // -----------------------------------
 // Main
 
 // Dev tests
-#[allow(unused)]
-fn test_main() {
-    let dp = DatePatterns::new();
-    let mut writer = logging::new(true);
+// #[allow(unused)]
+// fn test_main() {
+//     let dp = DatePatterns::new();
+//     let mut writer = logging::new(true);
+//     let options = Options {..Default::default()};
+//     let mut b = DataBag {..Default::default()};
 
-    process_file(&mut writer, &PathBuf::from("Destination France - 03.04.05.2025.pdf"), &dp, false, true);
+//     process_file(&mut writer, &PathBuf::from("Destination France - 03.04.05.2025.pdf"), &dp, &options, &mut b);
+// }
+
+#[derive(Debug, Default)]
+struct DataBag {
+    files_count: usize,
+    files_renamed_count: usize,
+    errors_count: usize,
 }
 
 fn main() {
@@ -61,7 +71,7 @@ fn main() {
 
     // Prepare log writer
     let mut writer = logging::new(true);
-
+    let mut b = DataBag { ..Default::default() };
     let start = Instant::now();
 
     let date_patterns = DatePatterns::new();
@@ -73,7 +83,7 @@ fn main() {
                 for ma in gs.explore_iter() {
                     match ma {
                         MyGlobMatch::File(pb) => {
-                            process_file(&mut writer, &pb, &date_patterns, !options.no_action, options.verbose);
+                            process_file(&mut writer, &pb, &date_patterns, &options, &mut b);
                         }
 
                         // We ignore matching directories in rgrep, we only look for files
@@ -92,6 +102,18 @@ fn main() {
     }
 
     let duration = start.elapsed();
+    log(&mut writer, format!("{} file(s) found", b.files_count).as_str());
+    if b.files_renamed_count > 0 {
+        log(&mut writer, format!(", {} renamed", b.files_renamed_count).as_str());
+        if options.no_action {
+            log(&mut writer, " (no action)");
+        }
+    }
+    if b.errors_count > 0 {
+        log(&mut writer, format!(", {} error(s)", b.errors_count).as_str());
+    }
+    logln(&mut writer, "");
+
     logln(&mut writer, format!("Duration: {:.3}s", duration.as_secs_f64()).as_str());
 
     if options.final_pause {
@@ -102,23 +124,50 @@ fn main() {
     }
 }
 
+fn process_file(lw: &mut LogWriter, pb: &Path, dp: &DatePatterns, opt: &Options, b: &mut DataBag) {
+    b.files_count += 1;
 
-fn process_file(lw: &mut LogWriter, pb: &Path, dp: &DatePatterns, do_it: bool, verbose: bool) {
     let filename_original = pb.file_name().unwrap().to_string_lossy().into_owned();
     let stem_original = pb.file_stem().expect("No stem??").to_string_lossy().into_owned();
     let extension = pb.extension().unwrap().to_string_lossy().to_lowercase();
 
-    let mut stem = apply_initial_transformations(&stem_original);
-    stem = apply_date_transformations(&stem, dp, verbose);
-    stem = apply_final_transformations(&stem) + "." + extension.as_str();
+    let filename_new = if opt.segment > 0 {
+        let mut ts = stem_original.split(" - ").collect::<Vec<&str>>();
+        if opt.segment > ts.len() {
+            filename_original.clone()
+        } else {
+            let mut seg = apply_initial_transformations(&ts[opt.segment - 1]);
+            seg = apply_date_transformations(&seg, dp, opt.verbose, true);
+            seg = apply_final_transformations(&seg);
+            println!("Final: «{}»", seg);
+            ts[opt.segment - 1] = seg.as_str();
 
-    if filename_original != stem {
-        logln(lw, format!("{:70} {}", filename_original.nfc().collect::<String>(), stem).as_str());
+            ts.join(" - ") + "." + extension.as_str()
+        }
+    } else {
+        let mut stem = apply_initial_transformations(&stem_original);
+        stem = apply_date_transformations(&stem, dp, opt.verbose, false);
+        stem = apply_final_transformations(&stem) + "." + extension.as_str();
 
-        if do_it {
-            let newpb = pb.parent().unwrap().to_path_buf().join(PathBuf::from(stem));
+        stem
+    };
+
+    if filename_original != filename_new {
+        logln(
+            lw,
+            format!("{:70} {}", filename_original.nfc().collect::<String>(), filename_new).as_str(),
+        );
+        b.files_renamed_count += 1;
+
+        if !opt.no_action {
+            let newpb = pb.parent().unwrap().to_path_buf().join(PathBuf::from(filename_new));
             if let Err(e) = fs::rename(pb, &newpb) {
-                logln( lw, format!("*** Error nenaming \"{}\" to \"{}\":\n{}", pb.display(), newpb.display(), e).as_str(), );
+                logln(
+                    lw,
+                    format!("*** Error nenaming \"{}\" to \"{}\":\n{}", pb.display(), newpb.display(), e).as_str(),
+                );
+                b.files_renamed_count -= 1;
+                b.errors_count += 1;
             }
         }
     } else {
@@ -181,7 +230,7 @@ fn apply_initial_transformations(stem_original: &str) -> String {
     stem
 }
 
-fn apply_date_transformations(stem_original: &str, dp: &DatePatterns, verbose: bool) -> String {
+fn apply_date_transformations(stem_original: &str, dp: &DatePatterns, verbose: bool, segment_mode: bool) -> String {
     let mut stem = stem_original.to_string();
 
     let mut start = 0;
@@ -198,7 +247,7 @@ fn apply_date_transformations(stem_original: &str, dp: &DatePatterns, verbose: b
     }
 
     // If name starts with a ymd date, then move it to the end, and analyze remaining patterns
-    if let Some(caps) = dp.re_date_ymd_head.captures(&stem) {
+    if let (false, Some(caps)) = (segment_mode, dp.re_date_ymd_head.captures(&stem)) {
         let cf = &caps[0];
         let y = get_year_num(&caps[1]);
         let m = get_month_num(&caps[2]);
@@ -367,8 +416,13 @@ fn apply_date_transformations(stem_original: &str, dp: &DatePatterns, verbose: b
     }
 
     if !res.is_empty() {
-        let p = if res.starts_with("n°") { "" } else { "- " };
-        stem = format!("{} {p}{} - {}", &stem[..start], res, &stem[start + len..]);
+        if segment_mode {
+            // In segment mode, we don't add - around dates, just do the conversion
+            stem = format!("{} {} {}", &stem[..start], res, &stem[start + len..])
+        } else {
+            let p = if res.starts_with("n°") { "" } else { "- " };
+            stem = format!("{} {p}{} - {}", &stem[..start], res, &stem[start + len..]);
+        }
     }
 
     if verbose {
@@ -432,6 +486,10 @@ fn apply_final_transformations(stem_original: &str) -> String {
             stem = (&stem[1..]).into();
             update = true;
         }
+        if stem.starts_with(" -") {
+            stem = (&stem[2..]).into();
+            update = true;
+        }
         if stem.ends_with("- ") {
             stem = (&stem[..stem.len() - 2]).into();
             update = true;
@@ -446,8 +504,11 @@ fn apply_final_transformations(stem_original: &str) -> String {
         }
     }
 
+    stem = ireplace(&stem, " - n°", " n°");
     stem = ireplace(&stem, "Hors-Série", "HS");
     stem = ireplace(&stem, "Hors-S rie", "HS");
+    stem = ireplace(&stem, " - HS", " HS");
+    stem = ireplace(&stem, " HS n°", " HS ");
     stem = ireplace(&stem, "01net", "01net");
     stem = ireplace(&stem, "4x4 Magazine France", "4x4 Magazine");
     stem = ireplace(&stem, "60 Millions de Consommateurs", "60M de consommateurs");
@@ -458,7 +519,7 @@ fn apply_final_transformations(stem_original: &str) -> String {
     stem = ireplace(&stem, "Questions & Réponses", "Questions Réponses");
     stem = ireplace(&stem, "Auto Moto France", "Auto Moto");
     stem = ireplace(&stem, "Auto Plus - Guide de L'Acheteur", "Auto Plus Guide de l'acheteur");
-    stem = ireplace(&stem, "Auto Plus - HS - Crossovers-Suv", "Auto Plus Crossovers");
+    stem = ireplace(&stem, "Auto Plus HS - Crossovers-Suv", "Auto Plus Crossovers");
     stem = ireplace(&stem, "Auto Plus Hors-S rie Crossovers Suv", "Auto Plus Crossovers");
     stem = ireplace(&stem, "Cerveau & Psycho", "Cerveau & Psycho");
     stem = ireplace(&stem, "Cerveau Psycho", "Cerveau & Psycho");
@@ -484,15 +545,19 @@ fn apply_final_transformations(stem_original: &str) -> String {
     stem = ireplace(&stem, "Le Monde - Histoire & Civilisations", "Histoire & Civilisations");
     stem = ireplace(&stem, "Le Monde Histoire Civilisations", "Histoire & Civilisations");
     stem = ireplace(&stem, "Le Monde Histoire & Civilisations", "Histoire & Civilisations");
+    stem = ireplace(&stem, "Les cahiers de Science & Vie", "Les cahiers de Science & Vie");
+    stem = ireplace(&stem, "Les cahiers de Science Vie", "Les cahiers de Science & Vie");
     stem = ireplace(&stem, "science et vie", "Science & Vie");
     stem = ireplace(&stem, "Les Collections de L'Histoire", "Les collections de L'Histoire");
     stem = ireplace(&stem, "Magazine CERVEAU et PSYCHO", "Cerveau & Psycho");
     stem = ireplace(&stem, "Merci pour l'info", "Merci pour l'info");
     stem = ireplace(&stem, " N ", " n°");
     stem = ireplace(&stem, "QC pratique", "Que Choisir Pratique");
-    stem = ireplace(&stem, "Que choisir - HS Budgets", "Que choisir Budgets");
-    stem = ireplace(&stem, "Que Choisir Hors-Série Budgets", "Que choisir Budgets");
+    stem = ireplace(&stem, "Que choisir", "Que Choisir");
+    stem = ireplace(&stem, "Que choisir HS Budgets", "Que Choisir Budgets");
+    stem = ireplace(&stem, "Que Choisir Hors-Série Budgets", "Que Choisir Budgets");
     stem = ireplace(&stem, "Que Choisir Sante", "Que Choisir Santé");
+    stem = ireplace(&stem, "Que Choisir Sant ", "Que Choisir Santé ");
     stem = ireplace(&stem, "Que Choisir Sant ", "Que Choisir Santé ");
     stem = ireplace(&stem, "Science & Vie - Guerres & Histoire", "Science & Vie Guerres & Histoire");
     stem = ireplace(&stem, "Science Vie Guerres Histoire", "Science & Vie Guerres & Histoire");
@@ -513,4 +578,3 @@ fn apply_final_transformations(stem_original: &str) -> String {
 
     stem
 }
-

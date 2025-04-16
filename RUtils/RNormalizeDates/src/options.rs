@@ -10,8 +10,8 @@ use super::*;
 #[derive(Debug, Default)]
 pub struct Options {
     pub sources: Vec<String>,
+    pub segment: usize,
     pub final_pause: bool,
-    pub segment: u8,
     pub no_action: bool,
     pub verbose: bool,
 }
@@ -33,7 +33,7 @@ impl Options {
 -n       Do not actually rename (no action)
 -p       Final pause
 -v       Verbose output
--s #     Only process segment # (starting at 1) delimited by ' - '    *** NOT IMPLEMENTED YET
+-s #     Only process segment # (starting at 1) delimited by ' - '
 source   folder containing PDF files (and recurse) or simple file, default: C:\\Downloads\\A_Trier\\!A_Trier_Revues\\*.pdf"
         );
     }
@@ -156,15 +156,14 @@ Autorecurse glob pattern transformation is active:
                         if options.segment > 0 {
                             return Err("Option -s # can only be used once".into());
                         }
-                        let segres = arg.parse::<u8>();
+                        let segres = arg.parse::<usize>();
                         if let Ok(s) = segres {
-                            if (1..5).contains(&s) {
+                            if (1..=5).contains(&s) {
                                 options.segment = s;
-                                eprint!("*** OPTION -S NOT IMPLEMENTED YET");
                                 continue;
                             }
                         }
-                        return Err("Option -s requires a numerical argument in 1..5".into());
+                        return Err("Option -s requires a numerical argument in [1..5]".into());
                     }
 
                     _ => unreachable!(),
@@ -193,4 +192,3 @@ Autorecurse glob pattern transformation is active:
         Ok(options)
     }
 }
-
