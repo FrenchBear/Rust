@@ -55,11 +55,11 @@ const FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS: u32 = 0x00400000;
 #[repr(u32)]
 #[allow(non_camel_case_types)]
 pub enum ReparseType {
-    NO_REPARSE = 0,
-    STUB = 1,               // Not actually a reparse point, but acts like one...  For OneDrive stubs
-    SYMLINK = 2,
-    JUNCTION = 3,
-    OTHER = 4,
+    NoReparse = 0,
+    Stub = 1,               // Not actually a reparse point, but acts like one...  For OneDrive stubs
+    SymLink = 2,
+    Junction = 3,
+    Other = 4,
 }
 
 #[repr(C)]
@@ -84,9 +84,9 @@ pub fn reparse_type(path: &Path) -> Result<ReparseType, String> {
     if attributes & FILE_ATTRIBUTE_REPARSE_POINT.0 == 0 {
     // OneDrive stubs have flag FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS = 0x00400000
     if attributes & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS != 0 {
-            return Ok(ReparseType::STUB);
+            return Ok(ReparseType::Stub);
         }
-        return Ok(ReparseType::NO_REPARSE); // Not a reparse point
+        return Ok(ReparseType::NoReparse); // Not a reparse point
     }
 
     // Open file handle to query reparse data
@@ -130,8 +130,8 @@ pub fn reparse_type(path: &Path) -> Result<ReparseType, String> {
     let tag = reparse_data.reparse_tag;
 
     match tag {
-        IO_REPARSE_TAG_SYMLINK => Ok(ReparseType::SYMLINK),
-        IO_REPARSE_TAG_MOUNT_POINT => Ok(ReparseType::JUNCTION),
-        _ => Ok(ReparseType::OTHER),
+        IO_REPARSE_TAG_SYMLINK => Ok(ReparseType::SymLink),
+        IO_REPARSE_TAG_MOUNT_POINT => Ok(ReparseType::Junction),
+        _ => Ok(ReparseType::Other),
     }
 }

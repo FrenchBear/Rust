@@ -1,6 +1,7 @@
 // recycle: Delete files and folders to trash
 //
 // 2025-04-03	PV      First version
+// 2025-04-17	PV      1.1 Fxed logic errors (return statement misplaced in embedded is blocks)
 
 #![allow(unused)]
 
@@ -30,7 +31,7 @@ use reparse::*;
 // Globals
 
 const APP_NAME: &str = "recycle";
-const APP_VERSION: &str = "1.0.0";
+const APP_VERSION: &str = "1.1.0";
 
 // ==============================================================================================
 // Options processing
@@ -167,8 +168,8 @@ fn main() {
             if gs.is_constant() {
                 if !options.silent {
                     logln(&mut writer, format!("*** Source {source} is neither a file nor a dir, ignored").as_str());
-                    continue;
                 }
+                continue;
             }
 
             for ma in gs.explore_iter() {
@@ -183,10 +184,8 @@ fn main() {
                     }
                 };
 
-                if problem {
-                    if !options.silent {
-                        logln(&mut writer, format!("*** Exploration of glob {source} is stopped").as_str());
-                    }
+                if problem && !options.silent {
+                    logln(&mut writer, format!("*** Exploration of glob {source} is stopped").as_str());
                 }
             }
         }
@@ -235,21 +234,21 @@ fn recycle_dir(writer: &mut LogWriter, path: &Path, dirs_count: &mut i32, option
                     writer,
                     format!("*** Can't recycle dir {} located on a remote drive", quoted_path(path)).as_str(),
                 );
-                return true; // Block glob processing, since all other dirs are on remote drive
             }
+            return true; // Block glob processing, since all other dirs are on remote drive
         }
     }
 
     if let Ok(rt) = reparse_type(path) {
-        if rt == ReparseType::JUNCTION || rt == ReparseType::SYMLINK || rt == ReparseType::STUB {
+        if rt == ReparseType::Junction || rt == ReparseType::SymLink || rt == ReparseType::Stub {
             if !options.silent {
                 logln(
                     writer,
                     format!(
                         "*** Can't recycle dir {} reparse point {}",
-                        if rt == ReparseType::JUNCTION {
+                        if rt == ReparseType::Junction {
                             "JUNCTION"
-                        } else if rt == ReparseType::SYMLINK {
+                        } else if rt == ReparseType::SymLink {
                             "SYMLINK"
                         } else {
                             "STUB"
@@ -300,8 +299,8 @@ fn recycle_file(writer: &mut LogWriter, path: &Path, files_count: &mut i32, opti
                     writer,
                     format!("*** Can't recycle file {} located on a remote drive", quoted_path(path)).as_str(),
                 );
-                return true; // Block glob processing, since all other files are on remote drive
             }
+            return true; // Block glob processing, since all other files are on remote drive
         }
     }
 
@@ -309,7 +308,7 @@ fn recycle_file(writer: &mut LogWriter, path: &Path, files_count: &mut i32, opti
     // OneDrive Stubs are deleted locally AND on OneDrive, they're not copied to local recycle.bin, but in
     // outlook recycle.bin.  For security, let refuse to delete them by default
     if let Ok(rt) = reparse_type(path) {
-        if rt == ReparseType::STUB {
+        if rt == ReparseType::Stub {
             if !options.silent {
                 logln(writer, format!("*** Can't recycle file stub {}", quoted_path(path)).as_str());
             }
