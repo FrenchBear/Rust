@@ -12,7 +12,7 @@ use regex as _;
 fn main() {
     println!("MyGlob lib version: {}\n", MyGlobSearch::version());
 
-    test_myglob(r"C:\Temp\*.log", true, &vec!["d2"], 1);
+    test_myglob(r"C:\Temp\*.log", true, &["d2"], 1);
 }
 
 // Entry point for testing

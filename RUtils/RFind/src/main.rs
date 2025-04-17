@@ -140,7 +140,7 @@ Autorecurse glob pattern transformation (active by default, use -noa[utorecurse]
         for word in line.split_whitespace() {
             let word_length = word.len();
 
-            if current_line_length + word_length + 1 <= width {
+            if current_line_length + word_length  < width {
                 if !result.is_empty() {
                     result.push(' ');
                     current_line_length += 1; // Add space
@@ -203,7 +203,7 @@ Autorecurse glob pattern transformation (active by default, use -noa[utorecurse]
                                 _ => return Err(format!("Invalid argument {search_type} for pption -type, valid arguments are f or d").into()),
                             }
                         } else {
-                            return Err(format!("Option -type requires an argument f or d").into());
+                            return Err("Option -type requires an argument f or d".into());
                         }
                     }
 

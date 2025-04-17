@@ -51,34 +51,28 @@ impl Action for ActionPrint {
             } else {
                 logln(lw, path.display().to_string().as_str());
             }
-        } else {
-            if self.detailed_output {
-                match path.metadata() {
-                    Ok(meta) => {
-                        // Last modified time formatting
-                        let modified_time = meta.modified().unwrap(); // Get last modified time
-                        let datetime_utc: DateTime<Utc> = DateTime::<Utc>::from(modified_time);
-                        let datetime_local = datetime_utc.with_timezone(&Local);
-                        let formatted_time = datetime_local.format("%d/%m/%Y %H:%M:%S");
+        } else if self.detailed_output {
+            match path.metadata() {
+                Ok(meta) => {
+                    // Last modified time formatting
+                    let modified_time = meta.modified().unwrap(); // Get last modified time
+                    let datetime_utc: DateTime<Utc> = DateTime::<Utc>::from(modified_time);
+                    let datetime_local = datetime_utc.with_timezone(&Local);
+                    let formatted_time = datetime_local.format("%d/%m/%Y %H:%M:%S");
 
-                        logln(lw, format!("{:>19}   {:<15} {}\\", formatted_time, "<DIR>", path.display()).as_str());
-                    }
-                    Err(e) => {
-                        logln(lw, format!("*** Error retrieving metadata for dir {}: {e}", path.display()).as_str());
-                    }
+                    logln(lw, format!("{:>19}   {:<15} {}\\", formatted_time, "<DIR>", path.display()).as_str());
                 }
-            } else {
-                logln(lw, (path.display().to_string() + "\\").as_str());
+                Err(e) => {
+                    logln(lw, format!("*** Error retrieving metadata for dir {}: {e}", path.display()).as_str());
+                }
             }
+        } else {
+            logln(lw, (path.display().to_string() + "\\").as_str());
         }
     }
 
     fn name(&self) -> &'static str {
-        if self.detailed_output {
-            "Dir"
-        } else {
-            "Print"
-        }
+        if self.detailed_output { "Dir" } else { "Print" }
     }
 }
 

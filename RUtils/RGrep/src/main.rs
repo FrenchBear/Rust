@@ -131,7 +131,7 @@ MyGlob care rule patters (option -2, default): Include all above patterns, plus:
         for word in line.split_whitespace() {
             let word_length = word.len();
 
-            if current_line_length + word_length + 1 <= width {
+            if current_line_length + word_length < width {
                 if !result.is_empty() {
                     result.push(' ');
                     current_line_length += 1; // Add space
@@ -426,11 +426,9 @@ fn process_path(re: &Regex, path: &Path, options: &Options) {
             if options.verbose == 1 {
                 println!("{APP_NAME}: ignored non-text file {}", path.display());
             }
-            return;
         }
         Err(e) => {
             eprintln!("*** Error reading file {}: {}", path.display(), e);
-            return;
         }
     }
 }
