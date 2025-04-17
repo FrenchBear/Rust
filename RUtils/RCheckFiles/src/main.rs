@@ -341,10 +341,8 @@ fn process_file(p: &Path, files_stats: &mut Statistics, fixit: bool, writer: &mu
 fn check_basename(p: &Path, pt: &str, stats: &mut Statistics, writer: &mut LogWriter, pconfusables: &Confusables) -> Option<String> {
     let fp = p.display();
     let file = p.file_name();
-    if file.is_none() {
-        // This is the case with network paths such as \\teraz\photo, file_name() is None, that's normal
-        return None;
-    }
+    file?;  // file is None with network paths such as \\teraz\photo, that's normal, return None
+
     let file = file.unwrap().to_str();
     if file.is_none() {
         stats.err += 1;
@@ -468,7 +466,7 @@ pub fn is_balanced(s: &str) -> bool {
                 current_state = c;
             }
             ')' | ']' | '}' | '»' | '›' => {
-                if stack.len() == 0 {
+                if stack.is_empty() {
                     return false;
                 }
 
