@@ -4,7 +4,8 @@
 
 #![allow(dead_code, unused_variables)]
 
-trait Person {
+// Debug is used as a supertrait of Person, do a struct implementing Person must implement debug (or use #[derive(Debug)])
+trait Person: core::fmt::Debug {
     fn name(&self) -> String;
 }
 
@@ -36,6 +37,7 @@ fn comp_sci_student_greeting(student: &dyn CompSciStudent) -> String {
 
 // Implem
 
+#[derive(Debug)]
 struct Etudiant {
     name: String,
     university: String,
@@ -81,4 +83,72 @@ impl CompSciStudent for Etudiant {
 fn main() {
     let joe = Etudiant::new("Joe", "Harvard", "joe.banana@watermelon.com", "Rust");
     println!("{}", comp_sci_student_greeting(&joe));
+
+    println!();
+    test_chien();
+}
+
+// -----------------------
+// Disambiguating overlapping traits (having member functions with the same name)
+// Since each trait is implemented separately, there's no ambiguity during definition
+
+trait Genre {
+    fn name(&self) -> String;
+}
+
+trait Espèce {
+    fn name(&self) -> String;
+}
+
+trait SousEspèce {
+    fn name(&self) -> String;
+}
+
+struct Animal {
+    name: String,
+    sous_espèce: String,
+    espèce: String,
+    genre: String,
+}
+
+impl Animal {
+    fn name(&self) -> String {
+        self.name.clone()
+    }
+}
+
+impl Genre for Animal {
+    fn name(&self) -> String {
+        self.genre.clone()
+    }
+}
+
+impl Espèce for Animal {
+    fn name(&self) -> String {
+        self.espèce.clone()
+    }
+}
+
+impl SousEspèce for Animal {
+    fn name(&self) -> String {
+        self.sous_espèce.clone()
+    }
+}
+
+fn test_chien() {
+    let m = Animal {
+        name: "Médor".into(),
+        genre: "Canis".to_string(),
+        espèce: "Canis lupus".to_string(),
+        sous_espèce: "Canis lupus familiaris".to_string(),
+    };
+
+    // There are multiple methods name()
+    println!("Animal {}:", m.name()); // Be default, it's name() from base type Animal
+    // type cast
+    println!("  Genre:       {}", <Animal as Genre>::name(&m));
+    println!("  Espèce:      {}", <Animal as Espèce>::name(&m));
+    // variable cast:
+    let se: Box<dyn SousEspèce> = Box::new(m);
+    println!("  Sous-espèce: {}", se.name());
 }
