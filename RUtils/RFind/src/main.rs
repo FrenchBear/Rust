@@ -354,25 +354,21 @@ fn main() {
         for ma in gs.1.explore_iter() {
             match ma {
                 MyGlobMatch::File(pb) => {
-                    if options.search_files {
-                        if !options.isempty || is_file_empty(&pb) {
-                            files_count += 1;
-                            for ba in actions.iter() {
-                                (**ba).action(&mut writer, &pb, options.noaction, options.verbose);
-                            }
-                        }
-                    }
-                }
-
-                MyGlobMatch::Dir(pb) => {
-                    if options.search_dirs {
-                        if !options.isempty || !is_dir_empty(&pb) {
-                        dirs_count += 1;
+                    if options.search_files && (!options.isempty || is_file_empty(&pb)) {
+                        files_count += 1;
                         for ba in actions.iter() {
                             (**ba).action(&mut writer, &pb, options.noaction, options.verbose);
                         }
                     }
                 }
+
+                MyGlobMatch::Dir(pb) => {
+                    if options.search_dirs && (!options.isempty || !is_dir_empty(&pb)) {
+                        dirs_count += 1;
+                        for ba in actions.iter() {
+                            (**ba).action(&mut writer, &pb, options.noaction, options.verbose);
+                        }
+                    }
                 }
 
                 MyGlobMatch::Error(err) => {
