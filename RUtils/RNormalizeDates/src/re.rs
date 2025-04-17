@@ -123,7 +123,7 @@ impl DatePatterns {
         // Prepare regex
         // Note: \b is a word-limit anchor, but backspace in a [class]
         let mut month = String::new();
-        let mut months_sorted = MONTHS.clone();
+        let mut months_sorted = MONTHS.to_vec();
         months_sorted.sort_by_key(|k| -(k.0.len() as i32));
         for &(month_name, _) in months_sorted.iter() {
             month.push_str(if month.is_empty() { r"\b(" } else { "|" });

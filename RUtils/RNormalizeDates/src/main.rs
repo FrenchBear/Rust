@@ -136,7 +136,7 @@ fn process_file(lw: &mut LogWriter, pb: &Path, dp: &DatePatterns, opt: &Options,
         if opt.segment > ts.len() {
             filename_original.clone()
         } else {
-            let mut seg = apply_initial_transformations(&ts[opt.segment - 1]);
+            let mut seg = apply_initial_transformations(ts[opt.segment - 1]);
             seg = apply_date_transformations(&seg, dp, opt.verbose, true);
             seg = apply_final_transformations(&seg);
             println!("Final: «{}»", seg);
@@ -171,7 +171,7 @@ fn process_file(lw: &mut LogWriter, pb: &Path, dp: &DatePatterns, opt: &Options,
             }
         }
     } else {
-        logln(lw, format!("{}", filename_original).as_str());
+        logln(lw, filename_original.as_str());
     }
 }
 
@@ -255,9 +255,7 @@ fn apply_date_transformations(stem_original: &str, dp: &DatePatterns, verbose: b
         // Special case, generate directly new version of stem without res intermediate
         stem = format!(" {}- {}-{}-{:02} ", &stem[cf.len()..], y, get_month_name(m), d);
         trans = "ymd_head";
-    } else if let Some(_) = dp.re_date_ymd_std.captures(&stem) {
-        // Already standard date
-    } else if let Some(_) = dp.re_date_ymm_std.captures(&stem) {
+    } else if dp.re_date_ymd_std.captures(&stem).is_some() || dp.re_date_ymm_std.captures(&stem).is_some() {
         // Already standard date
     } else if let Some(caps) = dp.re_date_ynm.captures(&stem) {
         start = caps.get(0).unwrap().start();

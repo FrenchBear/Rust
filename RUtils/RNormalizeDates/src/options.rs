@@ -88,7 +88,7 @@ Autorecurse glob pattern transformation is active:
         for word in line.split_whitespace() {
             let word_length = word.len();
 
-            if current_line_length + word_length + 1 <= width {
+            if current_line_length + word_length  < width {
                 if !result.is_empty() {
                     result.push(' ');
                     current_line_length += 1; // Add space
