@@ -8,6 +8,8 @@
 // 2025-03-29   PV      1.2.2   Option -2 is now default; Rename rgrep
 // 2025-04-01   PV      1.3.0   read_text_file_2, faster to detect text encoding
 // 2025-04-08   PV      1.4.0   When stdout is redirected, don't use colors (atty crate)
+// 2025-04-18   PV      1.4.1   Only check help and ? on first position in command line; more extended help
+// 2025-04-18   PV      1.5.0   End of glob crate and options -1/-2
 
 // standard library imports
 use std::error::Error;
@@ -18,7 +20,6 @@ use std::time::Instant;
 
 // external crates imports
 use getopt::Opt;
-use glob::{MatchOptions, glob_with};
 use myglob::{MyGlobMatch, MyGlobSearch};
 use regex::Regex;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
@@ -37,7 +38,7 @@ use decode_encoding::*;
 // Global constants
 
 const APP_NAME: &str = "rgrep";
-const APP_VERSION: &str = "1.4.0";
+const APP_VERSION: &str = "1.5.0";
 
 // ==============================================================================================
 // Options processing
@@ -50,9 +51,8 @@ pub struct Options {
     ignore_case: bool,
     whole_word: bool,
     fixed_string: bool,
-    recurse: bool,
+    autorecurse: bool,
     show_path: bool,
-    search_create: u8, // 1=Glob, 2=MyGlob
     out_level: u8, // 0: normal output, 1: (-l) matching filenames only, 2: (-c) filenames and matching lines count, 3: (-c -l) only matching filenames and matching lines count
     verbose: u8,
 }
@@ -68,14 +68,13 @@ impl Options {
     fn usage() {
         Options::header();
         eprintln!(
-            "\nUsage: {APP_NAME} [?|-?|-h|??] [-1|-2] [-i] [-w] [-F] [-r] [-v] [-c] [-l] pattern source...
+            "\nUsage: {APP_NAME} [?|-?|-h|??] [-i] [-w] [-F] [-r] [-v] [-c] [-l] pattern source...
 ?|-?|-h  Show this message
 ??       Show advanced usage notes
 -i       Ignore case during search
--1|-2    For glob search, -1: Use glob crate, -2: Use MyGlob crate (default)
 -w       Whole word search
--F       Fixed string search (no regexp interpretation)
--r       Recurse search in subfolders (add **/ ahead of glob not containing /)
+-F       Fixed string search (no regexp interpretation), also for patterns starting with - ? or help
+-r       Use autorecurse, see advanced help
 -c       Suppress normal output, show count of matching lines for each file
 -l       Suppress normal output, show matching file names only
 -v       Verbose output
@@ -93,20 +92,26 @@ source   File or folder where to search, glob syntax supported"
         };
         let text =
 "Copyright ©2025 Pierre Violent\n
-Advanced usage notes\n--------------------\n
-Options -c (show count of matching lines) and -l (show matching file names only) can be used together to show matching lines count only for matching files.\n
-Glob supports recursive search without using option, for instance, C:\\Development\\GitVSTS\\**\\Net[7-9]\\**\\*.cs\n
-Only UTF-8, UTF-16 LE and Windows 1252 text files are currently supported, but automatic format detection using heuristics may not be always correct. Other formats are silently ignored.\n
-Glob crate pattern nules (option -1):
+Advanced usage notes\n--------------------
+
+Options -c (show count of matching lines) and -l (show matching file names only) can be used together to show matching lines count only for matching files.
+
+To search for help or ?, use option -F: rgrep -F help C:\\Sources\\**\\*.rs
+To search for a string containing double quotes, surround string by double quotes, and double individual double quotes inside. To search for \"help\": rgrep \"\"\"help\"\"\" C:\\Sources\\**\\*.rs
+
+Glob pattern rules:
 •   ? matches any single character.
 •   * matches any (possibly empty) sequence of characters.
-•   ** matches the current directory and arbitrary subdirectories. To match files in arbitrary subdiretories, use **\\*. This sequence must form a single path component, so both **a and b** are invalid and will result in an error.
+•   ** matches the current directory and arbitrary subdirectories. To match files in arbitrary subdirectories, use **\\*. This sequence must form a single path component, so both **a and b** are invalid and will result in an error.
 •   [...] matches any character inside the brackets. Character sequences can also specify ranges of characters, as ordered by Unicode, so e.g. [0-9] specifies any character between 0 and 9 inclusive. An unclosed bracket is invalid.
 •   [!...] is the negation of [...], i.e. it matches any characters not in the brackets.
-•   The metacharacters ?, *, [, ] can be matched by using brackets (e.g. [?]). When a ] occurs immediately following [ or [! then it is interpreted as being part of, rather then ending, the character set, so ] and NOT ] can be matched by []] and [!]] respectively. The - character can be specified inside a character sequence pattern by placing it at the start or the end, e.g. [abc-].\n
-MyGlob care rule patters (option -2, default): Include all above patterns, plus:
+•   The metacharacters ?, *, [, ] can be matched by using brackets (e.g. [?]). When a ] occurs immediately following [ or [! then it is interpreted as being part of, rather then ending, the character set, so ] and NOT ] can be matched by []] and [!]] respectively. The - character can be specified inside a character sequence pattern by placing it at the start or the end, e.g. [abc-].
 •   {choice1,choice2...}  match any of the comma-separated choices between braces. Can be nested, and include ?, * and character classes.
-•   Character classes [ ] accept regex syntax, see https://docs.rs/regex/latest/regex/#character-classes for character classes and escape sequences supported.";
+•   Character classes [ ] accept regex syntax such as [\\d] to match a single digit, see https://docs.rs/regex/latest/regex/#character-classes for character classes and escape sequences supported.
+
+Autorecurse glob pattern transformation (option -r):
+•   Constant pattern (no filter, no **) pointing to a folder: \\**\\* is appended at the end to search all files of all subfolders.
+•   Patterns without ** and ending with a filter: \\** is inserted before final filter to find all matching files of all subfolders.";
 
         println!("{}", Self::format_text(text, width));
     }
@@ -160,7 +165,7 @@ MyGlob care rule patters (option -2, default): Include all above patterns, plus:
     fn new() -> Result<Options, Box<dyn Error>> {
         let mut args: Vec<String> = std::env::args().collect();
         if args.len() > 1 {
-            if args[1].to_lowercase() == "help" {
+            if args[1] == "?" || args[1].to_lowercase() == "help" {
                 Self::usage();
                 return Err("".into());
             }
@@ -171,10 +176,7 @@ MyGlob care rule patters (option -2, default): Include all above patterns, plus:
             }
         }
 
-        let mut options = Options {
-            search_create: 2,
-            ..Default::default()
-        };
+        let mut options = Options { ..Default::default() };
         let mut opts = getopt::Parser::new(&args, "h?12iwFrvcl");
 
         loop {
@@ -184,14 +186,6 @@ MyGlob care rule patters (option -2, default): Include all above patterns, plus:
                     Opt('h', None) | Opt('?', None) => {
                         Self::usage();
                         return Err("".into());
-                    }
-
-                    Opt('1', None) => {
-                        options.search_create = 1;
-                    }
-
-                    Opt('2', None) => {
-                        options.search_create = 2;
                     }
 
                     Opt('i', None) => {
@@ -207,7 +201,7 @@ MyGlob care rule patters (option -2, default): Include all above patterns, plus:
                     }
 
                     Opt('r', None) => {
-                        options.recurse = true;
+                        options.autorecurse = true;
                     }
 
                     Opt('l', None) => {
@@ -229,10 +223,11 @@ MyGlob care rule patters (option -2, default): Include all above patterns, plus:
 
         // Check for extra argument
         for arg in args.split_off(opts.index()) {
-            if arg == "?" || arg == "help" {
-                Self::usage();
-                return Err("".into());
-            }
+            // Don't check ? or help other than in first position, otherwise 'rgrep -F help source' will not search for word help
+            // if arg == "?" || arg == "help" {
+            //     Self::usage();
+            //     return Err("".into());
+            // }
 
             if arg.starts_with("-") {
                 return Err(format!("Invalid/unsupported option {}", arg).into());
@@ -249,11 +244,6 @@ MyGlob care rule patters (option -2, default): Include all above patterns, plus:
             Self::header();
             eprintln!("\nNo pattern specified.\nUse {APP_NAME} ? to show options or {APP_NAME} ?? for advanced usage notes.");
             return Err("".into());
-        }
-
-        // Special tolerant case, recurse search without specifying source does not search from stdin but from all files
-        if options.recurse && options.sources.is_empty() {
-            options.sources.push("*.*".to_string());
         }
 
         Ok(options)
@@ -281,83 +271,39 @@ fn main() {
     }
     let re = re.unwrap();
 
-    // MatchOptions has trait Copy, so only 1 global version is enough
-    let mo = MatchOptions {
-        case_sensitive: false,
-        require_literal_separator: false,
-        require_literal_leading_dot: false,
-    };
-
     let start = Instant::now();
 
     // Building list of files
     // ToDo: It could be better to process file just when it's returned by iterator rather than stored in a Vec and processed later...
     let mut files: Vec<PathBuf> = Vec::new();
     for source in options.sources.iter() {
-        // If file is a simple name, no path, no drive, and recurse option is specified, then we search in subfolders
-        let source2 = if options.recurse && !source.contains('/') && !source.contains('\\') && !source.contains(':') {
-            format!("**/{}", source)
-        } else {
-            source.clone()
-        };
-
         let mut count = 0;
 
-        if options.search_create == 2 {
-            // Use my own crate MyGlob, a bit faster than glob, and ignore $RECYCLE.BIN, System Volume Information and .git folders.
-            // Also supports {} alternations
-            let resgs = MyGlobSearch::build(&source2);
-            match resgs {
-                Ok(gs) => {
-                    for ma in gs.explore_iter() {
-                        match ma {
-                            MyGlobMatch::File(pb) => {
-                                count += 1;
-                                files.push(pb);
-                            }
+        let resgs = MyGlobSearch::new(source).autorecurse(options.autorecurse).compile();
+        match resgs {
+            Ok(gs) => {
+                for ma in gs.explore_iter() {
+                    match ma {
+                        MyGlobMatch::File(pb) => {
+                            count += 1;
+                            files.push(pb);
+                        }
 
-                            // We ignore matching directories in rgrep, we only look for files
-                            MyGlobMatch::Dir(_) => {}
+                        // We ignore matching directories in rgrep, we only look for files
+                        MyGlobMatch::Dir(_) => {}
 
-                            MyGlobMatch::Error(err) => {
-                                if options.verbose > 0 {
-                                    eprintln!("{APP_NAME}: error {}", err);
-                                }
+                        MyGlobMatch::Error(err) => {
+                            if options.verbose > 0 {
+                                eprintln!("{APP_NAME}: error {}", err);
                             }
                         }
                     }
                 }
-
-                Err(e) => {
-                    eprintln!("{APP_NAME}: Error building MyGlob: {:?}", e);
-                    count = -1; // No need to display "no file found" in this case
-                }
             }
-        } else {
-            // Use standard glob crate, that returns everything, including $RECYCLE.BIN content for instance.
-            // See extended help to see options, or https://docs.rs/glob/latest/glob/struct.Pattern.html
-            match glob_with(source2.as_str(), mo) {
-                Ok(paths) => {
-                    for entry in paths {
-                        match entry {
-                            Ok(pb) => {
-                                if !pb.to_string_lossy().contains("$RECYCLE.BIN") {
-                                    count += 1;
-                                    files.push(pb);
-                                }
-                            }
-                            Err(err) => {
-                                if options.verbose > 0 {
-                                    eprintln!("{APP_NAME}: error {}", err);
-                                }
-                            }
-                        };
-                    }
-                }
-                Err(err) => {
-                    eprintln!("{APP_NAME}: pattern error {}", err);
-                    count = -1; // No need to display "no file found" in this case
-                }
+
+            Err(e) => {
+                eprintln!("{APP_NAME}: Error building MyGlob: {:?}", e);
+                count = -1; // No need to display "no file found" in this case
             }
         }
 

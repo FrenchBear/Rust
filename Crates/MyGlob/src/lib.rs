@@ -14,15 +14,16 @@
 // 2025-04-09   PV      1.3.3 Fixed bug charindex/byteindex during initial cut of constant part
 // 2025-04-09   PV      1.4.0 New MyGlob API with MyBlobBuilder, version, new, compile and add_ignore_dir.
 // 2025-04-13   PV      1.5.0 Autorecurse
+// 2025-04-18   PV      1.5.1 MyGlobError implements std::error::Error
 
 #![allow(unused_variables, dead_code, unused_imports)]
 
 use regex::Regex;
-use std::{
-    fs::{self, File},
-    io::Error,
-    path::{Iter, Path, PathBuf},
-};
+use std::error::Error;
+use std::fmt::Display;
+use std::fs::{self, File};
+use std::io::Error as IOError;
+use std::path::{Iter, Path, PathBuf};
 
 // -----------------------------------
 // Submodules
@@ -57,7 +58,7 @@ pub struct MyGlobSearch {
 pub struct MyGlobBuilder {
     glob_pattern: String,
     ignore_dirs: Vec<String>, // just plain lowercase dir name, no path, no *
-    autorecurse: bool,  // Apply optional autorecurse transformation
+    autorecurse: bool,        // Apply optional autorecurse transformation
 }
 
 /// Error returned by MyGlob, either a Regex error or an io::Error
@@ -67,6 +68,19 @@ pub enum MyGlobError {
     RegexError(regex::Error),
     GlobError(String),
 }
+
+// Automatically provide ToString conversion
+impl Display for MyGlobError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self {
+            MyGlobError::IoError(error) => write!(f, "IOError: {}", error),
+            MyGlobError::RegexError(error) => write!(f, "RegexError: {}", error),
+            MyGlobError::GlobError(s) => write!(f, "MyGlobError: {}", s),
+        }
+    }
+}
+
+impl Error for MyGlobError {}
 
 impl MyGlobSearch {
     pub fn version() -> &'static str {
@@ -184,8 +198,8 @@ impl MyGlobBuilder {
             } else {
                 // Case of non-recursive pattern ending with a filter; insert ** before last segment
                 if !segments.iter().any(|s| matches!(s, Segment::Recurse)) && matches!(segments.last().unwrap(), Segment::Filter(_)) {
-                        segments.insert(segments.len()-1, Segment::Recurse);
-                    }
+                    segments.insert(segments.len() - 1, Segment::Recurse);
+                }
             }
         }
 
@@ -296,7 +310,7 @@ impl MyGlobBuilder {
             }
         }
         if !regex_buffer.is_empty() {
-            return Err(MyGlobError::GlobError("Internal error".to_string()));
+            return Err(MyGlobError::GlobError("Invalid glob pattern".to_string()));
         }
 
         // If last segment is a **, append a Filter * to find everything
@@ -313,7 +327,7 @@ impl MyGlobBuilder {
 pub enum MyGlobMatch {
     File(PathBuf),
     Dir(PathBuf),
-    Error(Error),
+    Error(IOError),
 }
 
 // Internal state of iterator
@@ -329,7 +343,7 @@ enum SearchPendingData {
     File(PathBuf),                      // Data to return
     Dir(PathBuf),                       // Data to return
     DirToExplore(PathBuf, usize, bool), // Dir not explored yet
-    Error(Error),                       // Returns an error
+    Error(IOError),                     // Returns an error
 }
 
 impl Iterator for MyGlobIteratorState<'_> {

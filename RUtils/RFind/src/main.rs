@@ -82,7 +82,7 @@ impl Options {
 -d|-type d       Search for directories
 -empty           Only find empty files or directories
 -[no]r[ecycle]   Delete forever (default: -r[ecycle], delete local files to recycle bin)
--noa[utorecurse] Glob pattern does not use autorecuse transformation
+-noa[utorecurse] Glob pattern does not use autorecurse transformation
 source           File or folder where to search (autorecurse glob pattern, see advanced notes)
 
 Actions:
@@ -106,7 +106,7 @@ Advanced usage notes\n--------------------\n
 Glob pattern rules:
 •   ? matches any single character.
 •   * matches any (possibly empty) sequence of characters.
-•   ** matches the current directory and arbitrary subdirectories. To match files in arbitrary subdiretories, use **\\*. This sequence must form a single path component, so both **a and b** are invalid and will result in an error.
+•   ** matches the current directory and arbitrary subdirectories. To match files in arbitrary subdirectories, use **\\*. This sequence must form a single path component, so both **a and b** are invalid and will result in an error.
 •   [...] matches any character inside the brackets. Character sequences can also specify ranges of characters, as ordered by Unicode, so e.g. [0-9] specifies any character between 0 and 9 inclusive. An unclosed bracket is invalid.
 •   [!...] is the negation of [...], i.e. it matches any characters not in the brackets.
 •   The metacharacters ?, *, [, ] can be matched by using brackets (e.g. [?]). When a ] occurs immediately following [ or [! then it is interpreted as being part of, rather then ending, the character set, so ] and NOT ] can be matched by []] and [!]] respectively. The - character can be specified inside a character sequence pattern by placing it at the start or the end, e.g. [abc-].
@@ -114,7 +114,7 @@ Glob pattern rules:
 •   Character classes [ ] accept regex syntax such as [\\d] to match a single digit, see https://docs.rs/regex/latest/regex/#character-classes for character classes and escape sequences supported.
 
 Autorecurse glob pattern transformation (active by default, use -noa[utorecurse] to deactivate):
-•   Constant pattern (no filter, no **) pointing to a folder: \\**\\* is appended at the end to search all files of all seubfolders.
+•   Constant pattern (no filter, no **) pointing to a folder: \\**\\* is appended at the end to search all files of all subfolders.
 •   Patterns without ** and ending with a filter: \\** is inserted before final filter to find all matching files of all subfolders.";
 
         println!("{}", Self::format_text(text, width));

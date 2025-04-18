@@ -107,7 +107,7 @@ fn last_char_of_first_line(text: &str) -> Option<char> {
     // let c2 = Option::<&str>::None;
     // let c3: Option<char> = Option::<&str>::None;     // Mismatched types error
 
-    // But this works, despite the fact that next() returns an Optin<&'a str>
+    // But this works, despite the fact that next() returns an Option<&'a str>
     text.lines().next()?.chars().last()
 }
 

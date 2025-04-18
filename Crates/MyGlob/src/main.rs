@@ -12,7 +12,13 @@ use regex as _;
 fn main() {
     println!("MyGlob lib version: {}\n", MyGlobSearch::version());
 
-    test_myglob(r"C:\Temp\*.log", true, &["d2"], 1);
+    // Errors
+    let e = MyGlobSearch::build(r"C:\**z\\z").err().unwrap();
+    println!("{}", e);
+
+    test_myglob(r"C:\[\d&&\p{ascii]", true, &["d2"], 1);
+
+    //test_myglob(r"C:\Temp\*.log", true, &["d2"], 1);
 }
 
 // Entry point for testing
@@ -54,7 +60,7 @@ pub fn test_myglob(pattern: &str, autorecurse: bool, ignore_dirs: &[&str], loops
                 durations.push(duration.as_secs_f64());
             }
 
-            Err(e) => println!("Error building MyGlob: {:?}", e),
+            Err(e) => println!("Error building MyGlob: {}", e),
         }
     }
 
