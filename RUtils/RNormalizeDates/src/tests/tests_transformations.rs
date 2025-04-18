@@ -3,6 +3,7 @@
 //
 // 2025-04-14   PV
 // 2025-04-16   PV      Better normalization of n°
+// 2025-04-18   PV      Better normalization of Ça m'intéresse
 
 #![cfg(test)]
 
@@ -73,7 +74,7 @@ fn tests_transformations() {
     t(&dp, "Sciences et Avenir - HS - 01-02-03.2025" ,"Sciences et Avenir HS - 2025-01..03");
     t(&dp, "Micro Pratique - 03-04.2025" ,"Micro Pratique - 2025-03..04");
     t(&dp, "Réponses Photo - 03.2025" ,"Réponses Photo - 2025-03");
-    t(&dp, "Ca m'intéresse - 01.2025" ,"Ca m'intéresse - 2025-01");
+    t(&dp, "Ca m'intéresse - 01.2025" ,"Ça m'intéresse - 2025-01");
     t(&dp, "Micro pratique - 02-03.2025" ,"Micro pratique - 2025-02..03");
     t(&dp, "PC trucs et astuces - 12.2024 01-02.2025" ,"PC trucs et astuces - 2024-12..2025-02");
     t(&dp, "PC trucs et astuces - 11-12.2024 01.2025" ,"PC trucs et astuces - 2024-11..2025-01");
@@ -214,7 +215,7 @@ fn tests_transformations() {
     t(&dp, "L'Auto-Journal 4x4 - 04-05-06.2025" ,"L'Auto-Journal 4x4 - 2025-04..06");
     t(&dp, "Auto Plus - Guide de L’Acheteur - 04-05-06.2025" ,"Auto Plus Guide de l'acheteur - 2025-04..06");
     t(&dp, "Destination Grèce - 04-05-06.2025" ,"Destination Grèce - 2025-04..06");
-    t(&dp, "Ca m'intéresse - 04.2025" ,"Ca m'intéresse - 2025-04");
+    t(&dp, "Ca m'intéresse - 04.2025" ,"Ça m'intéresse - 2025-04");
     t(&dp, "Terre Sauvage - 04.2025" ,"Terre Sauvage - 2025-04");
     t(&dp, "Hackable_2025_03_04" ,"Hackable - 2025-03-04 $$$ 2025-03..04");
     t(&dp, "Le Monde - Histoire & Civilisations - 04.2025" ,"Histoire & Civilisations - 2025-04");
@@ -299,7 +300,7 @@ fn tests_transformations() {
     t(&dp, "Epsiloon - 01.2025" ,"Epsiloon - 2025-01");
     t(&dp, "BBC Science Focus 2024 №414 New Year" ,"BBC Science Focus n°414 - 2024-01");
     t(&dp, "BBC Science Focus 2024 №412 November" ,"BBC Science Focus n°412 - 2024-11");
-    t(&dp, "Ca m'intéresse - 02.2025" ,"Ca m'intéresse - 2025-02");
+    t(&dp, "Ca m'intéresse - 02.2025" ,"Ça m'intéresse - 2025-02");
     t(&dp, "Jeux Vidéo Magazine - 02.2025" ,"Jeux Vidéo Magazine - 2025-02");
     t(&dp, "BBC Wildlife 2024 №01 January 2025" ,"BBC Wildlife n°01 - 2024-01 - 2025");
     t(&dp, "L’Auto-Journal - Le guide - 01-02-03.2025" ,"Le guide de l'Auto-Journal - 2025-01..03");

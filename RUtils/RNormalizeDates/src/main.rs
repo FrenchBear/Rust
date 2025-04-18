@@ -3,6 +3,7 @@
 // 2025-04-12	PV      First version
 // 2025-04-16   PV      Better normalization of n°
 // 2025-04-16   PV      1.1 Final counts, DataBag, Implementation of option -S, improved filtering of HS
+// 2025-04-18   PV      1.1.1 Better normalization of Ça m'intéresse
 
 //#![allow(unused)]
 
@@ -35,7 +36,7 @@ use re::*;
 // Global constants
 
 const APP_NAME: &str = "rnormalizedates";
-const APP_VERSION: &str = "1.1.0";
+const APP_VERSION: &str = "1.1.1";
 
 // -----------------------------------
 // Main
@@ -510,6 +511,8 @@ fn apply_final_transformations(stem_original: &str) -> String {
     stem = ireplace(&stem, "01net", "01net");
     stem = ireplace(&stem, "4x4 Magazine France", "4x4 Magazine");
     stem = ireplace(&stem, "60 Millions de Consommateurs", "60M de consommateurs");
+    stem = ireplace(&stem, "Ca MInteresse", "Ça m'intéresse");
+    stem = ireplace(&stem, "Ca m'intéresse", "Ça m'intéresse");
     stem = ireplace(&stem, "Ça M'Intéresse", "Ça m'intéresse");
     stem = ireplace(&stem, "a M Int resse", "Ça m'intéresse");
     stem = ireplace(&stem, "a M Int resse Questions R ponses", "Ça m'intéresse Questions Réponses");
