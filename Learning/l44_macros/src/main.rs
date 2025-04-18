@@ -73,6 +73,38 @@ macro_rules! find_min {
 }
 
 
+// Domain-specific languages
+// Note the two levels of braces in the macro, the outer one is part of the syntax of macro_rules!
+macro_rules! calculate {
+    (eval $e:expr) => {
+        {
+            let val: usize = $e; // Force types to be integers
+            println!("{} = {}", stringify!{$e}, val);
+        }
+    };
+}
+
+
+// Variadic interfaces
+macro_rules! calculate_var {
+    // The pattern for a single `eval`
+    (eval $e:expr) => {
+        {
+            let val: usize = $e; // Force types to be integers
+            println!("{} = {}", stringify!{$e}, val);
+        }
+    };
+
+    // Decompose multiple `eval`s recursively
+    (eval $e:expr, $(eval $es:expr),+) => {{
+        calculate_var! { eval $e }
+        calculate_var! { $(eval $es),+ }
+    }};
+}
+
+
+
+
 fn main() {
     say_hello!();
     println!();
@@ -95,6 +127,21 @@ fn main() {
     println!("{}", find_min!(1));
     println!("{}", find_min!(1 + 2, 2));
     println!("{}", find_min!(5, 2 * 3, 4));
+    println!();
+
+    calculate! {
+        eval 1 + 2 // hehehe `eval` is _not_ a Rust keyword!
+    }
+    calculate! {
+        eval (1 + 2) * (3 / 4)
+    }
+    println!();
+
+    calculate_var! { // Look ma! Variadic `calculate!`!
+        eval 1 + 2,
+        eval 3 + 4,
+        eval (2 * 3) + 1
+    }
     println!();
 
 }
