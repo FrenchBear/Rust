@@ -122,8 +122,7 @@ fn test_option_get_or_insert_with() {
         println!("Providing lemon as fallback");
         Fruit::Lemon
     };
-    let first_available_fruit = my_fruit
-        .get_or_insert_with(get_lemon_as_fallback);
+    let first_available_fruit = my_fruit.get_or_insert_with(get_lemon_as_fallback);
     println!("first_available_fruit is: {:?}", first_available_fruit);
     println!("my_fruit is: {:?}", my_fruit);
     // Providing lemon as fallback
@@ -138,8 +137,6 @@ fn test_option_get_or_insert_with() {
     // The output is a follows. Note that the closure `get_lemon_as_fallback` is not invoked
     // should_be_apple is: Apple
     // my_apple is unchanged: Some(Apple)
-
-
 }
 
 // -----------------------------------------------------
@@ -163,4 +160,105 @@ fn main() {
     test_option_or_else();
     test_option_get_or_insert();
     test_option_get_or_insert_with();
+
+    let oi: Option<i32> = Some(42);
+    let oj = oi.filter(|x| x & 1 == 0); // Filter using predicate: Value None->None, Some(x): if predicate is true -> Some(x) else None
+    assert_eq!(oi, Some(42));
+
+    oi.inspect(|x| println!("Value {} is even.\n", x)); // Call function(x) if value is Some(x)
+
+    // replace: return old value, and remplace inner value by new value (can't replace by None)
+    let mut x = Some(2);
+    let old = x.replace(5);
+    assert_eq!(x, Some(5));
+    assert_eq!(old, Some(2));
+
+    let mut x = None;
+    let old = x.replace(3);
+    assert_eq!(x, Some(3));
+    assert_eq!(old, None);
+
+    // take: takes the value out of the option, leaving a [None] in its place.
+    let mut x = Some(2);
+    let y = x.take();
+    assert_eq!(x, None);
+    assert_eq!(y, Some(2));
+
+    let mut x: Option<u32> = None;
+    let y = x.take();
+    assert_eq!(x, None);
+
+    // fn take_if(&mut self, predicate: P) -> Option<i32>
+    // Takes the value out of the option, but only if the predicate evaluates to true on a mutable reference to the value.
+    // In other words, replaces self with None if the predicate returns true. This method operates similar to [Option::take] but conditional.
+    let mut x = Some(42);
+    let prev = x.take_if(|v| {
+        if *v == 42 {
+            *v += 1;
+            false
+        } else {
+            false
+        }
+    });
+    assert_eq!(x, Some(43));
+    assert_eq!(prev, None);
+
+    let prev = x.take_if(|v| *v == 43);
+    assert_eq!(x, None);
+    assert_eq!(prev, Some(43));
+
+    // fn xor(self, optb: Option<i32>) -> Option<i32>
+    // Returns [Some] if exactly one of self, optb is [Some], otherwise returns [None].
+    let x = Some(2);
+    let y: Option<u32> = None;
+    assert_eq!(x.xor(y), Some(2));
+
+    let x: Option<u32> = None;
+    let y = Some(2);
+    assert_eq!(x.xor(y), Some(2));
+
+    let x = Some(2);
+    let y = Some(2);
+    assert_eq!(x.xor(y), None);
+
+    let x: Option<u32> = None;
+    let y: Option<u32> = None;
+    assert_eq!(x.xor(y), None);
+
+    let x: Option<u32> = Some(2);
+    let y: Option<u32> = Some(4);
+    assert_eq!(x.xor(y), None);
+
+    // fn and(self, optb: Option<U>) -> Option<U>
+    // Returns [None] if the option is [None], otherwise returns optb.
+    // Arguments passed to and are eagerly evaluated; if you are passing the result of a function call, 
+    // it is recommended to use and_then, which is lazily evaluated.
+    let x = Some(2);
+    let y: Option<&str> = None;
+    assert_eq!(x.and(y), None);
+
+    let x: Option<u32> = None;
+    let y = Some("foo");
+    assert_eq!(x.and(y), None);
+
+    let x = Some(2);
+    let y = Some("foo");
+    assert_eq!(x.and(y), Some("foo"));
+    println!("y: {:?}", y);     // Works, because &str implements Copy (but not Clone)
+
+    let x: Option<u32> = None;
+    let y: Option<&str> = None;
+    assert_eq!(x.and(y), None);
+
+    let x: Option<u32> = None;
+    let y = Some("foo");
+    assert_eq!(x.and(y), None);
+
+    let app = Some(Fruit::Apple);
+    let ora = Some(Fruit::Orange);
+    let zz = app.and(ora);
+    //println!("ora: {:?}", ora);    // Error, ora has been moved since Fluit doesn't implement Copy (or define enum Fruit with #[derive(Debug, Clone, Copy)])
+
+
+
 }
