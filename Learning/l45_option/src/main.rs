@@ -225,10 +225,6 @@ fn main() {
     let y: Option<u32> = None;
     assert_eq!(x.xor(y), None);
 
-    let x: Option<u32> = Some(2);
-    let y: Option<u32> = Some(4);
-    assert_eq!(x.xor(y), None);
-
     // fn and(self, optb: Option<U>) -> Option<U>
     // Returns [None] if the option is [None], otherwise returns optb.
     // Arguments passed to and are eagerly evaluated; if you are passing the result of a function call, 

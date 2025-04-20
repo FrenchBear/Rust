@@ -181,30 +181,38 @@ fn main() {
     assert_eq!(r17, Some(43));
 
     // These methods transform [`Option<T>`] to a value of a possibly different type `U`:
-    //
     // * [`map_or`] applies the provided function to the contained value of [`Some`], or returns the provided default value
     //   if the [`Option`] is [`None`]
     // * [`map_or_else`] applies the provided function to the contained value of [`Some`], or returns the result of
     //   evaluating the provided fallback function if the [`Option`] is [`None`]
 
-    let o18:Option<i16> = None;
-$$$
+    let o18: Option<i16> = None;
+    let r18 = o18.map_or(17833i16, |x| x + 1);
+    assert_eq!(r18, 17833i16);
 
+    let o19: Option<char> = Some('k');
+    let r19 = o19.map_or_else(|| '?', |c| c.to_ascii_uppercase());
+    assert_eq!(r19, 'K');
 
     // These methods combine the [`Some`] variants of two [`Option`] values:
-    //
     // * [`zip`] returns [`Some((s, o))`] if `self` is [`Some(s)`] and the provided [`Option`] value is [`Some(o)`];
     //   otherwise, returns [`None`]
     // * [`zip_with`] calls the provided function `f` and returns [`Some(f(s, o))`] if `self` is [`Some(s)`] and the
     //   provided [`Option`] value is [`Some(o)`]; otherwise, returns [`None`]
-    //
-    // [`Some(f(s, o))`]: Some
-    // [`Some(o)`]: Some
-    // [`Some(s)`]: Some
-    // [`Some((s, o))`]: Some
-    // [`zip`]: Option::zip
-    // [`zip_with`]: Option::zip_with
-    //
+
+    let o20a = Some('m');
+    let o20b = Some(true);
+    let r20 = o20a.zip(o20b);
+    assert_eq!(r20, Some(('m', true)));
+    let o20c: Option<bool> = None;
+    let r20c = o20a.zip(o20c);
+    assert_eq!(r20c, None);
+
+    // zip_with is an unstable feature
+    // let o21a = Some("Hello".to_string());
+    // let o21b = Some("World".to_string());
+    // let r21 = o21a.zip_with(o21b, |s1, s2| s1 + " " + s2.as_str());
+
     // ## Boolean operators
     //
     // These methods treat the [`Option`] as a boolean value, where [`Some`] acts like [`true`] and [`None`] acts like
@@ -226,11 +234,33 @@ $$$
     // | [`xor`] | `None`    | `Some(y)` | `Some(y)` |
     // | [`xor`] | `Some(x)` | `None`    | `Some(x)` |
     // | [`xor`] | `Some(x)` | `Some(y)` | `None`    |
-    //
-    // [`and`]: Option::and
-    // [`or`]: Option::or
-    // [`xor`]: Option::xor
-    //
+
+    let o22 = Some('a');
+    let o22a: Option<char> = None;
+    let r22a = o22.and(o22a);
+    assert_eq!(r22a, None);
+    let o22b = Some('A');
+    let r22b = o22.and(o22b);
+    assert_eq!(r22b, Some('A'));
+
+    let o23: Option<char> = None;
+    let o23b = Some('z');
+    let r23 = o23.or(o23b);
+    assert_eq!(r23, Some('z'));
+
+    let o24a1 = Some(2);
+    let o24a2: Option<u32> = None;
+    assert_eq!(o24a1.xor(o24a2), Some(2));
+    let o24b1: Option<u32> = None;
+    let o24b2 = Some(2);
+    assert_eq!(o24b1.xor(o24b2), Some(2));
+    let o24c1 = Some(2);
+    let o24c2 = Some(2);
+    assert_eq!(o24c1.xor(o24c2), None);
+    let o24d1: Option<u32> = None;
+    let o24d2: Option<u32> = None;
+    assert_eq!(o24d1.xor(o24d2), None);
+
     // The [`and_then`] and [`or_else`] methods take a function as input, and only evaluate the function when they need to
     // produce a new value. Only the [`and_then`] method can produce an [`Option<U>`] value having a different inner type
     // `U` than [`Option<T>`].
@@ -243,166 +273,84 @@ $$$
     // | [`or_else`]  | `None`    | (not provided) | `None`          | `None`    |
     // | [`or_else`]  | `None`    | (not provided) | `Some(y)`       | `Some(y)` |
     // | [`or_else`]  | `Some(x)` | (not provided) | (not evaluated) | `Some(x)` |
-    //
-    // [`and_then`]: Option::and_then
-    // [`or_else`]: Option::or_else
-    //
-    // This is an example of using methods like [`and_then`] and [`or`] in a pipeline of method calls. Early stages of the
-    // pipeline pass failure values ([`None`]) through unchanged, and continue processing on success values ([`Some`]).
-    // Toward the end, [`or`] substitutes an error message if it receives [`None`].
-    //
-    // ```
-    // # use std::collections::BTreeMap;
-    // let mut bt = BTreeMap::new();
-    // bt.insert(20u8, "foo");
-    // bt.insert(42u8, "bar");
-    // let res = [0u8, 1, 11, 200, 22]
-    //     .into_iter()
-    //     .map(|x| {
-    //         // `checked_sub()` returns `None` on error
-    //         x.checked_sub(1)
-    //             // same with `checked_mul()`
-    //             .and_then(|x| x.checked_mul(2))
-    //             // `BTreeMap::get` returns `None` on error
-    //             .and_then(|x| bt.get(&x))
-    //             // Substitute an error message if we have `None` so far
-    //             .or(Some(&"error!"))
-    //             .copied()
-    //             // Won't panic because we unconditionally used `Some` above
-    //             .unwrap()
-    //     })
-    //     .collect::<Vec<_>>();
-    // assert_eq!(res, ["error!", "error!", "foo", "error!", "bar"]);
-    // ```
-    //
+
+    let o25 = Some(String::from("Hello"));
+    let r25 = o25
+        .map(|s| format!("{}", s.to_uppercase())) // map fn(T) -> U
+        .and_then(|st| st.find('E')) // and_then fn(T) -> Some(U)
+        .and_then(|x| Some(x - 1));
+    assert_eq!(r25, Some(0));
+
+    let s25 = "Hello";
+    let o25 = s25.find("z");
+    let def = || Some(s25.len());
+    let r25 = o25.or_else(def);
+    assert_eq!(r25, Some(s25.len()));
+
     // ## Comparison operators
-    //
     // If `T` implements [`PartialOrd`] then [`Option<T>`] will derive its [`PartialOrd`] implementation.  With this order,
     // [`None`] compares as less than any [`Some`], and two [`Some`] compare the same way as their contained values would
     // in `T`.  If `T` also implements [`Ord`], then so does [`Option<T>`].
-    //
-    // ```
-    // assert!(None < Some(0));
-    // assert!(Some(0) < Some(1));
-    // ```
-    //
+    assert!(None < Some(0));
+    assert!(Some(0) < Some(1));
+
     // ## Iterating over `Option`
-    //
     // An [`Option`] can be iterated over. This can be helpful if you need an iterator that is conditionally empty. The
     // iterator will either produce a single value (when the [`Option`] is [`Some`]), or produce no values (when the
     // [`Option`] is [`None`]). For example, [`into_iter`] acts like [`once(v)`] if the [`Option`] is [`Some(v)`], and like
     // [`empty()`] if the [`Option`] is [`None`].
     //
-    // [`Some(v)`]: Some
-    // [`empty()`]: crate::iter::empty
-    // [`once(v)`]: crate::iter::once
-    //
     // Iterators over [`Option<T>`] come in three types:
-    //
     // * [`into_iter`] consumes the [`Option`] and produces the contained value
     // * [`iter`] produces an immutable reference of type `&T` to the contained value
     // * [`iter_mut`] produces a mutable reference of type `&mut T` to the contained value
     //
-    // [`into_iter`]: Option::into_iter
-    // [`iter`]: Option::iter
-    // [`iter_mut`]: Option::iter_mut
-    //
     // An iterator over [`Option`] can be useful when chaining iterators, for example, to conditionally insert items. (It's
     // not always necessary to explicitly call an iterator constructor: many [`Iterator`] methods that accept other
     // iterators will also accept iterable types that implement [`IntoIterator`], which includes [`Option`].)
-    //
-    // ```
-    // let yep = Some(42);
-    // let nope = None;
-    // // chain() already calls into_iter(), so we don't have to do so
-    // let nums: Vec<i32> = (0..4).chain(yep).chain(4..8).collect();
-    // assert_eq!(nums, [0, 1, 2, 3, 42, 4, 5, 6, 7]);
-    // let nums: Vec<i32> = (0..4).chain(nope).chain(4..8).collect();
-    // assert_eq!(nums, [0, 1, 2, 3, 4, 5, 6, 7]);
-    // ```
-    //
-    // One reason to chain iterators in this way is that a function returning `impl Iterator` must have all possible return
-    // values be of the same concrete type. Chaining an iterated [`Option`] can help with that.
-    //
-    // ```
-    // fn make_iter(do_insert: bool) -> impl Iterator<Item = i32> {
-    //     // Explicit returns to illustrate return types matching
-    //     match do_insert {
-    //         true => return (0..4).chain(Some(42)).chain(4..8),
-    //         false => return (0..4).chain(None).chain(4..8),
-    //     }
-    // }
-    // println!("{:?}", make_iter(true).collect::<Vec<_>>());
-    // println!("{:?}", make_iter(false).collect::<Vec<_>>());
-    // ```
-    //
-    // If we try to do the same thing, but using [`once()`] and [`empty()`], we can't return `impl Iterator` anymore
-    // because the concrete types of the return values differ.
-    //
-    // [`empty()`]: crate::iter::empty
-    // [`once()`]: crate::iter::once
-    //
-    // ```compile_fail,E0308
-    // # use std::iter::{empty, once};
-    // // This won't compile because all possible returns from the function
-    // // must have the same concrete type.
-    // fn make_iter(do_insert: bool) -> impl Iterator<Item = i32> {
-    //     // Explicit returns to illustrate return types not matching
-    //     match do_insert {
-    //         true => return (0..4).chain(once(42)).chain(4..8),
-    //         false => return (0..4).chain(empty()).chain(4..8),
-    //     }
-    // }
-    // ```
-    //
+    let y26 = Some(42);
+    let n26 = None;
+    // chain() already calls into_iter(), so we don't have to do so
+    let r26a: Vec<i32> = (0..4).chain(y26).chain(4..8).collect();
+    assert_eq!(r26a, [0, 1, 2, 3, 42, 4, 5, 6, 7]);
+    let r26b: Vec<i32> = (0..4).chain(n26).chain(4..8).collect();
+    assert_eq!(r26b, [0, 1, 2, 3, 4, 5, 6, 7]);
+
     // ## Collecting into `Option`
     //
     // [`Option`] implements the [`FromIterator`][impl-FromIterator] trait, which allows an iterator over [`Option`] values
     // to be collected into an [`Option`] of a collection of each contained value of the original [`Option`] values, or
     // [`None`] if any of the elements was [`None`].
-    //
-    // [impl-FromIterator]: Option#impl-FromIterator%3COption%3CA%3E%3E-for-Option%3CV%3E
-    //
-    // ```
-    // let v = [Some(2), Some(4), None, Some(8)];
-    // let res: Option<Vec<_>> = v.into_iter().collect();
-    // assert_eq!(res, None);
-    // let v = [Some(2), Some(4), Some(8)];
-    // let res: Option<Vec<_>> = v.into_iter().collect();
-    // assert_eq!(res, Some(vec![2, 4, 8]));
-    // ```
-    //
+
+    let v27a = [Some(2), Some(4), None, Some(8)];
+    let r27a: Option<Vec<_>> = v27a.into_iter().collect();
+    assert_eq!(r27a, None);
+    let v27b = [Some(2), Some(4), Some(8)];
+    let r27b: Option<Vec<_>> = v27b.into_iter().collect();
+    assert_eq!(r27b, Some(vec![2, 4, 8]));
+
     // [`Option`] also implements the [`Product`][impl-Product] and [`Sum`][impl-Sum] traits, allowing an iterator over
     // [`Option`] values to provide the [`product`][Iterator::product] and [`sum`][Iterator::sum] methods.
-    //
-    // [impl-Product]: Option#impl-Product%3COption%3CU%3E%3E-for-Option%3CT%3E
-    // [impl-Sum]: Option#impl-Sum%3COption%3CU%3E%3E-for-Option%3CT%3E
-    //
-    // ```
-    // let v = [None, Some(1), Some(2), Some(3)];
-    // let res: Option<i32> = v.into_iter().sum();
-    // assert_eq!(res, None);
-    // let v = [Some(1), Some(2), Some(21)];
-    // let res: Option<i32> = v.into_iter().product();
-    // assert_eq!(res, Some(42));
-    // ```
-    //
+
+    let v28a = [None, Some(1), Some(2), Some(3)];
+    let r28a: Option<i32> = v28a.into_iter().sum();
+    assert_eq!(r28a, None);
+    let v28b = [Some(1), Some(2), Some(21)];
+    let r28b: Option<i32> = v28b.into_iter().product();
+    assert_eq!(r28b, Some(42));
+
     // ## Modifying an [`Option`] in-place
     //
     // These methods return a mutable reference to the contained value of an [`Option<T>`]:
-    //
     // * [`insert`] inserts a value, dropping any old contents
     // * [`get_or_insert`] gets the current value, inserting a provided default value if it is [`None`]
     // * [`get_or_insert_default`] gets the current value, inserting the default value of type `T` (which must implement
     //   [`Default`]) if it is [`None`]
     // * [`get_or_insert_with`] gets the current value, inserting a default computed by the provided function if it is
     //   [`None`]
-    //
-    // [`get_or_insert`]: Option::get_or_insert
-    // [`get_or_insert_default`]: Option::get_or_insert_default
-    // [`get_or_insert_with`]: Option::get_or_insert_with
-    // [`insert`]: Option::insert
-    //
+
+    
+
     // These methods transfer ownership of the contained value of an [`Option`]:
     //
     // * [`take`] takes ownership of the contained value of an [`Option`], if any, replacing the [`Option`] with [`None`]
