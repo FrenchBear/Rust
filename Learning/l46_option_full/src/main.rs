@@ -2,6 +2,7 @@
 // Complete exploration of Option<T>
 //
 // 2025-04-20	PV      First version
+// 2025-04-21	PV      Added copied() and cloned()
 
 #![allow(dead_code, unused)]
 #![allow(clippy::bool_assert_comparison, clippy::unnecessary_literal_unwrap,clippy::unnecessary_lazy_evaluations, clippy::bind_instead_of_map)]
@@ -388,4 +389,14 @@ fn main() {
     let r34b = o34b.replace(3);
     assert_eq!(o34b, Some(3));
     assert_eq!(r34b, None);
+
+
+
+    // Extra: 
+    // Option Copied transforms an Option<&T> in a Option<T> where T:Copy by copying content
+    // Option Cloned transforms an Option<&T> in a Option<T> where T:Copy by cloning content
+    let f34 = 53.98;
+    let o34 = Some(&34);
+    let r34a = o34.copied();
+    let r34b = o34.cloned();
 }

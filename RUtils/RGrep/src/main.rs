@@ -68,7 +68,7 @@ impl Options {
     fn usage() {
         Options::header();
         eprintln!(
-            "\nUsage: {APP_NAME} [?|-?|-h|??] [-i] [-w] [-F] [-r] [-v] [-c] [-l] pattern source...
+            "\nUsage: {APP_NAME} [?|-?|-h|??] [-i] [-w] [-F] [-r] [-v] [-c] [-l] pattern [source...]
 ?|-?|-h  Show this message
 ??       Show advanced usage notes
 -i       Ignore case during search
@@ -79,7 +79,7 @@ impl Options {
 -l       Suppress normal output, show matching file names only
 -v       Verbose output
 pattern  Regular expression to search
-source   File or folder where to search, glob syntax supported"
+source   File or folder where to search, glob syntax supported. Without source, search stdin."
         );
     }
 

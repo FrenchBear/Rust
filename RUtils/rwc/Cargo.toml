@@ -1,0 +1,12 @@
+[package]
+name = "rwc"
+description = "Word COunt utility in Rust"
+version = "1.0.0"
+authors = ["Pierre Violent"]
+edition = "2024"
+
+[dependencies]
+myglob = { path = "../../Crates/MyGlob" }
+getopt = "1.1.7"
+encoding_rs = "0.8.35"
+terminal_size = "0.4.2"
