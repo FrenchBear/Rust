@@ -43,7 +43,7 @@ struct DataBag {
 }
 
 fn main() {
-    let globstrsources: Vec<String> = vec![r"C:\Development\**\*.{cs,rs}".to_string()];
+    let globstrsources: Vec<String> = vec![r"C:\Development\**\*.{cs,rs,py}".to_string()];
     //let globstrsources: Vec<String> = vec![r"C:\Development\GitHub\Rust\Learning\l47_checkdates\src\*.rs".to_string()];
 
     // Prepare log writer
@@ -162,7 +162,7 @@ fn process_text(writer: &mut LogWriter, p: &Path, source: &str, comment: &str, b
             }
 
             if last_date.is_some() && d<last_date {
-                logln(writer, format!("*** Invalid date sequence: {}\n    {}", p.display(), line).as_str());
+                logln(writer, format!("*** Invalid date sequence: {}\n    {}\n    {}", p.display(), last_date.unwrap(), d.unwrap()).as_str());
                 b.errors_count += 1;
                 return;
             }
