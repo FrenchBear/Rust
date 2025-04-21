@@ -4,6 +4,7 @@
 // Ultimately, lifetime syntax is about connecting the lifetimes of various parameters and return values of functions
 //
 // 2024-11-22   PV
+// 2025-04-21   PV      Clippy suggestions
 
 #![allow(dead_code, unused_variables)]
 
@@ -13,11 +14,7 @@ use std::fmt::Display;
 // Annotations go into function signature, not int he function body
 // Specifying the lifetime does not change the lifetime of anu values passed or returned
 fn longest<'a>(x: &'a str, y: &'a str) -> &'a str {
-    if x.len() > y.len() {
-        x
-    } else {
-        y
-    }
+    if x.len() > y.len() { x } else { y }
 }
 
 fn constant_str<'b>(x: &str, y: &str) -> &'b str {
@@ -47,7 +44,7 @@ struct ImportantExcerpt<'a> {
 
 // Since struct as a lafetime annotation, impl MUST refer to this annotation, even in this case where
 // leven doesn't return a reference.  Note that the alision rule apply to &self, so it's actually &'a self
-impl<'a> ImportantExcerpt<'a> {
+impl ImportantExcerpt<'_> {
     fn level(&self) -> i32 {
         3
     }
@@ -60,14 +57,12 @@ impl<'a> ImportantExcerpt<'a> {
         println!("Attention please: {announcement}");
         self.part
     }
-
 }
-
 
 // ------------------------------------------------------------------------
 // Lifetime elision example, built-in rule in rust compiler
 // Equivalent to fn first_word<'a>(s: &'a str) -> &'a str {
-// Lifetimes on function or method parameters are called input lifetimes, 
+// Lifetimes on function or method parameters are called input lifetimes,
 // and lifetimes on return values are called output lifetimes.
 fn first_word(s: &str) -> &str {
     let bytes = s.as_bytes();
@@ -78,28 +73,20 @@ fn first_word(s: &str) -> &str {
         }
     }
 
-    &s[..]
+    //&s[..]
+    s
 }
 
 // ------------------------------------------------------------------------
 // Generic Type Parameters, Trait Bounds, and Lifetimes Together
 
-fn longest_with_an_announcement<'a, T>(
-    x: &'a str,
-    y: &'a str,
-    ann: T,
-) -> &'a str
+fn longest_with_an_announcement<'a, T>(x: &'a str, y: &'a str, ann: T) -> &'a str
 where
     T: Display,
 {
     println!("Announcement! {ann}");
-    if x.len() > y.len() {
-        x
-    } else {
-        y
-    }
+    if x.len() > y.len() { x } else { y }
 }
-
 
 // ------------------------------------------------------------------------
 
@@ -108,5 +95,7 @@ fn main() {
 
     let novel = String::from("Call me Ishmael. Some years ago...");
     let first_sentence = novel.split('.').next().unwrap();
-    let i = ImportantExcerpt { part: first_sentence };
+    let i = ImportantExcerpt {
+        part: first_sentence,
+    };
 }

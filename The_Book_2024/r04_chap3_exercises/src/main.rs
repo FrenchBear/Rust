@@ -120,7 +120,7 @@ fn twelve_days() {
 }
 
 static GIFTS: [&str; 12] = [
-    "partridge in a pear tree",     // Starts with "A "" or "And a", managed in code
+    "partridge in a pear tree", // Starts with "A "" or "And a", managed in code
     "Two turtle doves",
     "Three French hens",
     "Four calling birds",
@@ -140,13 +140,13 @@ static NUMERAL_ADJECTIVES: [&str; 12] = [
 ];
 
 fn day(d: usize) {
-    let an = NUMERAL_ADJECTIVES[d-1];
+    let an = NUMERAL_ADJECTIVES[d - 1];
     println!("On the {an} day of Christmas my true love sent to me");
     for j in (1..=d).rev() {
         let g = GIFTS[j - 1];
         if j == 1 && d != 1 {
             print!("And a ");
-        } else if j==1 {
+        } else if j == 1 {
             print!("A ");
         }
         println!("{g}");

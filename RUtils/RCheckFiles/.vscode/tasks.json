@@ -15,32 +15,11 @@
         },
         {
             "type": "cargo",
-            "command": "check",
-            "problemMatcher": [
-                "$rustc"
-            ],
-            "group": "build",
-            "label": "rust: cargo check"
-        },
-        {
-            "type": "cargo",
             "command": "run",
             "problemMatcher": [
                 "$rustc"
             ],
             "label": "rust: cargo run"
-        },
-        {
-            "type": "cargo",
-            "command": "run",
-            "args": [
-                "--",
-                "\\\\terazalt\\photo",
-            ],
-            "problemMatcher": [
-                "$rustc"
-            ],
-            "label": "rust: cargo run for debug"
         },
         {
             "type": "cargo",

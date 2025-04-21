@@ -2,8 +2,10 @@
 // Learning rust 2024
 //
 // 2024-11-08   PV
+// 2025-04-21   PV      Clippy suggestions
 
-#![allow(dead_code, unused_variables)]
+#![allow(unused_variables)]
+#![allow(clippy::unnecessary_literal_unwrap)]
 
 fn main() {
     let x: i8 = 5;
@@ -32,12 +34,12 @@ fn main() {
 
     // if let construct
     if let Some(y6) = y {
-        let sum6 = x+y6;
+        let sum6 = x + y6;
         println!("Sum6: {sum6}");
-    } else {        // Else block is optional, without, there's no action when "if let" doesn't match
-        println!("Ooops, y is None...");    // Not a panic actually
+    } else {
+        // Else block is optional, without, there's no action when "if let" doesn't match
+        println!("Ooops, y is None..."); // Not a panic actually
     }
-
 
     // All arms of a match must return the same type
     // A final ; is required to end let statement
@@ -55,11 +57,7 @@ fn main() {
     }
 
     // Same for if, a let statement must be closed by a final ;
-    let pair = if roll % 2 == 0 {
-        true
-    } else {
-        false
-    };
+    let pair = if roll % 2 == 0 { "pair" } else { "impair" };
 
     // But a direct if statement does not
     if roll % 2 == 0 {
@@ -67,7 +65,6 @@ fn main() {
     } else {
         println!("Impair")
     }
-
 
     let zero = 0;
 }

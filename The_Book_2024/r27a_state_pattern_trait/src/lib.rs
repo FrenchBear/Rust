@@ -2,6 +2,7 @@
 // Learning Rust, OO Design Patterns
 //
 // 2025-02-12   PV      Seems really complicated while a simple enum could have been enough (ok, with many match to check state)
+// 2025-04-21   PV      Clippy suggestions
 
 pub struct Post {
     state: Option<Box<dyn State>>,
@@ -37,10 +38,18 @@ impl Post {
     }
 }
 
+// Suggestion from Clippy
+impl Default for Post {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 trait State {
     fn request_review(self: Box<Self>) -> Box<dyn State>;
     fn approve(self: Box<Self>) -> Box<dyn State>;
-    fn content<'a>(&self, _post: &'a Post) -> &'a str {     // use _ in _post to avoid warning about unused parameter
+    fn content<'a>(&self, _post: &'a Post) -> &'a str {
+        // use _ in _post to avoid warning about unused parameter
         ""
     }
 }

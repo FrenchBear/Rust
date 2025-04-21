@@ -66,5 +66,5 @@ fn main() {
 
     // Nonsensical operations fail as they should:
     // Compile-time Error: type mismatch.
-    //let one_feter = one_foot + one_meter;
+    //let one_something = one_foot + one_meter;
 }

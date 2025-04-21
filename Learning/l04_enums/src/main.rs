@@ -1,5 +1,5 @@
 // l04_enums
-// Learning Rust again, PLay with enums and Options
+// Learning Rust again, PLay with enum and Option
 //
 // 2023-05-17   PV
 // 2025-04-21   PV      Clippy optimizations
@@ -54,16 +54,16 @@ fn main() {
     let n2 = n1.clamp(Some(0), Some(10));
     let n3 = n1.and(n2); // Return n2 only if n1 and n2 both have a value, else None
 
-    let mut sv = Some(1);
-    // match sv.as_mut() {
+    let mut some_value = Some(1);
+    // match some_value.as_mut() {
     //     Some(v) => *v = 42,
     //     None => {}
     // }
     // Better:
-    if let Some(ref mut v) = sv {
+    if let Some(ref mut v) = some_value {
         *v = 42;
     }
-    println!("v={:?}", sv);
+    println!("v={:?}", some_value);
 
     let five = Some(5);
     let six = plus_one(five);

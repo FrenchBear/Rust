@@ -1,4 +1,4 @@
-// vstrings library - byterange based functions
+//  library - byte range based functions
 // Learning rust 2024, A bunch of string helpers before working on dev for fun project String coding
 //
 // 2024-11-10   PV
@@ -14,7 +14,7 @@ use std::str;
 use crate::glyph2::Glyph2;
 
 // ==========================================================================================
-// From byterange
+// From byte range
 
 // ------------------------
 // Helpers
@@ -55,7 +55,7 @@ where
 // ------------------------
 // get byte slice
 
-// Simple implementation, panicks if range is invalid or goes beyond s limits
+// Simple implementation, panics if range is invalid or goes beyond s limits
 pub fn get_byteslice_from_byterange<R>(s: &str, byte_range: R) -> &[u8]
 where
     R: RangeBounds<usize>,
@@ -75,7 +75,7 @@ pub fn get_bytesliceoption_from_byterange(s: &str, byte_range: Range<usize>) -> 
     Some(s[byte_range].as_bytes())
 }
 
-// Result<&[u8],String> varant, return an error string in cases causing basic version to panic, ok Ok(&[u8])
+// Result<&[u8],String> variant, return an error string in cases causing basic version to panic, ok Ok(&[u8])
 pub fn get_bytesliceresult_from_byterange(s: &str, byte_range: Range<usize>) -> Result<&[u8], String> {
     if byte_range.start > byte_range.end {
         return Err(format!(
@@ -101,7 +101,7 @@ pub fn get_byteslicetolerant_from_byterange(s: &str, byte_range: Range<usize>) -
 
     // Ensure that the actual range end is clipped to s.len()
     let en = if byte_range.end > s.len() { s.len() } else { byte_range.end };
-    //s[byte_range.start..en].as_bytes()
+    //s[byte_range.start..end].as_bytes()
     &s.as_bytes()[byte_range.start..en]
 }
 
@@ -145,7 +145,7 @@ pub fn get_glyphvector_from_byterange<R>(s: &str, byte_range: R) -> Vec<Glyph2>
 where
     R: RangeBounds<usize>,
 {
-    // Validate range and convert all varians into inclusive byte indexes for start and end
+    // Validate range and convert all variant into inclusive byte indexes for start and end
     let r = validate_byterange(s.len(), byte_range);
 
     let mut accumulate = false;

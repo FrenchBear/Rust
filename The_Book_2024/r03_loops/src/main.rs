@@ -3,6 +3,9 @@
 // In rust, break can return a value for a block, and/or specify a loop label to indicate wich look should break
 //
 // 2024-11-04   PV
+// 2025-04-21   PV      Clippy suggestions
+
+#![allow(clippy::never_loop)]
 
 fn main() {
     let mut count = 0;
@@ -31,7 +34,7 @@ fn main() {
         let mut i = 0;
         loop {
             {
-                i = i + 1;
+                i += 1;
                 if i == 4 {
                     break 'main_loop 12;
                 }
@@ -57,5 +60,4 @@ fn main() {
     for element in (1..5).rev() {
         println!("the value is: {element}");
     }
-
 }

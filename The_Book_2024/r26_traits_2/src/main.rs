@@ -69,7 +69,10 @@ impl Draw for SelectBox {
 
 // My example of a generic trait
 
-pub trait Dict<K, V> where K:Eq+Hash {
+pub trait Dict<K, V>
+where
+    K: Eq + Hash,
+{
     fn add(&mut self, k: K, v: V);
     fn get(&self, rk: &K) -> &V;
     fn del(&mut self, rk: &K) -> bool;
@@ -80,7 +83,10 @@ pub struct MyDic<K, V> {
     dic: HashMap<K, V>,
 }
 
-impl<K, V> Dict<K, V> for MyDic<K, V> where K:Eq+Hash {
+impl<K, V> Dict<K, V> for MyDic<K, V>
+where
+    K: Eq + Hash,
+{
     fn add(&mut self, k: K, v: V) {
         self.dic.insert(k, v);
     }
@@ -104,7 +110,11 @@ fn main() {
             Box::new(SelectBox {
                 width: 75,
                 height: 10,
-                options: vec![String::from("Yes"), String::from("No"), String::from("Maybe")],
+                options: vec![
+                    String::from("Yes"),
+                    String::from("No"),
+                    String::from("Maybe"),
+                ],
             }),
             Box::new(Button {
                 width: 50,

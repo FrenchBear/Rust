@@ -1,4 +1,4 @@
-// vstrings lib module
+// vstring lib module
 // Learning rust 2024, A bunch of string helpers before working on dev for fun project String coding
 //
 // 2024-11-10   PV
@@ -92,7 +92,7 @@ pub fn get_string_from_byteiterator(byteiterator: impl Iterator<Item = u8>) -> S
     String::from_utf8(byteiterator.collect::<Vec<u8>>()).unwrap()
 }
 
-// DOn't know if unsafe variant is faster
+// Don't know if unsafe variant is faster
 pub unsafe fn get_string_from_byteiterator_unsafe(
     byteiterator: impl Iterator<Item = u8>,
 ) -> String {

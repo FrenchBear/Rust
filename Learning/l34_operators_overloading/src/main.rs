@@ -1,5 +1,5 @@
 // l34_operators_overloading
-// Learning Rust, Rust by Exaample, §16.3
+// Learning Rust, Rust by Example, §16.3
 // Also example of Drop trait implementation (just one method, drop)
 //
 // 2025-04-03   PV      First version

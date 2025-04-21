@@ -23,7 +23,7 @@ impl Rectangle {
     }
 
     fn can_hold(&self, other: &Rectangle) -> bool {
-        other.width<=self.width && other.height<=self.height
+        other.width <= self.width && other.height <= self.height
     }
 
     // Associated function (doesn't have &self parameter contrary to methods)
@@ -37,15 +37,18 @@ impl Rectangle {
     }
 }
 
-
 fn main() {
     // Simple tuple (directly supports Debug trait)
-    let rect1 = Rectangle{
+    let rect1 = Rectangle {
         width: 30,
         height: 50,
     };
 
-    println!( "The area of the rectangle {:?} is {} square pixels.", rect1, rect1.area());
+    println!(
+        "The area of the rectangle {:?} is {} square pixels.",
+        rect1,
+        rect1.area()
+    );
     dbg!(&rect1);
 
     let rect2 = Rectangle {

@@ -20,7 +20,6 @@ struct Color(i32, i32, i32);
 #[derive(Debug)]
 struct Point(i32, i32, i32);
 
-
 // Unit-like structs without fields!
 struct AlwaysEqual;
 
@@ -44,7 +43,7 @@ fn main() {
         ..user1
     };
 
-    let em = user1.email;       // Still Ok
+    let em = user1.email; // Still Ok
     //let un = user1.username;          // Not Ok anymore
 
     // Initialize Tuple structs
@@ -59,7 +58,11 @@ fn main() {
 
     // Simple tuple (directly supports Debug trait)
     let rect1 = (30, 50);
-    println!( "The area of the rectangle {:?} is {} square pixels.", rect1, area(rect1));
+    println!(
+        "The area of the rectangle {:?} is {} square pixels.",
+        rect1,
+        area(rect1)
+    );
     dbg!(&rect1);
 }
 

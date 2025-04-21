@@ -41,7 +41,7 @@ fn test_option_map() {
     let o = n.map(|x| x + 1);
     assert_eq!(o, Some(43));
 
-    // Note that applyying a function returning Option<U> will return an Option<Option<U>> --> see .and_then
+    // Note that applying a function returning Option<U> will return an Option<Option<U>> --> see .and_then
     let s = Some(String::from("Hello"));
     let t = s.map(|st| st.find('k')); // t is an Option<Option<usize>>
     assert_eq!(t, Some(None));
@@ -168,7 +168,7 @@ fn main() {
 
     oi.inspect(|x| println!("Value {} is even.\n", x)); // Call function(x) if value is Some(x)
 
-    // replace: return old value, and remplace inner value by new value (can't replace by None)
+    // replace: return old value, and replace inner value by new value (can't replace by None)
     let mut x = Some(2);
     let old = x.replace(5);
     assert_eq!(x, Some(5));
@@ -209,8 +209,8 @@ fn main() {
     assert_eq!(x, None);
     assert_eq!(prev, Some(43));
 
-    // fn xor(self, optb: Option<i32>) -> Option<i32>
-    // Returns [Some] if exactly one of self, optb is [Some], otherwise returns [None].
+    // fn xor(self, opt: Option<i32>) -> Option<i32>
+    // Returns [Some] if exactly one of self, opt is [Some], otherwise returns [None].
     let x = Some(2);
     let y: Option<u32> = None;
     assert_eq!(x.xor(y), Some(2));
@@ -227,8 +227,8 @@ fn main() {
     let y: Option<u32> = None;
     assert_eq!(x.xor(y), None);
 
-    // fn and(self, optb: Option<U>) -> Option<U>
-    // Returns [None] if the option is [None], otherwise returns optb.
+    // fn and(self, opt: Option<U>) -> Option<U>
+    // Returns [None] if the option is [None], otherwise returns opt.
     // Arguments passed to and are eagerly evaluated; if you are passing the result of a function call,
     // it is recommended to use and_then, which is lazily evaluated.
     let x = Some(2);

@@ -1,4 +1,4 @@
-// vstrings library - gluphrange based functions
+// vstring library - glyph range based functions
 // Learning rust 2024, A bunch of string helpers before working on dev for fun project String coding
 //
 // 2024-12-18   PV
@@ -13,7 +13,7 @@ use std::str;
 use crate::glyph2::Glyph2;
 
 // ==========================================================================================
-// From charrange
+// From char range
 
 use std::ops::Bound::*;
 
@@ -26,7 +26,7 @@ pub struct ByteCharGlyphRange {
 
 // Checks that glyph_range is compatible with s, accepts all variations of Range
 // Panics in case of invalid range or incompatibility
-// If Ok, return both a byte range, a char range and a gluph range Range<usize> representing all forms of ranges
+// If Ok, return both a byte range, a char range and a glyph range Range<usize> representing all forms of ranges
 pub fn validate_glyphrange<R>(s: &str, glyph_range: R) -> ByteCharGlyphRange
 where
     R: RangeBounds<usize>,
@@ -90,7 +90,7 @@ where
 // ------------------------
 // get byte slice
 
-// Simple implementation, panicks if range is invalid or goes beyond s limits
+// Simple implementation, panics if range is invalid or goes beyond s limits
 pub fn get_byteslice_from_glyphrange<R>(s: &str, glyph_range: R) -> &[u8]
 where
     R: RangeBounds<usize>,

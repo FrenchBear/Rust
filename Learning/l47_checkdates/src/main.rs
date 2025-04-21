@@ -44,7 +44,6 @@ struct DataBag {
 
 fn main() {
     let globstrsources: Vec<String> = vec![r"C:\Development\**\*.{cs,rs,py,fs,c,cpp,go,java,js,jl,lua,ts,vb}".to_string()];
-    //let globstrsources: Vec<String> = vec![r"C:\Development\GitHub\Rust\Learning\l47_checkdates\src\*.rs".to_string()];
 
     // Prepare log writer
     let mut writer = logging::new(false);
@@ -97,7 +96,7 @@ fn main() {
         logln(&mut writer, format!(" found in {:.3}s", duration.as_secs_f64()).as_str());
         logln(
             &mut writer,
-            format!("Average comment header size: {:.1}", b.comment_lines_count as f64 / b.files_count as f64).as_str(),
+            format!("Average comment header size: {:.1} line(s)", b.comment_lines_count as f64 / b.files_count as f64).as_str(),
         );
     }
 }
@@ -133,7 +132,7 @@ fn process_file(writer: &mut LogWriter, b: &mut DataBag, p: &Path) {
 }
 
 fn process_text(writer: &mut LogWriter, p: &Path, source: &str, comment: &str, b: &mut DataBag) {
-    static DATE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\s(\d+)-(\d+)-(\d+)\s").unwrap());
+    static DATE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\s+(\d+)-(\d+)-(\d+)\s").unwrap());
 
     let mut last_date: Option<NaiveDate> = None;
 
@@ -145,7 +144,10 @@ fn process_text(writer: &mut LogWriter, p: &Path, source: &str, comment: &str, b
             return;
         }
 
-        if let Some(caps) = DATE.captures(line) {
+        if line.len() < 10 {
+            continue;
+        }
+        if let Some(caps) = DATE.captures(&line[comment.len()..]) {
             let y = caps[1].parse::<i32>().unwrap();
             let m = caps[2].parse::<u32>().unwrap();
             let d = caps[3].parse::<u32>().unwrap();

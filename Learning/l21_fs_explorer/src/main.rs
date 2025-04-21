@@ -46,7 +46,7 @@ fn test_globmatch() {
 
     // for p in builder
     //     .into_iter()
-    //     // Doesn't exlude files in $RECYCLE.BIN (can filter on path), but since it's done after getting iterator, it's too late
+    //     // Doesn't exclude files in $RECYCLE.BIN (can filter on path), but since it's done after getting iterator, it's too late
     //     .filter_entry(|p| !globmatch::is_hidden_entry(p))
     // {
     //     // match p {
@@ -59,7 +59,7 @@ fn test_globmatch() {
     // Since a Result<T,E> is iterable on Ok values and we only care about these, we can use flatten
     for p in builder
         .into_iter()
-        // Doesn't exlude files in $RECYCLE.BIN (can filter on path), but since it's done after getting iterator, it's too late
+        // Doesn't exclude files in $RECYCLE.BIN (can filter on path), but since it's done after getting iterator, it's too late
         .filter_entry(|p| !globmatch::is_hidden_entry(p))
         .flatten()
     {
@@ -73,7 +73,7 @@ fn test_rust_search() {
     let search: Vec<String> = SearchBuilder::default()
         .location(r"C:\Development")
         .search_input("cargo.toml")
-        //.search_input("kargo")
+        //.search_input("cargo")
         .ignore_case()
         //.filter(rust_search::filter::FilterType::Custom(fi))          // Nothing works here
         .build()
@@ -139,8 +139,8 @@ fn check_filenames() {
     // cnt += check_simple(r"\\terazalt\books\Livres");
     // cnt += check_simple(r"\\terazalt\books\BD");
     // cnt += check_simple(r"\\terazalt\books");
-    //cnt += check_simple(r"\\terazalt\Photo");
-    //cnt += check_simple(r"D:\Pierre\OneDrive\MusicOD");
+    // cnt += check_simple(r"\\terazalt\Photo");
+    // cnt += check_simple(r"D:\Pierre\OneDrive\MusicOD");
     cnt += check_simple(r"D:\Pierre\OneDrive\DocumentsOD");
 
     let duration = start.elapsed();

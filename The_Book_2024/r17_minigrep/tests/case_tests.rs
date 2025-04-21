@@ -4,7 +4,7 @@
 
 #[cfg(test)]
 mod tests {
-  
+
     #[test]
     fn case_sensitive() {
         let query = "duct";
@@ -13,7 +13,10 @@ Rust:
 safe, fast, productive.
 Pick three.
 Duct tape.";
-        assert_eq!(vec!["safe, fast, productive."], r17_minigrep::search(query, contents));
+        assert_eq!(
+            vec!["safe, fast, productive."],
+            r17_minigrep::search(query, contents)
+        );
     }
 
     #[test]
@@ -29,5 +32,4 @@ Trust me.";
             r17_minigrep::search_case_insensitive(query, contents)
         );
     }
-    
 }

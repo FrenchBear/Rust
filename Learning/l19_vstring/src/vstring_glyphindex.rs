@@ -1,4 +1,4 @@
-// vstrings library - glyphindex based functions
+// vstring library - glyph index based functions
 // Learning rust 2024, A bunch of string helpers before working on dev for fun project String coding
 //
 // 2024-12-17   PV
@@ -109,7 +109,7 @@ pub fn get_glyphiterator_from_glyphindex(
 }
 
 // ------------------------
-// get strref
+// get str ref
 
 pub fn get_strref_from_glyphindex(s: &str, glyph_index: usize) -> &str {
     &s[validate_glyphindex(s, glyph_index).byte_range]

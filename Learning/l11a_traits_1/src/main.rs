@@ -29,7 +29,6 @@ fn main() {
     print_comment(&b);
 
     let bs = summarizable(&b);
-    //let bt: &impl Summary = &b;       // Not allowed, but the previous line does exactly this...
     bs.comment();
 
     let pf = Pair::new(1.0, 2.0);
@@ -84,7 +83,7 @@ struct Fruit {
     weight: f64,
 }
 
-// Comparaisons are exclusively based on weight field
+// Comparisons are exclusively based on weight field
 impl Fruit {
     fn new(n: &str, c: &str, w: f64) -> Fruit {
         Fruit {

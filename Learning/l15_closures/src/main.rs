@@ -218,11 +218,11 @@ fn closure_moved_to_a_new_thread() {
 fn test_closure() {
     let s = String::from("Hello");
     let w = String::from("World");
-    let l = || s + "!"; // Closure takes ownership of s. Type FnOnce, can only be called pnce.
+    let l = || s + "!"; // Closure takes ownership of s. Type FnOnce, can only be called once.
     let t = l(); // Not possible with FnOnce
-    //let u = l();    // Use ov moved value
+    //let u = l();    // Use of moved value
 
-    //println!("{s}");    // Err borrow ov moved value s
+    //println!("{s}");    // Err borrow of moved value s
     println!("{w}");
 }
 
@@ -234,7 +234,7 @@ enum MyOption<T> {
 }
 
 impl<T> MyOption<T> {
-    // Genenric type F is only related to the function unwrap_or_else, not to the enum or impl
+    // Generic type F is only related to the function unwrap_or_else, not to the enum or impl
     pub fn unwrap_or_else<F>(self, f: F) -> T
     where
         F: FnOnce() -> T, // Note that Fn and FnMut also implement FnOnce trait
@@ -291,12 +291,12 @@ fn test_rectangle() {
     list.sort_by_key(|r| r.width);
     println!("{:#?}", list);
 
-    // Weird: sort_by_key requires that closure has FnMut trait, and I don't think that sw has it, but it's Ok...
+    // Weird: sort_by_key requires that closure has FnMut trait, and I don't think that the closure has it, but it's Ok...
     let swh = |r: &Rectangle| r.height;
     list.sort_by_key(swh);
     println!("{:#?}", list);
 
-    // swm is a FnMut
+    // This is a FnMut
     let mut cnt = 0;
     let swm = |r: &Rectangle| {
         cnt += 1;

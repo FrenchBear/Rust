@@ -1,5 +1,5 @@
 // L33_local_remote
-// Find out if a path is local or remore (or CD-ROM, ...)
+// Find out if a path is local or remote (or CD-ROM, ...)
 //
 // 2025-04-03   PV      First version
 
@@ -90,7 +90,7 @@ fn main() {
     // B:\ is Local
     // E:\ is Removable
     // \\teraz\temp\file.txt is Remote
-    // \\teraz\timp\file.txt is Unknown
+    // \\teraz\thing\file.txt is Unknown
     // X:\ is Remote
 }
 

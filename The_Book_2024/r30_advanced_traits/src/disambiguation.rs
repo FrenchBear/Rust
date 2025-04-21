@@ -2,7 +2,6 @@
 //
 // 2025-02-18   PV
 
-
 // Calling Methods (=having a &self parameter) with the same name
 trait Pilot {
     fn fly(&self);
@@ -35,12 +34,11 @@ impl Human {
 pub fn disambiguation_methods() {
     let person = Human;
 
-    person.fly();   // Call method implemented on Human directly (prints *waving arms furiously*)
+    person.fly(); // Call method implemented on Human directly (prints *waving arms furiously*)
     // Specifying trait name before method to select specific version of fly()
     Pilot::fly(&person);
     Wizard::fly(&person);
 }
-
 
 // calling associated funtions of the same name
 trait Animal {
@@ -62,14 +60,13 @@ impl Animal for Dog {
 }
 
 pub fn main() {
-    println!("A baby dog is called a {}", Dog::baby_name());        // Calls the function defined on Dog directly (Spot)
+    println!("A baby dog is called a {}", Dog::baby_name()); // Calls the function defined on Dog directly (Spot)
     //println!("A baby dog is called a {}", Animal::baby_name());   // cannot call associated function on trait without specifying the corresponding `impl` type
 
     // To disambiguate and tell Rust that we want to use the implementation of Animal for Dog as opposed to the implementation of Animal
-    // for some other type, we need to use fully qualified syntax. 
-    println!("A baby dog is called a {}", <Dog as Animal>::baby_name());        // "Cast" a type, not a variable
+    // for some other type, we need to use fully qualified syntax.
+    println!("A baby dog is called a {}", <Dog as Animal>::baby_name()); // "Cast" a type, not a variable
 
     // fully qualified syntax is defined as follows:
     // <Type as Trait>::function(receiver_if_method, next_arg, ...);
-
 }

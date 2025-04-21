@@ -50,7 +50,7 @@ mod back_of_house {
     // In a pub struct, default for fields is still private
     pub struct Breakfast {
         pub toast: String,
-        seasonal_fruit: String,         // Customers can't cange the fruit
+        seasonal_fruit: String, // Customers can't cange the fruit
     }
 
     // Because Breakfast contains a private field, we must provide a public associated function that constructs
@@ -69,7 +69,6 @@ mod back_of_house {
         Soup,
         Salad,
     }
-
 }
 
 pub fn eat_breakfast_at_restaurant() {
@@ -84,25 +83,22 @@ pub fn eat_breakfast_at_restaurant() {
     //let f = meal.seasonal_fruit;
     //println!("Selected fruit: {f}"):
 
-
     let order1 = back_of_house::Appetizer::Soup;
     let order2 = back_of_house::Appetizer::Salad;
 }
 
-
 pub mod reservations {
     use phone_reservations::take_phone_reservation;
 
-
-    pub enum  ReservationMode {
+    pub enum ReservationMode {
         Phone,
         Email,
         Sms,
     }
 
     // These submodules are private
-    mod email_reservations;     // from email_reservations.rs
-    mod sms_reservations;       // from sms_reservations/mod.rs (old style path)
+    mod email_reservations; // from email_reservations.rs
+    mod sms_reservations; // from sms_reservations/mod.rs (old style path)
 
     mod phone_reservations {
         pub fn take_phone_reservation() {}

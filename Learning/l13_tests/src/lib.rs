@@ -109,7 +109,7 @@ mod tests2 {
     use super::*;
 
     #[test]
-    #[should_panic(expected = "Guess value must be between 1 and 100, got 200.")] // Can optionally use expected="msg" to be sure that the function parics for the correct reason
+    #[should_panic(expected = "Guess value must be between 1 and 100, got 200.")] // Can optionally use expected="msg" to be sure that the function panics for the correct reason
     fn greater_than_100() {
         let g = Guess::new(200);
     }

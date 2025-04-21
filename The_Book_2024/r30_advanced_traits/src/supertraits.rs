@@ -1,6 +1,7 @@
 // Advanced traits, supertraits
 //
 // 2025-02-18   PV
+// 2025-04-21   PV      Clippy suggestions
 
 use std::fmt;
 
@@ -40,7 +41,6 @@ pub fn main() {
 
     (&p as &dyn OutlinePrint).outline_print();
 
-    let q: Box<dyn OutlinePrint>;
-    q = Box::new(p);        // Consumes p
+    let q: Box<dyn OutlinePrint> = Box::new(p); // Consumes p
     (*q).outline_print();
 }

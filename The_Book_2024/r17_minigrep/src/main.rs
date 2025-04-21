@@ -5,8 +5,8 @@
 
 #![allow(dead_code, unused_variables)]
 
-use std::{env, process};
 use r17_minigrep::Config;
+use std::{env, process};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -34,7 +34,7 @@ fn main() {
     */
 
     let config = Config::build(&args).unwrap_or_else(|err| {
-        eprintln!("Problem parsing arguments: {err}");      // To stderr
+        eprintln!("Problem parsing arguments: {err}"); // To stderr
         process::exit(1);
     });
 

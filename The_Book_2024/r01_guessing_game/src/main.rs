@@ -29,7 +29,7 @@ fn main() {
             Ok(num) => num,
             Err(_) => {
                 println!("Entrez une valeur numérique! entre 1 et 100!");
-                continue;       // Rust expects continue o return a u32...  But it returns ! (never return) so it's Ok
+                continue; // Rust expects continue o return a u32...  But it returns ! (never return) so it's Ok
             }
         };
 

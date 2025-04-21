@@ -25,7 +25,7 @@ fn main() {
     irtest();
 
     // static lifetime can actually be used (while 'a can't outside of a function with <'a>), but it's implicit here, all string
-    // litterals have 'static lifetime
+    // literals have 'static lifetime
     let s: &'static str = "I have a static lifetime.";
 }
 
@@ -40,11 +40,6 @@ fn longest<'a>(s1: &'a str, s2: &'a str) -> &'a str {
 fn first_word(s: &str) -> &str {
     let ts = s.split_whitespace();
     let fw = ts.into_iter().next();
-
-    // match (fw) {
-    //     Some(w) => w,
-    //     None => "",
-    // }
     fw.unwrap_or_default()
 }
 
@@ -65,7 +60,7 @@ impl ImportantExcerpt<'_> {
     }
 
     fn announce_and_return_part(&self, announcement: &str) -> &str {
-        // Result gets by default the same liketime as &self, so it's Ok
+        // Result gets by default the same lifetime as &self, so it's Ok
         println!("Attention please: {}", announcement);
         self.part
     }

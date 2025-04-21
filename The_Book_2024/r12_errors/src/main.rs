@@ -2,8 +2,10 @@
 // Learning rust 2024, The Book §9, errors
 //
 // 2024-11-15   PV
+// 2025-04-21   PV      Clippy suggestions
 
 #![allow(dead_code, unused_variables)]
+#![allow(clippy::question_mark, clippy::type_complexity)]
 
 use std::fs::{self, File};
 use std::io::{self, Read};
@@ -121,7 +123,7 @@ mod test_module {
 
     impl Guess {
         pub fn new(value: i32) -> Guess {
-            if value < 1 || value > 100 {
+            if !(1..=100).contains(&value) {
                 panic!("Guess value must be between 1 and 100, got {value}.");
             }
 

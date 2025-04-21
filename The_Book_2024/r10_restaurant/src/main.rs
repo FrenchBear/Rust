@@ -5,12 +5,12 @@
 
 #![allow(dead_code, unused_variables)]
 
-use r10_restaurant::{eat_breakfast_at_restaurant, eat_at_restaurant, reservations};
+use r10_restaurant::{eat_at_restaurant, eat_breakfast_at_restaurant, reservations};
 //use r10_restaurant::*;        // glob operator
 
 fn main() {
     println!("Hello from main");
-    
+
     eat_breakfast_at_restaurant();
     eat_at_restaurant();
 }
@@ -39,7 +39,7 @@ fn aw3() {
     add_to_waitlist();
 }
 
-// On the other hand, when bringing in structs, enums, and other items with use, 
+// On the other hand, when bringing in structs, enums, and other items with use,
 // it’s idiomatic to specify the full path.
 use std::collections::HashMap;
 
@@ -48,11 +48,9 @@ fn test_map() {
     map.insert(1, 2);
 }
 
-// Exception: we can't bring the same name twice into scope, for instance, use std::fmt::Result; 
+// Exception: we can't bring the same name twice into scope, for instance, use std::fmt::Result;
 // and use std::io::Result; is not permitted
 // But it's possible to rename one, for instance, use std::io::Result as IoResult;
-
-
 
 pub fn call_for_reservation() {
     reservations::take_reservation(reservations::ReservationMode::Email);

@@ -1,4 +1,4 @@
-// vstrings library - byteindex based functions
+// vstring library - byteindex based functions
 // Learning rust 2024, A bunch of string helpers before working on dev for fun project String coding
 //
 // 2024-11-10   PV
@@ -163,7 +163,7 @@ pub fn get_glyphiterator_from_byteindex(s: &str, byte_index: usize) -> impl Iter
 }
 
 // ------------------------
-// get strref
+// get str ref
 
 pub fn get_strref_from_byteindex(s: &str, byte_index: usize) -> &str {
     &s[byte_index..=byte_index]

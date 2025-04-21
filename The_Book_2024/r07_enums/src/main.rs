@@ -44,14 +44,12 @@ struct MoveMessage {
 struct WriteMessage(String); // tuple struct
 struct ChangeColorMessage(i32, i32, i32); // tuple struct
 
-
 // Can define methods on enums:
 impl Message {
     fn call(&self) {
         // Method body here
     }
 }
-
 
 fn main() {
     let four = IpAddrKind::V4;
@@ -79,5 +77,4 @@ fn main() {
     // Example calling a method of a Message
     let m = Message::Write(String::from("hello"));
     m.call();
-
 }

@@ -2,6 +2,7 @@
 // Learning rust 2024, The Book §8, common collections
 //
 // 2024-11-10   PV
+// 2025-04-21   PV      Clippy suggestions
 
 use std::collections::HashMap;
 
@@ -70,7 +71,7 @@ pub fn test_hashmaps() {
     // alt
     let mut map: HashMap<&str, i32> = HashMap::new();
     for word in text.split_whitespace() {
-        let e= map.entry(word);
+        let e = map.entry(word);
         *e.or_default() += 1;
     }
     println!("{map:?}"); // {"world": 2, "hello": 1, "wonderful": 1}.

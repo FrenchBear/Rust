@@ -52,7 +52,7 @@ fn iterator_sum() {
 // Instead, they produce different iterators by changing some aspect of the original iterator.
 fn adapter() {
     let v1: Vec<i32> = vec![1, 2, 3];
-    let v2: Vec<_> = v1.into_iter().map(|x| x + 1).collect(); // into_iter takes owership of values (x is i32, not &i32 as we get with iter), v1 can't be used after that
+    let v2: Vec<_> = v1.into_iter().map(|x| x + 1).collect(); // into_iter takes ownership of values (x is i32, not &i32 as we get with iter), v1 can't be used after that
     assert_eq!(v2, vec![2, 3, 4]);
 
     let euler_gamma = 0.5772156649015328; // More or less...

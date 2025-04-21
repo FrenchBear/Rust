@@ -51,7 +51,7 @@ fn main() {
     println!("The largest fruit is {result:?}");
 
     let pi = Point { x: 3, y: 4 };
-    let pf = Point { x: 0.866, y: 0.5 };
+    let pf: Point<f64> = Point { x: 0.866, y: 0.5 };
     let pu: Point<u8> = Point { x: 6, y: 12 };
     println!("pf: x={} y={} l={:.4}", pf.x, pf.y, pf.module());
 
@@ -110,12 +110,11 @@ impl Point<f64> {
     }
 }
 
-// Also implementing for f32 creates an error when calling module on a Point<f64>, not sure why...
-// impl Point<f32> {
-//     fn module(&self) -> f32 {
-//         f32::hypot(self.x, self.y)
-//     }
-// }
+impl Point<f32> {
+    fn module(&self) -> f32 {
+        f32::hypot(self.x, self.y)
+    }
+}
 
 struct MixedPoint<X, Y> {
     x: X,

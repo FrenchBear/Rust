@@ -2,8 +2,10 @@
 // Learning rust 2024, Advanced features
 //
 // 2025-02-17   PV
+// 2025-04-21   PV      Clippy suggestions
 
 #![allow(unused, static_mut_refs)]
+#![allow(clippy::missing_safety_doc)]
 
 use std::slice;
 
@@ -35,7 +37,7 @@ fn main() {
     }
 
     // Calling (a safe) function containing an unsafe block
-    let mut v = vec![1, 2, 3, 4, 5, 6];
+    let mut v = [1, 2, 3, 4, 5, 6];
     let r = &mut v[..];
     let (a, b) = r.split_at_mut(3);
 

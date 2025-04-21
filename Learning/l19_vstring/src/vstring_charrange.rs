@@ -1,4 +1,4 @@
-// vstrings library - charrange based functions
+//  library - char range based functions
 // Learning rust 2024, A bunch of string helpers before working on dev for fun project String coding
 //
 // 2024-12-16   PV
@@ -13,7 +13,7 @@ use std::str;
 use crate::glyph2::Glyph2;
 
 // ==========================================================================================
-// From charrange
+// From char range
 
 // ------------------------
 // Helpers
@@ -77,7 +77,7 @@ where
 // ------------------------
 // get byte slice
 
-// Simple implementation, panicks if range is invalid or goes beyond s limits
+// Simple implementation, panics if range is invalid or goes beyond s limits
 pub fn get_byteslice_from_charrange<R>(s: &str, char_range: R) -> &[u8]
 where
     R: RangeBounds<usize>,
@@ -125,8 +125,8 @@ pub fn get_glyphvector_from_charrange<R>(s: &str, char_range: R) -> Vec<Glyph2>
 where
     R: RangeBounds<usize>,
 {
-    // Validate range and convert all varians into inclusive byte indexes for start and end
-    // Don't need matching bytes range, argument char_range is enouth to analyse Glyph2 values returned bu iterator
+    // Validate range and convert all variant into inclusive byte indexes for start and end
+    // Don't need matching bytes range, argument char_range is enough to analyze Glyph2 values returned by iterator
     let r = validate_charrange(s, char_range);
 
     let mut accumulate = false;

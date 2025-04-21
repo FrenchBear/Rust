@@ -9,7 +9,7 @@ use r33_web::ThreadPool;
 
 use std::{
     fs,
-    io::{prelude::*, BufReader},
+    io::{BufReader, prelude::*},
     net::{TcpListener, TcpStream},
     thread,
     time::Duration,
@@ -34,7 +34,6 @@ fn main() {
         pool.execute(|| {
             handle_connection(stream);
         });
-
     }
 }
 

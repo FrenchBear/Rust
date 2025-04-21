@@ -33,7 +33,7 @@ fn mo(k: f64) -> impl Fn(f64) -> Metre {
     move |x: f64| Metre(x + k)
 }
 
-// Here we need metre to implement Clone or Copy to the move closure can cature k by value
+// Here we need metre to implement Clone or Copy to the move closure can capture k by value
 fn mx(k: Metre) -> impl Fn(Metre) -> Metre {
     // move |m: Metre| k.clone()        // This version explicitly calls clone(), so Copy trait is not required
     move |m: Metre| k // Implicit copy, Copy trait is required

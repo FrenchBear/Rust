@@ -5,7 +5,7 @@
 
 #![allow(dead_code, unused_variables)]
 
-mod front_of_house; // Moved to a separate file instead of mod fron_of_house { content... }
+mod front_of_house; // Moved to a separate file instead of mod front_of_house { content... }
 
 pub fn eat_at_restaurant() {
     // Absolute path
@@ -14,13 +14,13 @@ pub fn eat_at_restaurant() {
     // Relative path
     front_of_house::hosting::add_to_waitlist();
 
-    // Order a breakfast with Tye toast
+    // Order a breakfast with rye toast
     let mut meal = back_of_house::Breakfast::summer("Rye");
     // Change our mind!
     meal.toast = String::from("wheat");
     println!("I'd like {} toast please", meal.toast);
 
-    // Can't do this beacuse seasonal_fruit is provate
+    // Can't do this because seasonal_fruit is private
     //meal.seasonal_fruit = String::from("blueberries");
 
     let order1 = back_of_house::Appetizer::Salad;

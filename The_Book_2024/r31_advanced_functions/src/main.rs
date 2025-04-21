@@ -5,7 +5,6 @@
 
 #![allow(unused)]
 
-
 fn add_one(x: i32) -> i32 {
     x + 1
 }
@@ -22,7 +21,6 @@ fn main() {
 
     println!("The answer is: {answer}");
 }
-
 
 // Function returning a closure
 // Closures are represented by traits --> dyn Fn. They're not sized, sp wrat it in Box<>

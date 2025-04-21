@@ -171,8 +171,6 @@ impl DatePatterns {
 
         let re_date_my = Regex::new((String::from("(?i)") + month + "[ -]+" + year).as_str()).unwrap();
         let re_date_ym = Regex::new((String::from("(?i)") + year + "[ -]+" + month).as_str()).unwrap();
-        // let re_date_my = Regex::new((String::from("(?i)") + r"(\d[ -])?" + month + "[ -]+" + year + r"([ -]\d)?").as_str()).unwrap();
-        // let re_date_ym = Regex::new((String::from("(?i)") + r"(\d[ -])?" + year + "[ -]+" + month + r"([ -]\d)?").as_str()).unwrap();
 
         DatePatterns {
             re_date_ymd_head,

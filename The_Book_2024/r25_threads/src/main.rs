@@ -44,7 +44,7 @@ fn threads() {
     thread::spawn(move || {
         let val = String::from("hi from thread");
         tx.send(val).unwrap(); // unwrap() will cause code to panic in case of an error (just for simple learning code)
-                               // At this point, val is not available anymore, ownership has been transferred to the receiver.
+        // At this point, val is not available anymore, ownership has been transferred to the receiver.
     });
 
     // We’re using recv, short for receive, which will block the main thread’s execution and wait until a value is sent down the channel.
@@ -58,7 +58,12 @@ fn threads() {
     let (tx, rx) = mpsc::channel();
 
     thread::spawn(move || {
-        let vals = vec![String::from("hi"), String::from("from"), String::from("the"), String::from("thread")];
+        let vals = vec![
+            String::from("hi"),
+            String::from("from"),
+            String::from("the"),
+            String::from("thread"),
+        ];
 
         for val in vals {
             tx.send(val).unwrap();
@@ -76,7 +81,12 @@ fn threads() {
 
     let tx1 = tx.clone(); // Clone of tx for 1st thread
     thread::spawn(move || {
-        let vals = vec![String::from("hi"), String::from("from"), String::from("the"), String::from("thread")];
+        let vals = vec![
+            String::from("hi"),
+            String::from("from"),
+            String::from("the"),
+            String::from("thread"),
+        ];
 
         for val in vals {
             tx1.send(val).unwrap();
@@ -85,7 +95,12 @@ fn threads() {
     });
 
     thread::spawn(move || {
-        let vals = vec![String::from("more"), String::from("messages"), String::from("for"), String::from("you")];
+        let vals = vec![
+            String::from("more"),
+            String::from("messages"),
+            String::from("for"),
+            String::from("you"),
+        ];
 
         for val in vals {
             tx.send(val).unwrap();
@@ -101,7 +116,6 @@ fn threads() {
 
 use std::sync::{Arc, Mutex};
 
-
 fn mutexes() {
     // Simple example in single-threaded context
     let m = Mutex::new(5);
@@ -112,10 +126,9 @@ fn mutexes() {
         let mut num = m.lock().unwrap();
         println!("m = {m:?}");
         *num = 6;
-    }   // Lock is released when MutexGuard is dropped here
+    } // Lock is released when MutexGuard is dropped here
     println!("m = {m:?}");
     println!();
-    
 
     // Using Arc<T> to share ownership across multiple threads
     let counter = Arc::new(Mutex::new(0));
@@ -135,5 +148,4 @@ fn mutexes() {
     }
     println!("Result: {}", *counter.lock().unwrap());
     println!();
-    
 }

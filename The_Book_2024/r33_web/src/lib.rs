@@ -17,7 +17,8 @@ impl ThreadPool {
 
     // --snip--
     pub fn execute<F>(&self, _f: F)
-    where F: FnOnce() + Send + 'static,
-    { }
-    
+    where
+        F: FnOnce() + Send + 'static,
+    {
+    }
 }

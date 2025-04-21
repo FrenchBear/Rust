@@ -36,7 +36,10 @@ fn main() {
     println!("b after = {b:?}");
     println!("c after = {c:?}");
 
-    let p = Person {name: String::from("Pierre"), age:58};
+    let p = Person {
+        name: String::from("Pierre"),
+        age: 58,
+    };
     let pc = RefCell::new(p);
     let pcr1 = Rc::new(pc);
     let pcr2 = Rc::clone(&pcr1);

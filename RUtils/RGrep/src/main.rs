@@ -224,10 +224,6 @@ Autorecurse glob pattern transformation (option -r):
         // Check for extra argument
         for arg in args.split_off(opts.index()) {
             // Don't check ? or help other than in first position, otherwise 'rgrep -F help source' will not search for word help
-            // if arg == "?" || arg == "help" {
-            //     Self::usage();
-            //     return Err("".into());
-            // }
 
             if arg.starts_with("-") {
                 return Err(format!("Invalid/unsupported option {}", arg).into());

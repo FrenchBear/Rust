@@ -35,7 +35,7 @@ fn comp_sci_student_greeting(student: &dyn CompSciStudent) -> String {
     )
 }
 
-// Implem
+// Impl
 
 #[derive(Debug)]
 struct Etudiant {

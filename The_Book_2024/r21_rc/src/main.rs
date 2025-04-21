@@ -32,6 +32,4 @@ fn main() {
         println!("a={:?} ref count={}", ra, Rc::strong_count(&ra));
     }
     println!("a={:?} ref count={}", ra, Rc::strong_count(&ra));
-
-
 }

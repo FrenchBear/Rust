@@ -1,7 +1,7 @@
 // recycle: Delete files and folders to trash
 //
 // 2025-04-03	PV      First version
-// 2025-04-17	PV      1.1 Fxed logic errors (return statement misplaced in embedded is blocks)
+// 2025-04-17	PV      1.1 Fixed logic errors (return statement misplaced in embedded is blocks)
 
 #![allow(unused)]
 

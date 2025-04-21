@@ -5,8 +5,8 @@
 
 #![allow(dead_code, unused_variables)]
 
-use std::thread;
 use std::collections::HashMap;
+use std::thread;
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone, Hash)]
 enum ShirtColor {
@@ -36,9 +36,9 @@ impl Inventory {
             *count += 1;
         }
 
-        let mut colors_counts:Vec<(&ShirtColor, &i32)> = counter.iter().collect();
+        let mut colors_counts: Vec<(&ShirtColor, &i32)> = counter.iter().collect();
         colors_counts.sort_by_key(|kv| -kv.1);
-        let color_most = colors_counts.first().unwrap().0;      // Will panic if stock is empty, ok for now
+        let color_most = colors_counts.first().unwrap().0; // Will panic if stock is empty, ok for now
         *color_most
     }
 }
@@ -68,7 +68,6 @@ fn giveaway_tshirt() {
         "The user with preference {:?} gets {:?}",
         user_pref3, giveaway3
     );
-
 }
 
 fn borrow_immutably() {

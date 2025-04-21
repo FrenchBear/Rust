@@ -3,9 +3,9 @@
 //
 // Note that the actual rules defined in Unicode Standard Annex #29 Unicode Text Segmentation are much more complex,
 // Emoji detection and combination rules defined in Unicode Technical Standard #51are also more complex.
-// This is just a learning exercise. For full implementation of the rules, use rust unicode_segmentation crate.
+// This is just a learning exercise. For full implementation of the rules, use rust Unicode_segmentation crate.
 //
-// 2024-12-13   PV      First version, inefficient, only supporing simple combining diacriticals, but working!
+// 2024-12-13   PV      First version, inefficient, only supporting simple combining diacritical, but working!
 // 2024-12-14   PV      Store char_indices iterator instead of a Vec<char>; return ranges rather than strings
 // 2025-04-21   PV      Clippy optimizations
 
@@ -24,9 +24,9 @@ pub struct Glyph2 {
 // Private internal iterator object storing current state
 struct Glyph2Iterator<'a> {
     byte_count: usize,                          // Length of the string in UTF-8 bytes
-    charit: CharIndices<'a>, // Iterator over string returning Option<(usize, char)>
-    current_char_index: usize, // Current position in chars in string, charit provides current position in bytes
-    next_charindice_opt: Option<(usize, char)>, // charit return for next character, since we must read one ahead to decide if we combine or not
+    char_it: CharIndices<'a>, // Iterator over string returning Option<(usize, char)>
+    current_char_index: usize, // Current position in chars in string, char_it provides current position in bytes
+    next_charindice_opt: Option<(usize, char)>, // char_it return for next character, since we must read one ahead to decide if we combine or not
 }
 
 // Iterator returns (char_index, string)
@@ -37,14 +37,11 @@ impl Iterator for Glyph2Iterator<'_> {
         let current_charindice_opt = if self.next_charindice_opt.is_some() {
             self.next_charindice_opt
         } else {
-            self.charit.next()
+            self.char_it.next()
         };
-        // if current_charindice_opt.is_none() {
-        //     return None;
-        // }
         current_charindice_opt?;
 
-        self.next_charindice_opt = self.charit.next();
+        self.next_charindice_opt = self.char_it.next();
 
         // byte index of current char, covering bix_start..=bix_end
         let bix_start = current_charindice_opt.unwrap().0;
@@ -69,7 +66,7 @@ impl Iterator for Glyph2Iterator<'_> {
                 || is_zwj(cc) && is_emoji(nc)
             {
                 // We combine, fetch next character
-                self.next_charindice_opt = self.charit.next();
+                self.next_charindice_opt = self.char_it.next();
 
                 // Adjust byte end
                 bix_end = if self.next_charindice_opt.is_some() {
@@ -128,7 +125,7 @@ impl Glyph2 {
     pub fn glyph2_indices(s: &str) -> impl Iterator<Item = Glyph2> {
         Glyph2Iterator {
             byte_count: s.len(),
-            charit: s.char_indices(),
+            char_it: s.char_indices(),
             current_char_index: 0,
             next_charindice_opt: None,
         }

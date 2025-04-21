@@ -57,7 +57,7 @@ impl<T> Deref for MyBox<T> {
 // The Drop trait is included in the prelude
 impl<T> Drop for MyBox<T> {
     fn drop(&mut self) {
-        // SHould deallocate memory, but in this example, no need
+        // Should deallocate memory, but in this example, no need
         println!("Drop");
     }
 }
@@ -73,7 +73,7 @@ fn test_mybox() {
     assert_eq!(5, *y); // Compiler interprets *y as *(y.deref())
 
     let n = MyBox("Pierre".to_string());
-    hello(&n); // Because Defef is implemented, rust can convert &MyBox<String> in &String. Then stdlib implements Deref that turns &String in &str.
+    hello(&n); // Because Deref is implemented, rust can convert &MyBox<String> in &String. Then stdlib implements Deref that turns &String in &str.
     // Similar to: let n = MyBox::new(String::from("Pierre")); hello(&(*n)[..]);
 }
 

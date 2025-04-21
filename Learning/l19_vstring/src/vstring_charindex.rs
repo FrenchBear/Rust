@@ -1,4 +1,4 @@
-// vstrings library - charindex based functions
+// vstring library - charindex based functions
 // Learning rust 2024, A bunch of string helpers before working on dev for fun project String coding
 //
 // 2024-11-10   PV
@@ -150,7 +150,7 @@ pub fn get_glyphiterator_from_charindex(
 }
 
 // ------------------------
-// get strref
+// get str ref
 
 pub fn get_strref_from_charindex(s: &str, char_index: usize) -> &str {
     &s[validate_charindex(s, char_index)]

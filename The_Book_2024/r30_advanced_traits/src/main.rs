@@ -8,8 +8,8 @@
 use std::ops::Add;
 
 mod disambiguation;
-mod supertraits;
 mod newtype;
+mod supertraits;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 struct Point {
@@ -28,7 +28,7 @@ struct Point {
 // Rhs defaults to Self if we don't specify a concrete type for Rhs when implementing Add, making it easier to implement
 
 impl Add for Point {
-    type Output = Point;        
+    type Output = Point;
 
     fn add(self, other: Point) -> Point {
         Point {
@@ -49,7 +49,6 @@ impl Add<Meters> for Millimeters {
         Millimeters(self.0 + (other.0 * 1000))
     }
 }
-
 
 fn main() {
     assert_eq!(

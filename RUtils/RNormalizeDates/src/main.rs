@@ -41,17 +41,6 @@ const APP_VERSION: &str = "1.1.1";
 // -----------------------------------
 // Main
 
-// Dev tests
-// #[allow(unused)]
-// fn test_main() {
-//     let dp = DatePatterns::new();
-//     let mut writer = logging::new(true);
-//     let options = Options {..Default::default()};
-//     let mut b = DataBag {..Default::default()};
-
-//     process_file(&mut writer, &PathBuf::from("Destination France - 03.04.05.2025.pdf"), &dp, &options, &mut b);
-// }
-
 #[derive(Debug, Default)]
 struct DataBag {
     files_count: usize,

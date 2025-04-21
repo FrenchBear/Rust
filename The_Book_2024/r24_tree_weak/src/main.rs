@@ -18,11 +18,10 @@ use std::rc::{Rc, Weak};
 #[derive(Debug)]
 struct Node {
     value: i32,
-    
-    parent: RefCell<Weak<Node>>,    
+
+    parent: RefCell<Weak<Node>>,
     // A child does not own its parent; when parent is dropped, child nodes should be dropped as well.
     // But if we drop a child node, parent should still exist. This is a case for weak references!
-
     children: RefCell<Vec<Rc<Node>>>,
 }
 
@@ -40,7 +39,7 @@ fn main() {
         parent: RefCell::new(Weak::new()),
         children: RefCell::new(vec![Rc::clone(&leaf)]),
     });
-    *leaf.parent.borrow_mut()=Rc::downgrade(&branch);
+    *leaf.parent.borrow_mut() = Rc::downgrade(&branch);
 
     println!("leaf parent = {:?}", leaf.parent.borrow().upgrade());
     // The lack of infinite output indicates that this code didn’t create a reference cycle.

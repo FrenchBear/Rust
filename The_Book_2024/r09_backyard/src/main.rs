@@ -7,9 +7,9 @@
 
 use crate::garden::vegetables::Asparagus;
 
-pub mod garden;
-pub mod field;      // Required, since module field is defined in field/mod.rs, there's no mod statement in mod.rs, so can't make it pub from here
-                    // Without that, field module is private and not accessible
+pub mod field;
+pub mod garden; // Required, since module field is defined in field/mod.rs, there's no mod statement in mod.rs, so can't make it pub from here
+// Without that, field module is private and not accessible
 
 fn main() {
     let plant = Asparagus {};

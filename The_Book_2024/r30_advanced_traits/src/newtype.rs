@@ -26,6 +26,12 @@ pub fn main() {
     let w = Wrapper(vec![String::from("hello"), String::from("world")]);
     println!("w = {w}");
 
-    let res = format!("[{}]", w.0.iter().map(|x| format!("{:#?}", x)).collect::<Vec<String>>().join(", "));
+    let res = format!(
+        "[{}]",
+        w.0.iter()
+            .map(|x| format!("{:#?}", x))
+            .collect::<Vec<String>>()
+            .join(", ")
+    );
     println!("w = {res}");
 }

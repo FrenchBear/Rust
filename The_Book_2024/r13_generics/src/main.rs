@@ -39,13 +39,16 @@ impl Point<f64> {
 // generic method on generic struct
 struct Pair<X, Y> {
     x: X,
-    y:Y,
+    y: Y,
 }
 
 // Need Copy trait to duplicate value (alt: no reference, and take ownership of self and other)
 impl<X1: Copy, Y1> Pair<X1, Y1> {
     fn mixup<X2: Copy, Y2>(&self, other: &Pair<X2, Y2>) -> Pair<X1, X2> {
-        Pair { x:self.x, y:other.x }
+        Pair {
+            x: self.x,
+            y: other.x,
+        }
     }
 }
 
@@ -80,8 +83,7 @@ fn main() {
     let tc2 = ThreeContainer::Two(Point { x: 1, y: 2 }, Point { x: 3, y: 4 });
     let tc3 = ThreeContainer::One(tc2);
 
-    let pa1 = Pair {x:12, y:'a'};
-    let pa2 = Pair {x:false, y:-2.7};
+    let pa1 = Pair { x: 12, y: 'a' };
+    let pa2 = Pair { x: false, y: -2.7 };
     let pa3 = pa1.mixup(&pa2);
-    
 }

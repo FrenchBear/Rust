@@ -21,7 +21,7 @@ fn main() {
 }
 
 fn arrays() {
-    // Arrays (init: https://www.joshmcguigan.com/blog/array-initialization-rust/)
+    // Arrays: https://www.joshmcguigan.com/blog/array-initialization-rust/
     let mut a1: [i32; 10] = [0; 10]; // Initialization from [T; N] where T: Copy
     let a1b: [i32; 10] = Default::default(); // Initialization from [T; N] where T: Default (and N <= 32)
     let a2 = [1, 2, 3];
@@ -152,10 +152,6 @@ fn vectors() {
     println!();
 
     // Vector of vectors
-    // let mut vv: Vec<Vec<i32>> = Vec::new();
-    // vv.push(Vec::new());
-    // vv.push(Vec::new());
-    // vv.push(Vec::new());
     let vv: Vec<Vec<i32>> = vec![vec![], vec![], vec![]];
 
     let t1: [f64; 3] = [1.0, 5.0, 6.0];
@@ -188,7 +184,7 @@ fn mode(v: &Vec<i32>) -> i32 {
     imax
 }
 
-// Exercice 10.4
+// Exercise 10.4
 fn median(tf: &[f64]) -> Option<f64> {
     let mut vf: Vec<f64> = Vec::new();
     for f in tf {
@@ -301,7 +297,7 @@ fn strings() {
 
     // -----------
     // Exercise 10.4
-    // Convert strings to pig latin. The first consonant of each word is moved to the end of the word and “ay” is added, so “first” becomes “irst-fay.”
+    // Convert strings to pig Latin. The first consonant of each word is moved to the end of the word and “ay” is added, so “first” becomes “irst-fay.”
     // Words that start with a vowel have “hay” added to the end instead (“apple” becomes “apple-hay”). Keep in mind the details about UTF-8 encoding!
     println!();
     let s = pig_latin("first apple");
@@ -332,14 +328,14 @@ fn hashmaps() {
     scores.insert(String::from("Blue"), 10);
     scores.insert(String::from("Blue"), 12); // Inserting again updates value
     scores.insert(String::from("Yellow"), 50);
-    scores.entry(String::from("Yellow")).or_insert(100); // Insert only if the key doesn' already have a value
+    scores.entry(String::from("Yellow")).or_insert(100); // Insert only if the key doesn't already have a value
     let team_name = String::from("Blue");
     let score = scores.get(&team_name).copied().unwrap_or(0);
     for (key, value) in &scores {
         println!("{key}: {value}");
     }
 
-    // For owned values like String, invert moves the values and the hashmap is the owner
+    // For owned values like String, invert moves the values and the HashMap is the owner
     let field_name = String::from("Favorite color");
     let field_value = String::from("Blue");
     let mut map = HashMap::new();
@@ -347,7 +343,7 @@ fn hashmaps() {
     //println!("{field_name}");     // Error
     //println!("{field_value}");    // Error
 
-    // Inserting a reference won't move values, but the values referenced must be valid at least as long as the hashmap is valid
+    // Inserting a reference won't move values, but the values referenced must be valid at least as long as the HashMap is valid
     let field_name = String::from("Favorite color");
     let field_value = String::from("Blue");
     let mut map = HashMap::new();

@@ -21,7 +21,12 @@ pub trait Surface2D {
 
     // A trait with default impl can call other traits with or without default impl
     fn to_string(&self) -> String {
-        format!("{}: surface={}, perimeter={}", self.name(), self.surface(), self.perimeter())
+        format!(
+            "{}: surface={}, perimeter={}",
+            self.name(),
+            self.surface(),
+            self.perimeter()
+        )
     }
 }
 
@@ -54,11 +59,13 @@ pub struct Rectangle2points {
 
 impl Surface2D for Rectangle2points {
     fn surface(&self) -> f64 {
-        (self.bottom_right_corner.x - self.top_left_corner.x) * (self.bottom_right_corner.y - self.top_left_corner.y).abs()
+        (self.bottom_right_corner.x - self.top_left_corner.x)
+            * (self.bottom_right_corner.y - self.top_left_corner.y).abs()
     }
 
     fn perimeter(&self) -> f64 {
-        2.0 * (self.bottom_right_corner.x - self.top_left_corner.x).abs() + 2.0 * (self.bottom_right_corner.y - self.top_left_corner.y).abs()
+        2.0 * (self.bottom_right_corner.x - self.top_left_corner.x).abs()
+            + 2.0 * (self.bottom_right_corner.y - self.top_left_corner.y).abs()
     }
 
     // Override default impl
@@ -89,7 +96,11 @@ fn print_surface_2(surf: &impl Surface2D) {
 
 fn max_surface_2(surf1: &impl Surface2D, surf2: &impl Surface2D) {
     // surf1 and surf2 don't need to have the same type
-    let ms = if surf1.surface() >= surf2.surface() { surf1.name() } else { surf2.name() };
+    let ms = if surf1.surface() >= surf2.surface() {
+        surf1.name()
+    } else {
+        surf2.name()
+    };
     print!("Max surface_2: {}", ms)
 }
 
@@ -99,7 +110,9 @@ fn print_surface_3<T: Surface2D>(name: &str, surf: &T) {
 }
 
 // Using where clause on generic type
-fn print_surface_4<T>(name: &str, surf: &T) where T: Surface2D
+fn print_surface_4<T>(name: &str, surf: &T)
+where
+    T: Surface2D,
 {
     println!("{} surface_3 = {}", name, surf.surface());
 }
@@ -151,7 +164,10 @@ where
 
 // Returning a type that implements Traits
 fn returns_surface() -> impl Surface2D {
-    Rectangle2points { top_left_corner: Point {x: -2.0, y: 3.0}, bottom_right_corner: Point {x: 5.0, y:-3.3} }
+    Rectangle2points {
+        top_left_corner: Point { x: -2.0, y: 3.0 },
+        bottom_right_corner: Point { x: 5.0, y: -3.3 },
+    }
 }
 
 // ----------------------------------------------------------
@@ -185,12 +201,11 @@ pub trait MonTrait {
     fn say_hello(&self);
 }
 
-pub struct Machin
-{
+pub struct Machin {
     pub x: i32,
 }
 
-impl  MonTrait for Machin {
+impl MonTrait for Machin {
     fn say_hello(&self) {
         println!("Hello!");
     }
@@ -215,17 +230,16 @@ fn main() {
     print_surface_3("Rectangle r", &r);
     println!("{}", r.to_string());
 
-    let p = Point {x:3.8, y:-1.2};
+    let p = Point { x: 3.8, y: -1.2 };
     print_half_3(&p);
     print_half_4(&p);
 
     let s2 = returns_surface();
     print_surface_1(&s2);
 
-
     // Use trait Trait: dyn Trait
-    let ma = Machin {x:3};
-    let mb: Box<dyn MonTrait> = Box::new(Machin {x:3});     // Use Box<dyn Trait> to get a reference (and because the size for any type implementing Box isn't known at compile time of this line)
+    let ma = Machin { x: 3 };
+    let mb: Box<dyn MonTrait> = Box::new(Machin { x: 3 }); // Use Box<dyn Trait> to get a reference (and because the size for any type implementing Box isn't known at compile time of this line)
     let x1: &dyn MonTrait = &ma;
-    let x2: &dyn MonTrait = &(*mb);     // Can't use directly mb, need to dereference the box and then take the address
+    let x2: &dyn MonTrait = &(*mb); // Can't use directly mb, need to dereference the box and then take the address
 }

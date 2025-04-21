@@ -2,6 +2,7 @@
 // Learning rust 2024, The Book §8, common collections
 //
 // 2024-11-10   PV
+// 2025-04-21   PV      Clippy suggestions
 //
 // Two strings in rust:
 // - str:    in the core language, usually seen in its borrowed form &str. String slices are references to some UTF-8 encoded string data stored elsewhere.
@@ -69,7 +70,7 @@ pub fn test_strings() {
 
     // &str concatenation
     let s1 = plus_str("Hello", " world");
-    
+
     // ---------------------------------------------------
     // format! macro
     // Only use references, does NOT take ownership of the first string
@@ -93,16 +94,31 @@ pub fn test_strings() {
     println!("blen={}", blen(s));
     println!("bgetbyte(10)={}", bgetbyte(s, 10));
     println!("bgetbyteopt(20)={:?}", bgetbyteopt(s, 20));
-    println!("bgetbyterange(0..10)={:?}", bgetbyterange(s, &(0usize..10usize)));
-    println!("bvgetbyterange(0..10)={:?}", bvgetbyterange(s, &(0usize..10usize)));
-    println!("bgetbyterangeinclusive(0..=10)={:?}", bgetbyterangeinclusive(s, &(0usize..=10usize)));
+    println!(
+        "bgetbyterange(0..10)={:?}",
+        bgetbyterange(s, &(0usize..10usize))
+    );
+    println!(
+        "bvgetbyterange(0..10)={:?}",
+        bvgetbyterange(s, &(0usize..10usize))
+    );
+    println!(
+        "bgetbyterangeinclusive(0..=10)={:?}",
+        bgetbyterangeinclusive(s, &(0usize..=10usize))
+    );
 
     println!("\nChar functions");
     println!("clen={}", clen(s));
     println!("cgetchar(5)={}", cgetchar(s, 5));
     println!("cgetcharopt(6)={:?}", cgetcharopt(s, 6));
-    println!("cgetcharange(2..5)={:?}", cgetcharange(s, &(2usize..5usize)));
-    println!("cgetcharangeinclusive(2..=5)={:?}", cgetcharangeinclusive(s, &(2usize..=5usize)));
+    println!(
+        "cgetcharange(2..5)={:?}",
+        cgetcharange(s, &(2usize..5usize))
+    );
+    println!(
+        "cgetcharangeinclusive(2..=5)={:?}",
+        cgetcharangeinclusive(s, &(2usize..=5usize))
+    );
 
     let s = "🏳️‍🌈🐻‍❄️";
     println!("\ns={s}");
@@ -130,7 +146,8 @@ fn bgetbyte(s: &str, index: usize) -> u8 {
 }
 
 fn bgetbyteopt(s: &str, index: usize) -> Option<u8> {
-    s.bytes().nth(index)
+    //s.bytes().nth(index)
+    s.as_bytes().get(index).copied()
 }
 
 // Can only return a reference to an array, can't return directly an array since its size is now known at compile time

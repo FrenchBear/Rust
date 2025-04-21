@@ -1,5 +1,5 @@
 // l35_impl_trait
-// Learning Rust, Rust by Exaample, §16.3
+// Learning Rust, Rust by Example, §16.3
 // Also example of Drop trait implementation (just one method, drop)
 //
 // 2025-04-03   PV      First version
@@ -13,8 +13,8 @@ use std::vec::IntoIter;
 // Advanced example showing:
 // - impl Trait as an argument type (BufRead is a trait)
 // - An iterator of Result<T, E> items can be collected into Result<Collection<T>, E>
-// Another way to declate it is:
-// fn parse_csv_document<R: std::io::BufRead>(src: R) -> std::io::Result<Vec<Vec<String>>> {..}
+// Another way to declare it is:
+// fn parse_csv_document<R: std::io::BufRead>(source: R) -> std::io::Result<Vec<Vec<String>>> {..}
 fn parse_csv_document<R: std::io::BufRead>(src: R) -> std::io::Result<Vec<Vec<String>>> {
     src.lines()
         .map(|line| {

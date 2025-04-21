@@ -1,4 +1,4 @@
-// l28_associated_types: Learning Rust, Generics, Accociated types
+// l28_associated_types: Learning Rust, Generics, Associated types
 //
 // 2025-03-24	PV      First version
 
