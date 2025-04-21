@@ -1,8 +1,9 @@
 // l44_macros: Learning Rust
 //
 // 2025-04-17	PV      First version
+// 2025-04-21   PV      Clippy optimizations
 
-#![allow(dead_code, unused_variables)]
+#![allow(clippy::eq_op, clippy::erasing_op)]
 
 // Simple macro
 macro_rules! say_hello {
@@ -43,18 +44,22 @@ macro_rules! test {
     // Arguments don't need to be separated by a comma.
     // Any template can be used!
     ($left:expr; and $right:expr) => {
-        println!("{:?} and {:?} is {:?}",
-                 stringify!($left),
-                 stringify!($right),
-                 $left && $right)
+        println!(
+            "{:?} and {:?} is {:?}",
+            stringify!($left),
+            stringify!($right),
+            $left && $right
+        )
     };
     // ^ each arm must end with a semicolon.
     ($left:expr; or $right:expr) => {
-        println!("{:?} or {:?} is {:?}",
-                 stringify!($left),
-                 stringify!($right),
-                 $left || $right)
-    };  
+        println!(
+            "{:?} or {:?} is {:?}",
+            stringify!($left),
+            stringify!($right),
+            $left || $right
+        )
+    };
 }
 
 // Macros can use + in the argument list to indicate that an argument may repeat at least once, or *, to indicate that
@@ -72,7 +77,6 @@ macro_rules! find_min {
     )   // Last semicolon is optional
 }
 
-
 // Domain-specific languages
 // Note the two levels of braces in the macro, the outer one is part of the syntax of macro_rules!
 macro_rules! calculate {
@@ -83,7 +87,6 @@ macro_rules! calculate {
         }
     };
 }
-
 
 // Variadic interfaces
 macro_rules! calculate_var {
@@ -101,9 +104,6 @@ macro_rules! calculate_var {
         calculate_var! { $(eval $es),+ }
     }};
 }
-
-
-
 
 fn main() {
     say_hello!();
@@ -143,5 +143,4 @@ fn main() {
         eval (2 * 3) + 1
     }
     println!();
-
 }

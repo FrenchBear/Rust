@@ -3,8 +3,7 @@
 // This is base code, that will panic if any part is missing, it's just demo code to show functions to call
 //
 // 2025-04-07   PV      First version
-
-//#![allow(unused)]
+// 2025-04-21   PV      Clippy optimizations
 
 use std::path::Path;
 
@@ -31,10 +30,11 @@ fn break_path(p: &Path) {
     };
     // Basepath is path with prefix removed (or None if there's no path)
     let basepath = match prefix {
-        Some(p) => match path {
-            Some(pa) => Some(&pa[p.len()..]),
-            None => None,
-        },
+        // Some(p) => match path {
+        //     Some(pa) => Some(&pa[p.len()..]),
+        //     None => None,
+        // },
+        Some(p) => path.map(|pa| &pa[p.len()..]),
         None => path,
     };
 

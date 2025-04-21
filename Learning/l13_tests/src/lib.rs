@@ -8,6 +8,7 @@
 // Use «cargo test -- --ignored» to run tests with #[ignore] attribute (ex: expensive tests)
 //
 // 2023-06-23   PV
+// 2025-04-21   PV      Clippy optimizations
 
 #![allow(unused)]
 
@@ -28,8 +29,7 @@ pub fn add(left: usize, right: usize) -> usize {
 }
 
 pub fn greeting(name: &str) -> String {
-    //format!("Hello {}!", name)
-    format!("Hello")
+    "Hello".into()
 }
 
 // The attribute cfg stands for configuration and tells Rust that the following item should only be included given a certain configuration option.
@@ -96,7 +96,8 @@ pub struct Guess {
 
 impl Guess {
     pub fn new(value: i32) -> Guess {
-        if value < 1 || value > 100 {
+        //if value < 1 || value > 100 {
+        if !(1..=100).contains(&value) {
             panic!("Guess value must be between 1 and 100, got {}.", value);
         }
         Guess { value }
@@ -108,7 +109,7 @@ mod tests2 {
     use super::*;
 
     #[test]
-    #[should_panic(expected="Guess value must be between 1 and 100, got 200.")] // Can optionally use expected="msg" to be sure that the function parics for the correct reason
+    #[should_panic(expected = "Guess value must be between 1 and 100, got 200.")] // Can optionally use expected="msg" to be sure that the function parics for the correct reason
     fn greater_than_100() {
         let g = Guess::new(200);
     }
@@ -124,7 +125,7 @@ mod tests3 {
     // Using operator ? is a convenient way to to fail the test if any operation within returns an Err variant.
     #[test]
     fn it_works() -> Result<(), String> {
-        if add(2,2)==4 {
+        if add(2, 2) == 4 {
             Ok(())
         } else {
             Err(String::from("Adding 2 and 2 doesn't make 4!"))

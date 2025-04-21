@@ -5,7 +5,7 @@
 
 #![allow(dead_code, unused_variables)]
 
-mod front_of_house;     // Moved to a separate file instead of mod fron_of_house { content... }
+mod front_of_house; // Moved to a separate file instead of mod fron_of_house { content... }
 
 pub fn eat_at_restaurant() {
     // Absolute path

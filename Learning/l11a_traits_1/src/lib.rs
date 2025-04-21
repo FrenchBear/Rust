@@ -4,9 +4,10 @@
 // 2023-06-19   PV
 
 pub trait Summary {
-    fn summarize(&self) -> String;  
+    fn summarize(&self) -> String;
 
-    fn comment(&self) -> String { // Default implementation
+    fn comment(&self) -> String {
+        // Default implementation
         "No comment".to_string()
     }
 }
@@ -38,7 +39,7 @@ pub struct Book {
     pub title: String,
     pub author: String,
 }
-impl Summary for Book { 
+impl Summary for Book {
     fn summarize(&self) -> String {
         format!("Book {} from {}", self.title, self.author)
     }

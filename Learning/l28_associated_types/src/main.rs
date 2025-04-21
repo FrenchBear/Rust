@@ -24,10 +24,12 @@ impl Contains<i32, i32> for Container {
     }
 }
 
-fn difference<A, B, C>(container: &C) -> i32 where C: Contains<A, B> {
+fn difference<A, B, C>(container: &C) -> i32
+where
+    C: Contains<A, B>,
+{
     container.last() - container.first()
 }
-
 
 trait Kontains {
     type A;
@@ -37,7 +39,6 @@ trait Kontains {
     fn kfirst(&self) -> i32;
     fn klast(&self) -> i32;
 }
-
 
 impl Kontains for Container {
     // Specify what types `A` and `B` are. If the `input` type is `Container(i32, i32)`, the `output` types are determined as `i32` and `i32`.
@@ -49,37 +50,44 @@ impl Kontains for Container {
         (&self.0 == number_1) && (&self.1 == number_2)
     }
     // Grab the first number.
-    fn kfirst(&self) -> i32 { self.0 }
+    fn kfirst(&self) -> i32 {
+        self.0
+    }
     // Grab the last number.
-    fn klast(&self) -> i32 { self.1 }
+    fn klast(&self) -> i32 {
+        self.1
+    }
 }
 
 fn kdifference<C: Kontains>(container: &C) -> i32 {
     container.klast() - container.kfirst()
 }
 
-
 fn main() {
     let number_1 = 3;
     let number_2 = 10;
     let container = Container(number_1, number_2);
 
-    println!("Does container contain {} and {}: {}",
-        &number_1, &number_2,
-        container.contains(&number_1, &number_2));
+    println!(
+        "Does container contain {} and {}: {}",
+        &number_1,
+        &number_2,
+        container.contains(&number_1, &number_2)
+    );
 
     println!("First number: {}", container.first());
     println!("Last number: {}", container.last());
-    
+
     println!("The difference is: {}", difference(&container));
 
-
-    println!("Does container contain {} and {}: {}",
-        &number_1, &number_2,
-        container.kontains(&number_1, &number_2));
+    println!(
+        "Does container contain {} and {}: {}",
+        &number_1,
+        &number_2,
+        container.kontains(&number_1, &number_2)
+    );
     println!("First number: {}", container.kfirst());
     println!("Last number: {}", container.klast());
-    
-    println!("The difference is: {}", kdifference(&container));
 
+    println!("The difference is: {}", kdifference(&container));
 }

@@ -2,6 +2,7 @@
 // Learning Rust again
 //
 // 2023-06-18   PV
+// 2025-04-21   PV      Clippy optimizations
 
 #![allow(dead_code, unused_variables)]
 
@@ -55,11 +56,12 @@ fn panic_if_file_not_found() {
 }
 
 fn read_text() -> Result<String, io::Error> {
-    let file_result = File::open(SOURCE);
-    let mut file = match file_result {
-        Ok(file) => file,
-        Err(e) => return Err(e),
-    };
+    // let file_result = File::open(SOURCE);
+    // let mut file = match file_result {
+    //     Ok(file) => file,
+    //     Err(e) => return Err(e),
+    // };
+    let mut file = File::open(SOURCE)?;
     let mut txt = String::new();
 
     match file.read_to_string(&mut txt) {

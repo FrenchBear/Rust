@@ -2,6 +2,7 @@
 // Learning Rust again, PLay with enums and Options
 //
 // 2023-05-17   PV
+// 2025-04-21   PV      Clippy optimizations
 
 #![allow(unused_variables, dead_code, unused_mut)]
 
@@ -32,10 +33,12 @@ fn value_in_cents(coin: Coin) -> u8 {
 }
 
 fn plus_one(x: Option<i32>) -> Option<i32> {
-    match x {
-        None => None,
-        Some(v) => Some(v + 1),
-    }
+    // match x {
+    //     None => None,
+    //     Some(v) => Some(v + 1),
+    // }
+    // Better:
+    x.map(|n| n + 1)
 }
 
 fn main() {
@@ -51,12 +54,16 @@ fn main() {
     let n2 = n1.clamp(Some(0), Some(10));
     let n3 = n1.and(n2); // Return n2 only if n1 and n2 both have a value, else None
 
-    let mut v = Some(1);
-    match v.as_mut() {
-        Some(v) => *v = 42,
-        None => {}
+    let mut sv = Some(1);
+    // match sv.as_mut() {
+    //     Some(v) => *v = 42,
+    //     None => {}
+    // }
+    // Better:
+    if let Some(ref mut v) = sv {
+        *v = 42;
     }
-    println!("v={:?}", v);
+    println!("v={:?}", sv);
 
     let five = Some(5);
     let six = plus_one(five);

@@ -2,6 +2,7 @@
 // https://doc.rust-lang.org/rust-by-example/hello/print/print_display.html
 //
 // 2025-03-17	PV      First version
+// 2025-04-21   PV      Clippy optimizations
 
 #![allow(dead_code)]
 
@@ -86,7 +87,11 @@ impl Complex {
 impl fmt::Display for Complex {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match f.precision() {
-            Some(precision) => write!(f, "({:.precision$} + {:.precision$}i)", self.real, self.imag),
+            Some(precision) => write!(
+                f,
+                "({:.precision$} + {:.precision$}i)",
+                self.real, self.imag
+            ),
             None => write!(f, "({} + {}i)", self.real, self.imag),
         }
     }
@@ -101,19 +106,28 @@ impl fmt::Debug for Complex {
 struct Rectangular<'a>(&'a Complex);
 struct Polar<'a>(&'a Complex);
 
-impl<'a> fmt::Display for Rectangular<'a> {
+impl fmt::Display for Rectangular<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match f.precision() {
-            Some(precision) => write!(f, "({:.precision$} + {:.precision$}i)", self.0.real, self.0.imag),
+            Some(precision) => write!(
+                f,
+                "({:.precision$} + {:.precision$}i)",
+                self.0.real, self.0.imag
+            ),
             None => write!(f, "({} + {}i)", self.0.real, self.0.imag),
         }
     }
 }
 
-impl<'a> fmt::Display for Polar<'a> {
+impl fmt::Display for Polar<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match f.precision() {
-            Some(precision) => write!(f, "({:.precision$} ∠ {:.precision$}ʳ)", self.0.magnitude(), self.0.phase()),
+            Some(precision) => write!(
+                f,
+                "({:.precision$} ∠ {:.precision$}ʳ)",
+                self.0.magnitude(),
+                self.0.phase()
+            ),
             None => write!(f, "({} ∠ {}ʳ)", self.0.magnitude(), self.0.phase()),
         }
     }
@@ -154,14 +168,25 @@ fn main() {
             green: 255,
             blue: 90,
         },
-        Color { red: 0, green: 3, blue: 254 },
-        Color { red: 0, green: 0, blue: 0 },
+        Color {
+            red: 0,
+            green: 3,
+            blue: 254,
+        },
+        Color {
+            red: 0,
+            green: 0,
+            blue: 0,
+        },
     ] {
         println!("{}", color);
     }
 
     println!("\nComplex numbers:");
-    let z = Complex { real: 3.0, imag: 4.0 };
+    let z = Complex {
+        real: 3.0,
+        imag: 4.0,
+    };
     println!("z: {:.3}", z);
     println!("z: {}", z);
     println!("z: {:.3}", Polar(&z));

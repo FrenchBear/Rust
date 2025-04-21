@@ -2,8 +2,10 @@
 // Learning Rust again, arrays, collections, iterators...
 //
 // 2023-06-11   PV
+// 2025-04-21   PV      Clippy optimizations
 
 #![allow(dead_code, unused_variables)]
+#![allow(clippy::vec_init_then_push)]
 
 extern crate unicode_normalization;
 
@@ -67,11 +69,15 @@ impl List {
 fn vectors() {
     // Vectors
     let mut v1: Vec<i32> = Vec::new();
-    let mut v2 = vec![1, 2, 3];
-    let v3 = vec!["Once", "upon", "a", "time"];
     v1.push(5);
     v1.push(6);
     v1.push(7);
+
+    let mut v2 = vec![1, 2, 3];
+
+    //let v3 = vec!["Once", "upon", "a", "time"];
+    let v3 = ["Once", "upon", "a", "time"];
+
     let third = v1[2]; // Ok since integers support copy
     v1[2] = -3;
     println!("Third: {third}");
@@ -101,7 +107,8 @@ fn vectors() {
 
     // Iterating over values and changing them
     for i in &mut v2 {
-        *i = 2 * (*i);
+        //*i = 2 * (*i);
+        *i *= 2;
     }
 
     // Sort vector
@@ -145,10 +152,11 @@ fn vectors() {
     println!();
 
     // Vector of vectors
-    let mut vv: Vec<Vec<i32>> = Vec::new();
-    vv.push(Vec::new());
-    vv.push(Vec::new());
-    vv.push(Vec::new());
+    // let mut vv: Vec<Vec<i32>> = Vec::new();
+    // vv.push(Vec::new());
+    // vv.push(Vec::new());
+    // vv.push(Vec::new());
+    let vv: Vec<Vec<i32>> = vec![vec![], vec![], vec![]];
 
     let t1: [f64; 3] = [1.0, 5.0, 6.0];
     let m1 = median(&t1).unwrap_or(-999.0);
@@ -209,8 +217,8 @@ fn strings() {
     let s1 = String::from("Hello, ");
     let s2 = String::from("world!");
     let s3 = s1 + &s2; // note s1 has been moved here and can no longer be used
-                       // Although let s3 = s1 + &s2; looks like it will copy both strings and create a new one, this statement actually takes ownership of s1, appends a copy of the contents of s2, and then returns ownership of the result.
-                       // Signature of + operator: (it's self, not &self):  fn add(self, s: &str) -> String {
+    // Although let s3 = s1 + &s2; looks like it will copy both strings and create a new one, this statement actually takes ownership of s1, appends a copy of the contents of s2, and then returns ownership of the result.
+    // Signature of + operator: (it's self, not &self):  fn add(self, s: &str) -> String {
 
     let s4 = s2.clone() + &s3;
     //println!("s1={s1}");  // s1 not valid

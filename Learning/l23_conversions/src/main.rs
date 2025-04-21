@@ -2,6 +2,7 @@
 // https://doc.rust-lang.org/rust-by-example
 //
 // 2025-03-19	PV      First version
+// 2025-04-21   PV      Clippy optimizations
 
 #![allow(dead_code, unused_variables)]
 
@@ -89,23 +90,46 @@ struct Point2Di32 {
     y: i32,
 }
 
-impl Into<Point2D> for Point2Di32 {
-    fn into(self) -> Point2D {
+// Clippy: an implementation of `From` is preferred since it gives you `Into<_>` for free where the reverse isn't true
+// impl Into<Point2D> for Point2Di32 {
+//     fn into(self) -> Point2D {
+//         // Note that the signature use from, while From:: does not
+//         Point2D {
+//             x: self.x as f64,
+//             y: self.y as f64,
+//         }
+//     }
+// }
+
+impl From<Point2Di32> for Point2D {
+    fn from(val: Point2Di32) -> Self {
         // Note that the signature use from, while From:: does not
         Point2D {
-            x: self.x as f64,
-            y: self.y as f64,
+            x: val.x as f64,
+            y: val.y as f64,
         }
     }
 }
 
-impl Into<Point2D> for &Point2Di32 {
+// Clippy: an implementation of `From` is preferred since it gives you `Into<_>` for free where the reverse isn't true
+// impl Into<Point2D> for &Point2Di32 {
+//     // Preserve original, here self is actually &Point2Di32
+//     fn into(self) -> Point2D {
+//         // Note that the signature use from, while From:: does not
+//         Point2D {
+//             x: self.x as f64,
+//             y: self.y as f64,
+//         }
+//     }
+// }
+
+impl From<&Point2Di32> for Point2D {
     // Preserve original, here self is actually &Point2Di32
-    fn into(self) -> Point2D {
+    fn from(val: &Point2Di32) -> Self {
         // Note that the signature use from, while From:: does not
         Point2D {
-            x: self.x as f64,
-            y: self.y as f64,
+            x: val.x as f64,
+            y: val.y as f64,
         }
     }
 }
@@ -141,7 +165,7 @@ impl FromStr for Point2Di32 {
                 });
             }
         };
-        Ok(Point2Di32 { x, y })     // Note: skip labels x: and y: since they match variable names
+        Ok(Point2Di32 { x, y }) // Note: skip labels x: and y: since they match variable names
     }
 }
 
@@ -223,5 +247,4 @@ fn main() {
         // A let else must diverge: break, return, panic! (returning !)
         panic!("Y'a un problème");
     };
-
 }

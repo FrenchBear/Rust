@@ -4,6 +4,7 @@
 // 2025-04-20	PV      First version
 
 #![allow(dead_code, unused)]
+#![allow(clippy::bool_assert_comparison, clippy::unnecessary_literal_unwrap,clippy::unnecessary_lazy_evaluations, clippy::bind_instead_of_map)]
 
 fn main() {
     // Optional values.
@@ -130,7 +131,7 @@ fn main() {
     let o7 = Some("Hello");
     let r7 = o7.expect("Problem 7");
 
-    let o8 = Some(3.1416);
+    let o8 = Some(1.38756);
     let r8 = o8.unwrap();
 
     let o9: Option<bool> = None;
@@ -276,7 +277,7 @@ fn main() {
 
     let o25 = Some(String::from("Hello"));
     let r25 = o25
-        .map(|s| format!("{}", s.to_uppercase())) // map fn(T) -> U
+        .map(|s| s.to_uppercase().to_string()) // map fn(T) -> U
         .and_then(|st| st.find('E')) // and_then fn(T) -> Some(U)
         .and_then(|x| Some(x - 1));
     assert_eq!(r25, Some(0));
@@ -349,66 +350,42 @@ fn main() {
     // * [`get_or_insert_with`] gets the current value, inserting a default computed by the provided function if it is
     //   [`None`]
 
-    
+    let mut o29 = Some(13);
+    o29.insert(31);
+    assert_eq!(o29, Some(31));
+
+    let mut o30a = Some(28);
+    let r30a = o30a.get_or_insert(66);
+    assert_eq!(r30a, &mut 28);
+    let mut o30b: Option<i32> = None;
+    let r30b = o30b.get_or_insert(66);
+    assert_eq!(r30b, &mut 66);
+
+    let mut o31: Option<u8> = None;
+    let r31 = o31.get_or_insert_default();
+    assert_eq!(r31, &mut 0u8);
+
+    let mut o32 = Some('j');
+    let r32 = o32.get_or_insert_with(|| 'Z');
+    assert_eq!(r32, &mut 'j');
 
     // These methods transfer ownership of the contained value of an [`Option`]:
     //
     // * [`take`] takes ownership of the contained value of an [`Option`], if any, replacing the [`Option`] with [`None`]
     // * [`replace`] takes ownership of the contained value of an [`Option`], if any, replacing the [`Option`] with a
     //   [`Some`] containing the provided value
-    //
-    // [`replace`]: Option::replace
-    // [`take`]: Option::take
-    //
-    // # Examples
-    //
-    // Basic pattern matching on [`Option`]:
-    //
-    // ```
-    // let msg = Some("howdy");
-    //
-    // // Take a reference to the contained string
-    // if let Some(m) = &msg {
-    //     println!("{}", *m);
-    // }
-    //
-    // // Remove the contained string, destroying the Option
-    // let unwrapped_msg = msg.unwrap_or("default message");
-    // ```
-    //
-    // Initialize a result to [`None`] before a loop:
-    //
-    // ```
-    // enum Kingdom { Plant(u32, &'static str), Animal(u32, &'static str) }
-    //
-    // // A list of data to search through.
-    // let all_the_big_things = [
-    //     Kingdom::Plant(250, "redwood"),
-    //     Kingdom::Plant(230, "noble fir"),
-    //     Kingdom::Plant(229, "sugar pine"),
-    //     Kingdom::Animal(25, "blue whale"),
-    //     Kingdom::Animal(19, "fin whale"),
-    //     Kingdom::Animal(15, "north pacific right whale"),
-    // ];
-    //
-    // // We're going to search for the name of the biggest animal,
-    // // but to start with we've just got `None`.
-    // let mut name_of_biggest_animal = None;
-    // let mut size_of_biggest_animal = 0;
-    // for big_thing in &all_the_big_things {
-    //     match *big_thing {
-    //         Kingdom::Animal(size, name) if size > size_of_biggest_animal => {
-    //             // Now we've found the name of some big animal
-    //             size_of_biggest_animal = size;
-    //             name_of_biggest_animal = Some(name);
-    //         }
-    //         Kingdom::Animal(..) | Kingdom::Plant(..) => ()
-    //     }
-    // }
-    //
-    // match name_of_biggest_animal {
-    //     Some(name) => println!("the biggest animal is {name}"),
-    //     None => println!("there are no animals :("),
-    // }
-    // ```
+
+    let mut o33 = Some(2);
+    let r33 = o33.take();
+    assert_eq!(o33, None);
+    assert_eq!(r33, Some(2));
+
+    let mut o34a = Some(2);
+    let r34a = o34a.replace(5);
+    assert_eq!(o34a, Some(5));
+    assert_eq!(r34a, Some(2));
+    let mut o34b = None;
+    let r34b = o34b.replace(3);
+    assert_eq!(o34b, Some(3));
+    assert_eq!(r34b, None);
 }

@@ -1,8 +1,10 @@
 // l41_music_dups: Detects dups or close dups for music files
 //
 // 2025-04-11	PV      First version
+// 2025-04-21   PV      Clippy optimizations
 
 //#![allow(unused)]
+#![allow(clippy::type_complexity)]
 
 // standard library imports
 use std::path::PathBuf;
@@ -39,8 +41,7 @@ struct DataBag {
 }
 
 fn main() {
-    let mut globstrsources: Vec<String> = Vec::new();
-    globstrsources.push(r"C:\MusicOD\MP3P\**\*.mp3".to_string());
+    let globstrsources: Vec<String> = vec![r"C:\MusicOD\MP3P\**\*.mp3".to_string()];
 
     // Prepare log writer
     let mut writer = logging::new(false);
@@ -60,7 +61,7 @@ fn main() {
         }
     }
     if sources.is_empty() {
-        logln(&mut writer, format!("*** No source to process, aborting.").as_str());
+        logln(&mut writer, "*** No source to process, aborting.");
         process::exit(1);
     }
 
@@ -103,7 +104,7 @@ fn main() {
 
             let data_ics = filter_alphanum(data);
             let entry_ics = counter_ics.entry(data_ics).or_insert((0, HashMap::<&str, u32>::new()));
-            (*entry_ics).0 += 1;
+            entry_ics.0 += 1;
             let subentry_ics = entry_ics.1.entry(data).or_insert(0);
             *subentry_ics += 1;
         }
@@ -118,7 +119,10 @@ fn main() {
         //     // }
 
         // Sort and print case-insensitive space-insensitive direct counter
-        logln(&mut writer, format!("\n{data_name}: Groups ignoring case and spaces, at least 2 files").as_str());
+        logln(
+            &mut writer,
+            format!("\n{data_name}: Groups ignoring case and spaces, at least 2 files").as_str(),
+        );
         let mut vec_ics: Vec<(&String, &(u32, HashMap<&str, u32>))> = counter_ics.iter().collect();
         vec_ics.sort_by(|&a, &b| (b.1.0).cmp(&a.1.0));
         let mut vec_repr = Vec::<(&str, &str)>::new(); // Collect representants for Levenshtein distance
@@ -163,8 +167,9 @@ fn main() {
         );
         for i in 0..vec_repr.len() {
             let (cnorm1, crepr1) = vec_repr[i];
-            for j in i + 1..vec_repr.len() {
-                let (cnorm2, crepr2) = vec_repr[j];
+            // for j in i + 1..vec_repr.len() {
+            //     let (cnorm2, crepr2) = vec_repr[j];
+            for (cnorm2, crepr2) in vec_repr.iter().skip(i+1) {
                 let d = levenshtein_distance(cnorm1, cnorm2, 1);
                 if d == 1 {
                     // Found a close pair, print it
@@ -243,7 +248,7 @@ pub fn is_balanced(s: &str) -> bool {
                 current_state = c;
             }
             ')' | ']' | '}' | '»' | '›' => {
-                if stack.len() == 0 {
+                if stack.is_empty() {
                     return false;
                 }
 
@@ -274,7 +279,7 @@ pub fn levenshtein_distance(s1: &str, s2: &str, dmax: usize) -> usize {
     let len2 = s2.len();
 
     // If the difference in lengths exceeds dmax, return early
-    if (len1 as isize - len2 as isize).abs() as usize > dmax {
+    if (len1 as isize - len2 as isize).unsigned_abs() > dmax {
         return dmax + 1;
     }
 

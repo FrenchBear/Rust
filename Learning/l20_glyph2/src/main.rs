@@ -24,7 +24,7 @@ fn main() {
     println!("{:?}", get_glyph_from_byteindex(s, 32));
 
     println!("{:?}", get_glyph_from_byteindex("ABC", 1));
-    println!("{:?}", get_glyph_from_byteindex("🐗", 1));        // Should panic
+    println!("{:?}", get_glyph_from_byteindex("🐗", 1)); // Should panic
 }
 
 pub fn get_glyph_from_byteindex(s: &str, byte_index: usize) -> Glyph2 {
@@ -36,10 +36,18 @@ pub fn get_glyphoption_from_byteindex(s: &str, byte_index: usize) -> Option<Glyp
 }
 
 // Private base function
-fn get_glyphresult_from_byteindex(s: &str, byte_index: usize, should_panic: bool) -> Option<Glyph2> {
+fn get_glyphresult_from_byteindex(
+    s: &str,
+    byte_index: usize,
+    should_panic: bool,
+) -> Option<Glyph2> {
     if byte_index >= s.len() {
         if should_panic {
-            panic!("index out of bounds: the len is {} but the index is {}", s.len(), byte_index);
+            panic!(
+                "index out of bounds: the len is {} but the index is {}",
+                s.len(),
+                byte_index
+            );
         } else {
             return None;
         }
@@ -64,5 +72,5 @@ fn get_glyphresult_from_byteindex(s: &str, byte_index: usize, should_panic: bool
         }
         //lmax = *g.byte_range.end() + 1;
     }
-    None    // Actually we should never get here
+    None // Actually we should never get here
 }

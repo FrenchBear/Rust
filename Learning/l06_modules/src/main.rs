@@ -14,6 +14,6 @@ fn main() {
     garden::flower();
     lake::pond();
 
-    let plant = Asparagus{};
+    let plant = Asparagus {};
     println!("Growing {:?}", plant);
 }

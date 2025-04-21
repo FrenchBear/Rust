@@ -2,10 +2,11 @@
 // Learning Rust again
 //
 // 2023-06-27   PV
+// 2025-04-21   PV      Clippy optimizations
 
 #![allow(unused, non_snake_case)]
+#![allow(clippy::unnecessary_literal_unwrap)]
 
-use num;
 use std::{collections::HashMap, ops::Add};
 
 fn main() {
@@ -191,8 +192,8 @@ fn capture_mutable_reference() {
     let mut list = vec![1, 2, 3];
     println!("Before defining closure: {:?}", list);
     let mut borrows_mutably = || list.push(7); // It's a FnMut
-                                               // Can't put a println! here since there because there's a mutable borrow in progress, an immutable borrow is not allowed
-                                               //println!("Before calling closure: {:?}", list);
+    // Can't put a println! here since there because there's a mutable borrow in progress, an immutable borrow is not allowed
+    //println!("Before calling closure: {:?}", list);
     borrows_mutably();
     println!("After calling closure: {:?}", list);
 }
@@ -219,7 +220,7 @@ fn test_closure() {
     let w = String::from("World");
     let l = || s + "!"; // Closure takes ownership of s. Type FnOnce, can only be called pnce.
     let t = l(); // Not possible with FnOnce
-                 //let u = l();    // Use ov moved value
+    //let u = l();    // Use ov moved value
 
     //println!("{s}");    // Err borrow ov moved value s
     println!("{w}");

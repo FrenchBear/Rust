@@ -28,11 +28,12 @@ struct Rectangle {
     height: u32,
 }
 
-// To define a method, that is, a function within the context of Rectangle, we start an impl (implementation) block for Rectangle. 
+// To define a method, that is, a function within the context of Rectangle, we start an impl (implementation) block for Rectangle.
 // Methods can take ownership of self (actually it's rare), borrow self immutably, as we’ve done here, or borrow self mutably, just as they can any other parameter.
 impl Rectangle {
-    fn area(&self) -> u32 {             // self is a shortcut for self: &Self within an impl block.
-        self.height*self.width
+    fn area(&self) -> u32 {
+        // self is a shortcut for self: &Self within an impl block.
+        self.height * self.width
     }
 }
 
@@ -48,7 +49,7 @@ fn main() {
         email: String::from("pierre.violent@outlook.com"),
         ..u1
     };
-    println!("{:#?}", u2);      // Pretty print using :#?
+    println!("{:#?}", u2); // Pretty print using :#?
     //println!("{:?}", u1);     // borrow of partially moved value: `u1` partial move occurs because `u1.nom` has type `String`, which does not implement the `Copy` trait
 
     let black = Color(0, 0, 0);
@@ -56,8 +57,11 @@ fn main() {
 
     let subject = AlwaysEqual;
 
-    let r1 = Rectangle{width: dbg!(2+2), height:3};
-    dbg!(&r1);      // Need & otherwise dbg! macro takes ownership of r1.  dbg! needs #[derive(Debug)] on struct
+    let r1 = Rectangle {
+        width: dbg!(2 + 2),
+        height: 3,
+    };
+    dbg!(&r1); // Need & otherwise dbg! macro takes ownership of r1.  dbg! needs #[derive(Debug)] on struct
     println!("r1 surface: {}", r1.area());
 }
 
@@ -70,4 +74,3 @@ fn create_user(nom: String, email: String) -> User {
         email,
     }
 }
-

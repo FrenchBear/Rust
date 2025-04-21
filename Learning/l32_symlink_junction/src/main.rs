@@ -4,6 +4,7 @@
 //
 // 2025-04-02   PV      First version
 // 2025-04-04   PV      Code streamlined, all attributes constants included
+// 2025-04-21   PV      Clippy optimizations
 
 #![allow(unused)]
 
@@ -18,7 +19,9 @@ use std::os::windows::io::AsRawHandle;
 use std::path::Path;
 use windows::{
     Win32::Foundation::{HANDLE, INVALID_HANDLE_VALUE},
-    Win32::Storage::FileSystem::{FILE_ATTRIBUTE_REPARSE_POINT, GetFileAttributesW, MAXIMUM_REPARSE_DATA_BUFFER_SIZE},
+    Win32::Storage::FileSystem::{
+        FILE_ATTRIBUTE_REPARSE_POINT, GetFileAttributesW, MAXIMUM_REPARSE_DATA_BUFFER_SIZE,
+    },
     Win32::System::IO::DeviceIoControl,
     core::PCWSTR,
 };
@@ -96,23 +99,23 @@ fn show(filename: &str) {
 }
 
 fn attributes1(path: &Path) -> u32 {
-    let attributes = match path.metadata() {
+    match path.metadata() {
         Ok(m) => m.file_attributes(),
         Err(e) => panic!("Error accessing metadata of file {}: {}", path.display(), e),
-    };
-    attributes
+    }
 }
 
 fn attributes2(path: &Path) -> u32 {
-        // Convert path to wide string
-    let path_wide: Vec<u16> = path.as_os_str().encode_wide().chain(std::iter::once(0)).collect();
+    // Convert path to wide string
+    let path_wide: Vec<u16> = path
+        .as_os_str()
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect();
 
     // Check if path has FILE_ATTRIBUTE_REPARSE_POINT
-    let attributes = unsafe { GetFileAttributesW(PCWSTR(path_wide.as_ptr())) };
-
-    attributes
+    unsafe { GetFileAttributesW(PCWSTR(path_wide.as_ptr())) }
 }
-
 
 /// Values returned by reparse_type
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -120,7 +123,7 @@ fn attributes2(path: &Path) -> u32 {
 #[allow(non_camel_case_types)]
 pub enum ReparseType {
     NO_REPARSE = 0,
-    STUB = 1,               // Not actually a reparse point, but acts like one...  For OneDrive stubs
+    STUB = 1, // Not actually a reparse point, but acts like one...  For OneDrive stubs
     SYMLINK = 2,
     JUNCTION = 3,
     OTHER = 4,
@@ -138,7 +141,11 @@ pub fn reparse_type(path: &Path) -> Result<ReparseType, String> {
     // WARNING!
     // Can't use path.metadata().unwrap().file_attributes()... since REPARSE_POINT flag is always 0!!!!  Why?
     // Convert path to wide string
-    let path_wide: Vec<u16> = path.as_os_str().encode_wide().chain(std::iter::once(0)).collect();
+    let path_wide: Vec<u16> = path
+        .as_os_str()
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect();
 
     // Check if path has FILE_ATTRIBUTE_REPARSE_POINT
     let attributes = unsafe { GetFileAttributesW(PCWSTR(path_wide.as_ptr())) };
@@ -146,8 +153,8 @@ pub fn reparse_type(path: &Path) -> Result<ReparseType, String> {
         return Err(io::Error::last_os_error().to_string());
     }
     if attributes & FILE_ATTRIBUTE_REPARSE_POINT.0 == 0 {
-    // OneDrive stubs have flag FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS = 0x00400000
-    if attributes & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS != 0 {
+        // OneDrive stubs have flag FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS = 0x00400000
+        if attributes & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS != 0 {
             return Ok(ReparseType::STUB);
         }
         return Ok(ReparseType::NO_REPARSE); // Not a reparse point

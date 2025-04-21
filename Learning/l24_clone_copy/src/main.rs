@@ -1,8 +1,10 @@
 // l24_clone_copy: Learning Rust, Compare Clone and Copy traits
 //
 // 2025-03-20	PV      First version
+// 2025-04-21   PV      Clippy optimizations
 
-#![allow(dead_code, unused_variables)]
+#![allow(dead_code)]
+#![allow(clippy::clone_on_copy, clippy::non_canonical_clone_impl)]
 
 #[derive(Debug)]
 struct Pair(i32, i32);
@@ -21,11 +23,11 @@ impl Copy for Pair {}
 
 fn main() {
     let p = Pair(3, 4);
-    let p0 = p;         // Implicit copy constructor, bitwise fast copy
+    let p0 = p; // Implicit copy constructor, bitwise fast copy
     let p1 = p.clone(); // Explicit clone, deep copy using explicit code
 
     println!("p: {:?}", p);
-    println!("copy: {:?}", p0);  // 2nd member is 4, bitwise copy
+    println!("copy: {:?}", p0); // 2nd member is 4, bitwise copy
     println!("clone: {:?}", p1); // 2nd member is -1, produced by clone()
 }
 

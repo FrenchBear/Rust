@@ -55,7 +55,9 @@ impl Config {
     }
 
     // Using an iterator allow to transfer ownership of arguments without cloning them
-    pub fn build_using_iterator(mut args: impl Iterator<Item = String>) -> Result<Config, &'static str> {
+    pub fn build_using_iterator(
+        mut args: impl Iterator<Item = String>,
+    ) -> Result<Config, &'static str> {
         args.next();
         let query = match args.next() {
             Some(arg) => arg,
@@ -98,9 +100,10 @@ pub fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
     // results
 
     // Shorter with iterators
-    contents.lines()
-            .filter(|line| line.contains(query))
-            .collect()
+    contents
+        .lines()
+        .filter(|line| line.contains(query))
+        .collect()
 }
 
 pub fn search_case_insensitive<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {

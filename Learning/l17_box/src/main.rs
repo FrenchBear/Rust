@@ -74,7 +74,7 @@ fn test_mybox() {
 
     let n = MyBox("Pierre".to_string());
     hello(&n); // Because Defef is implemented, rust can convert &MyBox<String> in &String. Then stdlib implements Deref that turns &String in &str.
-               // Similar to: let n = MyBox::new(String::from("Pierre")); hello(&(*n)[..]);
+    // Similar to: let n = MyBox::new(String::from("Pierre")); hello(&(*n)[..]);
 }
 
 // ---------------------
@@ -89,7 +89,7 @@ impl Drop for CustomSmartPointer {
     }
 }
 
-fn my_drop<T>(x:T) { }
+fn my_drop<T>(x: T) {}
 
 fn test_drop() {
     let c = CustomSmartPointer {

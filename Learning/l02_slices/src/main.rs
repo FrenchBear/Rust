@@ -24,7 +24,7 @@ fn test_slices() {
 
     let mut t = String::from("Bonjour à tous");
     let t2 = t.clone();
-    let fw = first_word(&t2);       // Doesn't compile with &t because of next line, must use a cloned (deep copy) version
+    let fw = first_word(&t2); // Doesn't compile with &t because of next line, must use a cloned (deep copy) version
     t.clear();
     println!("Fist word: {fw}");
 }
@@ -35,7 +35,8 @@ fn first_space(s: &String) -> usize {
             return i;
         }
     }
-    return s.len();
+
+    s.len()
 }
 
 // Actually, compiler inferred «fn first_word<'a>(s: &'a str) -> &'a str {» thanks to elision rules,
@@ -52,7 +53,7 @@ fn first_word(s: &str) -> &str {
     */
 
     let s = "Hello world";
-    return &s[0..5];
+    &s[0..5]
 }
 
 fn test_loops() {
@@ -88,5 +89,4 @@ fn test_loops() {
         }
     }
     println!("names: {:?}", names);
-
 }

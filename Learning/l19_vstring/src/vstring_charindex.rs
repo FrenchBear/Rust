@@ -3,7 +3,7 @@
 //
 // 2024-11-10   PV
 // 2024-12-13   PV      Separated module, more functions
-//
+// 2025-04-21   PV      Clippy optimizations
 
 #![allow(unused_mut)]
 
@@ -24,16 +24,19 @@ pub fn validate_charindex(s: &str, char_index: usize) -> Range<usize> {
     loop {
         let ciopt = it.next();
         if ciopt.is_none() {
-            panic!("char index out of bounds: &str contains {} character(s), but the index is {}", ix, char_index);
+            panic!(
+                "char index out of bounds: &str contains {} character(s), but the index is {}",
+                ix, char_index
+            );
         }
 
         if ix == char_index {
             let ci = ciopt.unwrap();
             let nextopt = it.next();
-            if nextopt.is_none() {
-                return ci.0..s.len();
+            if let Some(item) = nextopt {
+                return ci.0..item.0;
             } else {
-                return ci.0..nextopt.unwrap().0;
+                return ci.0..s.len();
             }
         }
 
@@ -45,7 +48,10 @@ pub fn validate_charindex(s: &str, char_index: usize) -> Range<usize> {
 // get char
 
 pub fn get_char_from_charindex(s: &str, char_index: usize) -> char {
-    (&s[validate_charindex(s, char_index)]).chars().next().unwrap()
+    (s[validate_charindex(s, char_index)])
+        .chars()
+        .next()
+        .unwrap()
 }
 
 pub fn get_charoption_from_charindex(s: &str, char_index: usize) -> Option<char> {
@@ -54,7 +60,8 @@ pub fn get_charoption_from_charindex(s: &str, char_index: usize) -> Option<char>
             return Some(char);
         }
     }
-    return None;
+
+    None
 }
 
 // ------------------------
@@ -63,17 +70,25 @@ pub fn get_charoption_from_charindex(s: &str, char_index: usize) -> Option<char>
 pub fn get_glyph_from_charindex(s: &str, char_index: usize) -> Glyph2 {
     let mut charcount = 0;
     for g in Glyph2::glyph2_indices(s) {
-        if g.char_range.start == char_index { return g; }
+        if g.char_range.start == char_index {
+            return g;
+        }
         charcount = g.char_range.end;
     }
-    panic!("char index out of bounds: s contains {} characters, but the index is {}", charcount, char_index);
+    panic!(
+        "char index out of bounds: s contains {} characters, but the index is {}",
+        charcount, char_index
+    );
 }
 
 pub fn get_glyphoption_from_charindex(s: &str, char_index: usize) -> Option<Glyph2> {
-    for g in Glyph2::glyph2_indices(s) {
-        if g.char_range.start == char_index { return Some(g); }
-    }
-    None
+    // for g in Glyph2::glyph2_indices(s) {
+    //     if g.char_range.start == char_index {
+    //         return Some(g);
+    //     }
+    // }
+    // None
+    Glyph2::glyph2_indices(s).find(|g| g.char_range.start == char_index)
 }
 
 // ------------------------
@@ -94,7 +109,7 @@ pub fn get_bytevector_from_charindex(s: &str, char_index: usize) -> Vec<u8> {
 // get char vector
 
 pub fn get_charvector_from_charindex(s: &str, char_index: usize) -> Vec<char> {
-    Vec::from_iter((&s[validate_charindex(s, char_index)]).chars())
+    Vec::from_iter((s[validate_charindex(s, char_index)]).chars())
 }
 
 // ------------------------
@@ -107,28 +122,37 @@ pub fn get_glyphvector_from_charindex(s: &str, char_index: usize) -> Vec<Glyph2>
 // ------------------------
 // get byte iterator
 
-pub fn get_byteiterator_from_charindex<'a>(s: &'a str, char_index: usize) -> impl Iterator<Item = u8> + 'a {
+pub fn get_byteiterator_from_charindex(
+    s: &str,
+    char_index: usize,
+) -> impl Iterator<Item = u8> {
     s[validate_charindex(s, char_index)].bytes()
 }
 
 // ------------------------
 // get char iterator
 
-pub fn get_chariterator_from_charindex<'a>(s: &'a str, char_index: usize) -> impl Iterator<Item = char> + 'a {
-    Vec::from_iter((&s[validate_charindex(s, char_index)]).chars()).into_iter()
+pub fn get_chariterator_from_charindex(
+    s: &str,
+    char_index: usize,
+) -> impl Iterator<Item = char>{
+    Vec::from_iter((s[validate_charindex(s, char_index)]).chars()).into_iter()
 }
 
 // ------------------------
 // get glyph iterator
 
-pub fn get_glyphiterator_from_charindex<'a>(s: &'a str, char_index: usize) -> impl Iterator<Item = Glyph2> + 'a {
+pub fn get_glyphiterator_from_charindex(
+    s: &str,
+    char_index: usize,
+) -> impl Iterator<Item = Glyph2> {
     get_glyphvector_from_charindex(s, char_index).into_iter()
 }
 
 // ------------------------
 // get strref
 
-pub fn get_strref_from_charindex<'a>(s: &'a str, char_index: usize) -> &'a str {
+pub fn get_strref_from_charindex(s: &str, char_index: usize) -> &str {
     &s[validate_charindex(s, char_index)]
 }
 

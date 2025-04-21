@@ -11,19 +11,19 @@ use crate::*;
 #[test]
 pub fn test_validate_glyphrange_normal() {
     let s = "Aé♫山𝄞🐗🐻‍❄️"; // 10 chars, polar bear = 4 characters
-                          //       UTF8        char byte
-                          // Char  bytes       ix   ix
-                          // A     41          0    0
-                          // é     C3 A9       1    1
-                          // ♫     E2 99 AB    2    3
-                          // 山    E5 B1 B1    3    6
-                          // 𝄞    F0 9D 84 9E  4    9
-                          // 🐗   F0 9F 90 97  5    13
-                          // 🐻   F0 9F 90 BB  6    17
-                          // ZWJ   E2 80 8D     7    21
-                          // ❄    E2 9D 84     8    24
-                          // VS-16 EF B8 8F     9    27
-                          //                   10    30
+    //       UTF8        char byte
+    // Char  bytes       ix   ix
+    // A     41          0    0
+    // é     C3 A9       1    1
+    // ♫     E2 99 AB    2    3
+    // 山    E5 B1 B1    3    6
+    // 𝄞    F0 9D 84 9E  4    9
+    // 🐗   F0 9F 90 97  5    13
+    // 🐻   F0 9F 90 BB  6    17
+    // ZWJ   E2 80 8D     7    21
+    // ❄    E2 9D 84     8    24
+    // VS-16 EF B8 8F     9    27
+    //                   10    30
 
     assert_eq!(
         validate_glyphrange(s, 5..7),
@@ -110,22 +110,32 @@ pub fn test_validate_glyphrange_panic_invalid_range_3() {
 pub fn test_byteslice_from_glyphrange_normal() {
     let s = "Aé♫山𝄞🐗🐻‍❄️";
 
-    assert_eq!(get_byteslice_from_glyphrange(s, 1..3), [0xC3, 0xA9, 0xE2, 0x99, 0xAB]);
+    assert_eq!(
+        get_byteslice_from_glyphrange(s, 1..3),
+        [0xC3, 0xA9, 0xE2, 0x99, 0xAB]
+    );
     assert_eq!(get_byteslice_from_glyphrange(s, 2..2), []);
     assert_eq!(
         get_byteslice_from_glyphrange(s, ..),
         [
-            0x41, 0xC3, 0xA9, 0xE2, 0x99, 0xAB, 0xE5, 0xB1, 0xB1, 0xF0, 0x9D, 0x84, 0x9E, 0xF0, 0x9F, 0x90, 0x97, 0xF0, 0x9F, 0x90, 0xBB, 0xE2, 0x80,
-            0x8D, 0xE2, 0x9D, 0x84, 0xEF, 0xB8, 0x8F,
+            0x41, 0xC3, 0xA9, 0xE2, 0x99, 0xAB, 0xE5, 0xB1, 0xB1, 0xF0, 0x9D, 0x84, 0x9E, 0xF0,
+            0x9F, 0x90, 0x97, 0xF0, 0x9F, 0x90, 0xBB, 0xE2, 0x80, 0x8D, 0xE2, 0x9D, 0x84, 0xEF,
+            0xB8, 0x8F,
         ]
     );
     assert_eq!(get_byteslice_from_glyphrange("", ..), []);
     assert_eq!(
         get_byteslice_from_glyphrange(s, 5..),
-        [0xF0, 0x9F, 0x90, 0x97, 0xF0, 0x9F, 0x90, 0xBB, 0xE2, 0x80, 0x8D, 0xE2, 0x9D, 0x84, 0xEF, 0xB8, 0x8F,]
+        [
+            0xF0, 0x9F, 0x90, 0x97, 0xF0, 0x9F, 0x90, 0xBB, 0xE2, 0x80, 0x8D, 0xE2, 0x9D, 0x84,
+            0xEF, 0xB8, 0x8F,
+        ]
     );
     assert_eq!(get_byteslice_from_glyphrange(s, ..2), [0x41, 0xC3, 0xA9]);
-    assert_eq!(get_byteslice_from_glyphrange(s, ..=2), [0x41, 0xC3, 0xA9, 0xE2, 0x99, 0xAB]);
+    assert_eq!(
+        get_byteslice_from_glyphrange(s, ..=2),
+        [0x41, 0xC3, 0xA9, 0xE2, 0x99, 0xAB]
+    );
 }
 
 #[test]
@@ -142,7 +152,10 @@ pub fn test_byteslice_from_endglyphcount() {
     let s = "Aé♫山𝄞🐗🐻‍❄️";
     assert_eq!(
         get_byteslice_from_endglyphcount(s, 3),
-        [0xF0, 0x9D, 0x84, 0x9E, 0xF0, 0x9F, 0x90, 0x97, 0xF0, 0x9F, 0x90, 0xBB, 0xE2, 0x80, 0x8D, 0xE2, 0x9D, 0x84, 0xEF, 0xB8, 0x8F]
+        [
+            0xF0, 0x9D, 0x84, 0x9E, 0xF0, 0x9F, 0x90, 0x97, 0xF0, 0x9F, 0x90, 0xBB, 0xE2, 0x80,
+            0x8D, 0xE2, 0x9D, 0x84, 0xEF, 0xB8, 0x8F
+        ]
     );
 }
 
@@ -152,22 +165,35 @@ pub fn test_byteslice_from_endglyphcount() {
 #[test]
 pub fn test_bytevector_from_glyphrange() {
     let s = "Aé♫山𝄞🐗🐻‍❄️";
-    assert_eq!(get_bytevector_from_glyphrange(s, 1..3), vec![0xC3, 0xA9, 0xE2, 0x99, 0xAB]);
+    assert_eq!(
+        get_bytevector_from_glyphrange(s, 1..3),
+        vec![0xC3, 0xA9, 0xE2, 0x99, 0xAB]
+    );
     assert_eq!(get_bytevector_from_glyphrange(s, 2..2), vec![]);
     assert_eq!(
         get_bytevector_from_glyphrange(s, ..),
         vec![
-            0x41, 0xC3, 0xA9, 0xE2, 0x99, 0xAB, 0xE5, 0xB1, 0xB1, 0xF0, 0x9D, 0x84, 0x9E, 0xF0, 0x9F, 0x90, 0x97, 0xF0, 0x9F, 0x90, 0xBB, 0xE2, 0x80,
-            0x8D, 0xE2, 0x9D, 0x84, 0xEF, 0xB8, 0x8F,
+            0x41, 0xC3, 0xA9, 0xE2, 0x99, 0xAB, 0xE5, 0xB1, 0xB1, 0xF0, 0x9D, 0x84, 0x9E, 0xF0,
+            0x9F, 0x90, 0x97, 0xF0, 0x9F, 0x90, 0xBB, 0xE2, 0x80, 0x8D, 0xE2, 0x9D, 0x84, 0xEF,
+            0xB8, 0x8F,
         ]
     );
     assert_eq!(get_bytevector_from_glyphrange("", ..), vec![]);
     assert_eq!(
         get_bytevector_from_glyphrange(s, 5..),
-        vec![0xF0, 0x9F, 0x90, 0x97, 0xF0, 0x9F, 0x90, 0xBB, 0xE2, 0x80, 0x8D, 0xE2, 0x9D, 0x84, 0xEF, 0xB8, 0x8F,]
+        vec![
+            0xF0, 0x9F, 0x90, 0x97, 0xF0, 0x9F, 0x90, 0xBB, 0xE2, 0x80, 0x8D, 0xE2, 0x9D, 0x84,
+            0xEF, 0xB8, 0x8F,
+        ]
     );
-    assert_eq!(get_bytevector_from_glyphrange(s, ..2), vec![0x41, 0xC3, 0xA9]);
-    assert_eq!(get_bytevector_from_glyphrange(s, ..=2), vec![0x41, 0xC3, 0xA9, 0xE2, 0x99, 0xAB]);
+    assert_eq!(
+        get_bytevector_from_glyphrange(s, ..2),
+        vec![0x41, 0xC3, 0xA9]
+    );
+    assert_eq!(
+        get_bytevector_from_glyphrange(s, ..=2),
+        vec![0x41, 0xC3, 0xA9, 0xE2, 0x99, 0xAB]
+    );
 }
 
 // ------------------------
@@ -180,10 +206,15 @@ pub fn test_charvector_from_glyphrange() {
     assert_eq!(get_charvector_from_glyphrange(s, 2..2), vec![]);
     assert_eq!(
         get_charvector_from_glyphrange(s, ..),
-        vec!['A', 'é', '♫', '山', '𝄞', '🐗', '🐻', '\u{200D}', '❄', '\u{FE0F}']
+        vec![
+            'A', 'é', '♫', '山', '𝄞', '🐗', '🐻', '\u{200D}', '❄', '\u{FE0F}'
+        ]
     );
     assert_eq!(get_charvector_from_glyphrange("", ..), vec![]);
-    assert_eq!(get_charvector_from_glyphrange(s, 5..), vec!['🐗', '🐻', '\u{200D}', '❄', '\u{FE0F}']);
+    assert_eq!(
+        get_charvector_from_glyphrange(s, 5..),
+        vec!['🐗', '🐻', '\u{200D}', '❄', '\u{FE0F}']
+    );
     assert_eq!(get_charvector_from_glyphrange(s, ..2), vec!['A', 'é']);
     assert_eq!(get_charvector_from_glyphrange(s, ..=2), vec!['A', 'é', '♫']);
 }
@@ -342,6 +373,9 @@ pub fn test_refstr_from_glyphrange() {
 pub fn test_string_from_glyphrange() {
     let s = "🐻‍❄️e\u{0301}👨🏾‍❤️‍💋‍👨🏻";
 
-    assert_eq!(get_string_from_glyphrange(s, 1..3), "e\u{0301}👨🏾‍❤️‍💋‍👨🏻".to_string());
+    assert_eq!(
+        get_string_from_glyphrange(s, 1..3),
+        "e\u{0301}👨🏾‍❤️‍💋‍👨🏻".to_string()
+    );
     assert!(String::is_empty(&get_string_from_glyphrange(s, 3..3)));
 }

@@ -9,13 +9,13 @@ use std::path::Path;
 use windows::Win32::Storage::FileSystem::GetDriveTypeW;
 use windows::core::PCWSTR;
 
-const DRIVE_UNKNOWN:u32 = 0;
-const DRIVE_NO_ROOT_DIR:u32 = 1;
-const DRIVE_REMOVABLE:u32 = 2;
-const DRIVE_FIXED:u32 = 3;
-const DRIVE_REMOTE:u32 = 4;
-const DRIVE_CDROM:u32 = 5;
-const DRIVE_RAMDISK:u32 = 6;
+const DRIVE_UNKNOWN: u32 = 0;
+const DRIVE_NO_ROOT_DIR: u32 = 1;
+const DRIVE_REMOVABLE: u32 = 2;
+const DRIVE_FIXED: u32 = 3;
+const DRIVE_REMOTE: u32 = 4;
+const DRIVE_CDROM: u32 = 5;
+const DRIVE_RAMDISK: u32 = 6;
 
 fn is_local_or_remote(path: &Path) -> Result<String, String> {
     let root_path = match path.components().next() {
@@ -41,7 +41,11 @@ fn is_local_or_remote(path: &Path) -> Result<String, String> {
                 std::path::Prefix::UNC(server, share) => {
                     // let unc_str: Vec<u16> = OsStr::new(&format!("\\\\{}\\{}\\", server.to_string_lossy(), share.to_string_lossy())).encode_wide().chain(std::iter::once(0)).collect();
                     // unc_str
-                    &format!("\\\\{}\\{}\\", server.to_string_lossy(), share.to_string_lossy())
+                    &format!(
+                        "\\\\{}\\{}\\",
+                        server.to_string_lossy(),
+                        share.to_string_lossy()
+                    )
                 }
                 _ => {
                     return Err("Path is not a drive or UNC path".to_string());
@@ -54,11 +58,14 @@ fn is_local_or_remote(path: &Path) -> Result<String, String> {
     };
 
     //println!("Drive_str: {:?}", drive_letter);
-    let lprootpathname:Vec<u16> = OsStr::new(root_path).encode_wide().chain(std::iter::once(0)).collect();
+    let lprootpathname: Vec<u16> = OsStr::new(root_path)
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect();
 
     unsafe {
         match GetDriveTypeW(PCWSTR(lprootpathname.as_ptr())) {
-            DRIVE_UNKNOWN|DRIVE_NO_ROOT_DIR => Ok("Unknown/Invalid/Inexistent".into()),
+            DRIVE_UNKNOWN | DRIVE_NO_ROOT_DIR => Ok("Unknown/Invalid/Inexistent".into()),
             DRIVE_FIXED => Ok("Local".to_string()),
             DRIVE_REMOVABLE => Ok("Removable".to_string()),
             DRIVE_REMOTE => Ok("Remote".to_string()),
@@ -84,7 +91,7 @@ fn main() {
     // E:\ is Removable
     // \\teraz\temp\file.txt is Remote
     // \\teraz\timp\file.txt is Unknown
-    // X:\ is Remote    
+    // X:\ is Remote
 }
 
 fn test(path: &Path) {

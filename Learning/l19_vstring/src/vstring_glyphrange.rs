@@ -2,6 +2,7 @@
 // Learning rust 2024, A bunch of string helpers before working on dev for fun project String coding
 //
 // 2024-12-18   PV
+// 2025-04-21   PV      Clippy optimizations
 
 #![allow(unused_mut)]
 
@@ -17,7 +18,7 @@ use crate::glyph2::Glyph2;
 use std::ops::Bound::*;
 
 #[derive(Debug, PartialEq)]
-pub struct ByteCharGlyphRange{
+pub struct ByteCharGlyphRange {
     pub byte_range: Range<usize>,
     pub char_range: Range<usize>,
     pub glyph_range: Range<usize>,
@@ -43,55 +44,66 @@ where
     };
 
     if startglyphindex > endglyphindex {
-        panic!("Invalid glyph range, start {} is greater than end {}", startglyphindex, endglyphindex);
+        panic!(
+            "Invalid glyph range, start {} is greater than end {}",
+            startglyphindex, endglyphindex
+        );
     }
     if startglyphindex > glyphcount {
-        panic!("Invalid glyph range, start {} is greater than glyph count {}", startglyphindex, glyphcount);
+        panic!(
+            "Invalid glyph range, start {} is greater than glyph count {}",
+            startglyphindex, glyphcount
+        );
     }
     if endglyphindex > glyphcount {
-        panic!("Invalid glyph range, end {} is greater than glyph count {}", endglyphindex, glyphcount);
+        panic!(
+            "Invalid glyph range, end {} is greater than glyph count {}",
+            endglyphindex, glyphcount
+        );
     }
 
     // Convert glyph indexes into bytes and char indexes
-    let mut glyphindex = 0;
     let mut startbyteindex = s.len();
     let mut endbyteindex = s.len();
     let mut startcharindex = s.chars().count();
     let mut endcharindex = startcharindex;
 
-    for g in Glyph2::glyph2_indices(s) {
+    for (glyphindex, g) in Glyph2::glyph2_indices(s).enumerate() {
         if glyphindex == startglyphindex {
             startbyteindex = g.byte_range.start;
             startcharindex = g.char_range.start;
         }
         if glyphindex == endglyphindex {
-            endbyteindex = g.byte_range.start;      // Since we're at the character after the last one, we use start values to fill end/byte indexes
+            endbyteindex = g.byte_range.start; // Since we're at the character after the last one, we use start values to fill end/byte indexes
             endcharindex = g.char_range.start;
             break;
         }
-        glyphindex += 1;
     }
 
-    ByteCharGlyphRange { byte_range: startbyteindex..endbyteindex, char_range: startcharindex..endcharindex, glyph_range:startglyphindex..endglyphindex }
+    ByteCharGlyphRange {
+        byte_range: startbyteindex..endbyteindex,
+        char_range: startcharindex..endcharindex,
+        glyph_range: startglyphindex..endglyphindex,
+    }
 }
 
 // ------------------------
 // get byte slice
 
 // Simple implementation, panicks if range is invalid or goes beyond s limits
-pub fn get_byteslice_from_glyphrange<'a, R>(s: &'a str, glyph_range: R) -> &'a [u8]
+pub fn get_byteslice_from_glyphrange<R>(s: &str, glyph_range: R) -> &[u8]
 where
     R: RangeBounds<usize>,
 {
-    &s[validate_glyphrange(s, glyph_range).byte_range].as_bytes()
+    s[validate_glyphrange(s, glyph_range).byte_range].as_bytes()
 }
 
 // Specialized variants to extract by slice at the beginning or at the end
-pub fn get_byteslice_from_startglyphcount<'a>(s: &'a str, glyph_count: usize) -> &'a [u8] {
+pub fn get_byteslice_from_startglyphcount(s: &str, glyph_count: usize) -> &[u8] {
     get_byteslice_from_glyphrange(s, 0..glyph_count)
 }
 
-pub fn get_byteslice_from_endglyphcount<'a>(s: &'a str, glyph_count: usize) -> &'a [u8] {
+pub fn get_byteslice_from_endglyphcount(s: &str, glyph_count: usize) -> &[u8] {
     get_byteslice_from_glyphrange(s, Glyph2::glyph2_indices(s).count() - glyph_count..)
 }
 
@@ -105,7 +117,9 @@ where
 {
     // ToDo: Check which version is the most efficient
     //Vec::from_iter((&s[validate_glyphrange(s, glyph_range)]).bytes())
-    (&s[validate_glyphrange(s, glyph_range).byte_range]).bytes().collect()
+    (s[validate_glyphrange(s, glyph_range).byte_range])
+        .bytes()
+        .collect()
 }
 
 // ------------------------
@@ -116,7 +130,9 @@ where
     R: RangeBounds<usize>,
 {
     //Vec::from_iter(s[validate_glyphrange(s, glyph_range)].chars())
-    s[validate_glyphrange(s, glyph_range).byte_range].chars().collect()
+    s[validate_glyphrange(s, glyph_range).byte_range]
+        .chars()
+        .collect()
 }
 
 // ------------------------
@@ -131,20 +147,17 @@ where
 
     let mut accumulate = false;
     let mut res = Vec::new();
-    let mut ix = 0;
-    for g in Glyph2::glyph2_indices(s) {
+    for (ix, g) in Glyph2::glyph2_indices(s).enumerate() {
         if r.glyph_range.start == ix {
             accumulate = true;
         };
 
         if accumulate {
             res.push(g);
-            if r.glyph_range.end == ix+1 {
+            if r.glyph_range.end == ix + 1 {
                 return res;
             }
         }
-
-        ix += 1;
     }
     panic!("Internal error, see https://xkcd.com/2200/"); // Should bever get here actually
 }
@@ -152,28 +165,43 @@ where
 // ------------------------
 // get byte iterator
 
-pub fn get_byteiterator_from_glyphrange<'a, R>(s: &'a str, glyph_range: R) -> impl Iterator<Item = u8> + 'a where R: RangeBounds<usize>, {
+pub fn get_byteiterator_from_glyphrange<R>(
+    s: &str,
+    glyph_range: R,
+) -> impl Iterator<Item = u8>
+where
+    R: RangeBounds<usize>,
+{
     s[validate_glyphrange(s, glyph_range).byte_range].bytes()
 }
 
 // ------------------------
 // get char iterator
 
-pub fn get_chariterator_from_glyphrange<'a, R>(s: &'a str, glyph_range: R) -> impl Iterator<Item = char> + 'a where R: RangeBounds<usize>, {
+pub fn get_chariterator_from_glyphrange<R>(
+    s: &str,
+    glyph_range: R,
+) -> impl Iterator<Item = char>
+where
+    R: RangeBounds<usize>,
+{
     s[validate_glyphrange(s, glyph_range).byte_range].chars()
 }
 
 // ------------------------
 // get glyph iterator
 
-pub fn get_glyphiterator_from_glyphrange<R>(s: &str, glyph_range: R) -> impl Iterator<Item = Glyph2> where R: RangeBounds<usize>, {
+pub fn get_glyphiterator_from_glyphrange<R>(s: &str, glyph_range: R) -> impl Iterator<Item = Glyph2>
+where
+    R: RangeBounds<usize>,
+{
     get_glyphvector_from_glyphrange(s, glyph_range).into_iter()
 }
 
 // ------------------------
 // get &str
 
-pub fn get_strref_from_glyphrange<'a, R>(s: &'a str, glyph_range: R) -> &'a str
+pub fn get_strref_from_glyphrange<R>(s: &str, glyph_range: R) -> &str
 where
     R: RangeBounds<usize>,
 {

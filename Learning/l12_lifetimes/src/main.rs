@@ -8,6 +8,7 @@
 // or otherwise violate memory safety.
 //
 // 2023-06-20   PV
+// 2025-04-21   PV      Clippy optimizations
 
 #![allow(unused)]
 
@@ -30,11 +31,7 @@ fn main() {
 
 // The signature  express the following constraint: the returned reference will be valid as long as both the parameters are valid.
 fn longest<'a>(s1: &'a str, s2: &'a str) -> &'a str {
-    if s1.len() > s2.len() {
-        s1
-    } else {
-        s2
-    }
+    if s1.len() > s2.len() { s1 } else { s2 }
 }
 
 // Actually the definition of first_word should be:
@@ -44,10 +41,11 @@ fn first_word(s: &str) -> &str {
     let ts = s.split_whitespace();
     let fw = ts.into_iter().next();
 
-    match (fw) {
-        Some(w) => w,
-        None => "",
-    }
+    // match (fw) {
+    //     Some(w) => w,
+    //     None => "",
+    // }
+    fw.unwrap_or_default()
 }
 
 // ----------------
@@ -59,7 +57,8 @@ struct ImportantExcerpt<'a> {
 // Not allowed, since struct has lifetime, impl must have lifetime (lifetime is part of the type)...
 // impl ImportantExcerpt { }
 
-impl<'a> ImportantExcerpt<'a> {
+//impl<'a> ImportantExcerpt<'a> {
+impl ImportantExcerpt<'_> {
     fn level(&self) -> i32 {
         // No need for a lifetime here for the reference to self
         3
@@ -93,7 +92,7 @@ struct Iref<'a, 'b> {
 }
 
 fn irtest() {
-    let v1 = vec![1, 2, 3];
+    let v1 = [1, 2, 3];
     let ir;
     let jr;
     {
@@ -119,10 +118,6 @@ fn longest_with_an_announcement<'a, T>(x: &'a str, y: &'a str, ann: T) -> &'a st
 where
     T: Display,
 {
-    println!("Announcement! {}", ann);  // Display trait is required
-    if x.len() > y.len() {
-        x
-    } else {
-        y
-    }
+    println!("Announcement! {}", ann); // Display trait is required
+    if x.len() > y.len() { x } else { y }
 }

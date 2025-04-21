@@ -3,12 +3,13 @@
 // 2025-03-29   PV
 
 #[cfg(test)]
-
 use super::*;
 
 #[test]
 fn test_simple_name_4_parts() {
-    let bres = get_book_name(PathBuf::from(r"W:\Livres\Physique\Physique des particules (2è ed, 2017) - [Dunod] - Benoît Clément - ISBN 978-2-10-077183-7.pdf"));
+    let bres = get_book_name(PathBuf::from(
+        r"W:\Livres\Physique\Physique des particules (2è ed, 2017) - [Dunod] - Benoît Clément - ISBN 978-2-10-077183-7.pdf",
+    ));
     assert!(bres.is_ok());
     let b = bres.unwrap();
     assert_eq!(b.full_title, "Physique des particules (2è ed, 2017)");
@@ -72,7 +73,9 @@ fn test_simple_name_1_part() {
 
 #[test]
 fn test_year_version_1() {
-    let bres = get_book_name(PathBuf::from(r"C:\Temp\Title (2è ed, 2022) - [Editor] - Author.pdf"));
+    let bres = get_book_name(PathBuf::from(
+        r"C:\Temp\Title (2è ed, 2022) - [Editor] - Author.pdf",
+    ));
     assert!(bres.is_ok());
     let b = bres.unwrap();
     assert_eq!(b.full_title, "Title (2è ed, 2022)");
@@ -87,7 +90,9 @@ fn test_year_version_1() {
 
 #[test]
 fn test_year_version_2() {
-    let bres = get_book_name(PathBuf::from(r"C:\Temp\Title (2025) - [Editor] - Author.pdf"));
+    let bres = get_book_name(PathBuf::from(
+        r"C:\Temp\Title (2025) - [Editor] - Author.pdf",
+    ));
     assert!(bres.is_ok());
     let b = bres.unwrap();
     assert_eq!(b.full_title, "Title (2025)");
@@ -102,7 +107,9 @@ fn test_year_version_2() {
 
 #[test]
 fn test_year_braced_1() {
-    let bres = get_book_name(PathBuf::from(r"C:\Temp\Title (2è ed, 2024) {Scan} - [Editor] - Author.pdf"));
+    let bres = get_book_name(PathBuf::from(
+        r"C:\Temp\Title (2è ed, 2024) {Scan} - [Editor] - Author.pdf",
+    ));
     assert!(bres.is_ok());
     let b = bres.unwrap();
     assert_eq!(b.full_title, "Title (2è ed, 2024) {Scan}");
@@ -114,4 +121,3 @@ fn test_year_braced_1() {
     assert_eq!(b.year, "2024");
     assert_eq!(b.braced, "Scan");
 }
-

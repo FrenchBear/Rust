@@ -7,6 +7,9 @@
 //
 // 2024-12-13   PV      First version, inefficient, only supporing simple combining diacriticals, but working!
 // 2024-12-14   PV      Store char_indices iterator instead of a Vec<char>; return ranges rather than strings
+// 2025-04-21   PV      Clippy optimizations
+
+#![allow(clippy::manual_range_contains)]
 
 use core::ops::Range;
 use std::str::CharIndices;
@@ -21,13 +24,13 @@ pub struct Glyph2 {
 // Private internal iterator object storing current state
 struct Glyph2Iterator<'a> {
     byte_count: usize,                          // Length of the string in UTF-8 bytes
-    charit: CharIndices<'a>,                    // Iterator over string returning Option<(usize, char)>
-    current_char_index: usize,                  // Current position in chars in string, charit provides current position in bytes
+    charit: CharIndices<'a>, // Iterator over string returning Option<(usize, char)>
+    current_char_index: usize, // Current position in chars in string, charit provides current position in bytes
     next_charindice_opt: Option<(usize, char)>, // charit return for next character, since we must read one ahead to decide if we combine or not
 }
 
 // Iterator returns (char_index, string)
-impl<'a> Iterator for Glyph2Iterator<'a> {
+impl Iterator for Glyph2Iterator<'_> {
     type Item = Glyph2;
 
     fn next(&mut self) -> Option<Glyph2> {
@@ -36,9 +39,10 @@ impl<'a> Iterator for Glyph2Iterator<'a> {
         } else {
             self.charit.next()
         };
-        if current_charindice_opt.is_none() {
-            return None;
-        }
+        // if current_charindice_opt.is_none() {
+        //     return None;
+        // }
+        current_charindice_opt?;
 
         self.next_charindice_opt = self.charit.next();
 
@@ -59,7 +63,11 @@ impl<'a> Iterator for Glyph2Iterator<'a> {
         // Graphemes detection and combination loop
         while self.next_charindice_opt.is_some() {
             let nc = self.next_charindice_opt.unwrap().1 as u32; // next codepoint
-            if is_combining(nc) || is_emoji(cc) && (is_zwj(nc) || is_vs(nc)) || is_vs(cc) && is_zwj(nc) || is_zwj(cc) && is_emoji(nc) {
+            if is_combining(nc)
+                || is_emoji(cc) && (is_zwj(nc) || is_vs(nc))
+                || is_vs(cc) && is_zwj(nc)
+                || is_zwj(cc) && is_emoji(nc)
+            {
                 // We combine, fetch next character
                 self.next_charindice_opt = self.charit.next();
 
@@ -80,8 +88,8 @@ impl<'a> Iterator for Glyph2Iterator<'a> {
         }
 
         let result: Option<Glyph2> = Some(Glyph2 {
-            byte_range: bix_start..bix_end+1,
-            char_range: self.current_char_index..cix_end+1,
+            byte_range: bix_start..bix_end + 1,
+            char_range: self.current_char_index..cix_end + 1,
         });
 
         self.current_char_index = cix_end + 1;
@@ -117,7 +125,7 @@ fn is_vs(cp: u32) -> bool {
 }
 
 impl Glyph2 {
-    pub fn glyph2_indices<'a>(s: &'a str) -> impl Iterator<Item = Glyph2> + 'a {
+    pub fn glyph2_indices(s: &str) -> impl Iterator<Item = Glyph2> {
         Glyph2Iterator {
             byte_count: s.len(),
             charit: s.char_indices(),

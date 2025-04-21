@@ -32,10 +32,18 @@ fn main() {
     //let bt: &impl Summary = &b;       // Not allowed, but the previous line does exactly this...
     bs.comment();
 
-
     let pf = Pair::new(1.0, 2.0);
-    pf.cmp_display();   // Ok
-    let pb = Pair::new(Book {title:"t1".to_string(), author:"a1".to_string()}, Book {title:"t2".to_string(), author:"a2".to_string()});
+    pf.cmp_display(); // Ok
+    let pb = Pair::new(
+        Book {
+            title: "t1".to_string(),
+            author: "a1".to_string(),
+        },
+        Book {
+            title: "t2".to_string(),
+            author: "a2".to_string(),
+        },
+    );
     //pb.cmp_display();   // Not Ok because Book does not support PartialOrd
 
     // i32 implements trait Display, so it implements Affichable and its member affiche
@@ -140,18 +148,19 @@ trait Affichable {
 }
 
 // Blanket implementation, that is, implement a trait for any type that implement another trait
-impl<T:Display> Affichable for T {
+impl<T: Display> Affichable for T {
     fn affiche(&self) {
         println!("{}", self)
     }
 }
 
-fn test_affichable(item: impl Affichable) {     // Takes ownership
+fn test_affichable(item: impl Affichable) {
+    // Takes ownership
     item.affiche();
 }
 
 fn demo_affichable() {
-    let i=String::from("Hello");
+    let i = String::from("Hello");
     test_affichable(i);
     //println!("{i}");    // Err borrow of moved value
 }

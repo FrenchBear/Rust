@@ -41,13 +41,20 @@ pub fn log(lw: &mut LogWriter, msg: &str) {
 }
 
 // Create a new logging file, and if verbose is true, write app name+version on first line
-pub(crate) fn new(verbose:bool) -> LogWriter {
+pub(crate) fn new(verbose: bool) -> LogWriter {
     let now: DateTime<Local> = Local::now();
     let formatted_now = now.format("%Y-%m-%d-%H.%M.%S");
     let logpath = format!("c:\\temp\\{APP_NAME}-{formatted_now}.log");
     let file = File::create(logpath.clone());
     if file.is_err() {
-        logln(&mut None, format!("{APP_NAME}: Error creating log file {logpath}: {:?}", file.err()).as_str());
+        logln(
+            &mut None,
+            format!(
+                "{APP_NAME}: Error creating log file {logpath}: {:?}",
+                file.err()
+            )
+            .as_str(),
+        );
         process::exit(1);
     }
     let mut writer = Some(BufWriter::new(file.unwrap()));

@@ -2,6 +2,7 @@
 // Learning Rust again
 //
 // 2023-06-19   PV
+// 2025-04-21   PV      Clippy optimizations
 
 #![allow(unused)]
 
@@ -57,11 +58,10 @@ fn main() {
     let mp1 = MixedPoint { x: 1, y: 'w' };
     let mp2 = MixedPoint {
         x: "Hello",
-        y: 3.1416,
+        y: 12.331,
     };
     let mp3 = MixedPoint::mixup(mp2, mp1);
     println!("mp3: x={} y={}", mp3.x, mp3.y);
-
 }
 
 // Generic version
@@ -130,4 +130,3 @@ impl<X1, Y1> MixedPoint<X1, Y1> {
         }
     }
 }
-

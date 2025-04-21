@@ -34,7 +34,9 @@ fn test_validate_glyphindex() {
 }
 
 #[test]
-#[should_panic(expected = "glyph index out of bounds: &str contains 1 glyph(s), but the index is 1")]
+#[should_panic(
+    expected = "glyph index out of bounds: &str contains 1 glyph(s), but the index is 1"
+)]
 fn test_validate_glyphindex_panic_out_of_bounds() {
     let _ = validate_glyphindex("🐻‍❄️", 1);
 }
@@ -60,7 +62,9 @@ fn test_glyph_from_glyphindex_normal() {
     );
 }
 
-#[should_panic(expected = "glyph index out of bounds: &str contains 3 glyph(s), but the index is 5")]
+#[should_panic(
+    expected = "glyph index out of bounds: &str contains 3 glyph(s), but the index is 5"
+)]
 #[test]
 fn test_glyph_from_glyphindex_panic_out_of_bounds() {
     let _ = get_glyph_from_glyphindex("abc", 5);
@@ -84,7 +88,10 @@ fn test_glyphoption_from_glyphindex() {
 
 #[test]
 pub fn test_byteslice_from_glyphindex() {
-    assert_eq!(get_byteslice_from_glyphindex("Ou\u{0300}?", 1), [0x75, 0xCC, 0x80]);
+    assert_eq!(
+        get_byteslice_from_glyphindex("Ou\u{0300}?", 1),
+        [0x75, 0xCC, 0x80]
+    );
 }
 
 // ------------------------
@@ -95,7 +102,9 @@ pub fn test_bytevector_from_glyphindex() {
     let s = "👨‍🚒"; // {MAN}{ZERO WIDTH JOINER}{FIRE ENGINE}
     assert_eq!(
         get_bytevector_from_glyphindex(s, 0),
-        vec![0xF0, 0x9F, 0x91, 0xA8, 0xE2, 0x80, 0x8D, 0xF0, 0x9F, 0x9A, 0x92,]
+        vec![
+            0xF0, 0x9F, 0x91, 0xA8, 0xE2, 0x80, 0x8D, 0xF0, 0x9F, 0x9A, 0x92,
+        ]
     );
 }
 
@@ -105,7 +114,10 @@ pub fn test_bytevector_from_glyphindex() {
 #[test]
 pub fn test_charvector_from_glyphindex() {
     let s = "<👨‍🚒>"; // {MAN}{ZERO WIDTH JOINER}{FIRE ENGINE}
-    assert_eq!(get_charvector_from_glyphindex(s, 1), vec!['\u{1F468}', '\u{200D}', '\u{1F692}',]);
+    assert_eq!(
+        get_charvector_from_glyphindex(s, 1),
+        vec!['\u{1F468}', '\u{200D}', '\u{1F692}',]
+    );
 }
 
 // ------------------------

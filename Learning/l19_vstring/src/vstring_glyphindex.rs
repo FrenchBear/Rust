@@ -2,7 +2,7 @@
 // Learning rust 2024, A bunch of string helpers before working on dev for fun project String coding
 //
 // 2024-12-17   PV
-//
+// 2025-04-21   PV      Clippy optimizations
 
 #![allow(unused_mut)]
 
@@ -23,15 +23,17 @@ pub fn validate_glyphindex(s: &str, glyph_index: usize) -> Glyph2 {
     loop {
         let glopt = it.next();
         if glopt.is_none() {
-            panic!("glyph index out of bounds: &str contains {} glyph(s), but the index is {}", ix, glyph_index);
+            panic!(
+                "glyph index out of bounds: &str contains {} glyph(s), but the index is {}",
+                ix, glyph_index
+            );
         }
         if ix == glyph_index {
-            return  glopt.unwrap();
+            return glopt.unwrap();
         }
         ix += 1;
     }
 }
-
 
 // ------------------------
 // get glyph
@@ -41,10 +43,10 @@ pub fn get_glyph_from_glyphindex(s: &str, glyph_index: usize) -> Glyph2 {
 }
 
 pub fn get_glyphoption_from_glyphindex(s: &str, glyph_index: usize) -> Option<Glyph2> {
-    let mut ix:usize = 0;
-    for g in Glyph2::glyph2_indices(s) {
-        if ix == glyph_index { return Some(g); }
-        ix += 1;
+    for (ix, g) in Glyph2::glyph2_indices(s).enumerate() {
+        if ix == glyph_index {
+            return Some(g);
+        }
     }
     None
 }
@@ -66,7 +68,7 @@ pub fn get_bytevector_from_glyphindex(s: &str, glyph_index: usize) -> Vec<u8> {
 // get char vector
 
 pub fn get_charvector_from_glyphindex(s: &str, glyph_index: usize) -> Vec<char> {
-    Vec::from_iter((&s[validate_glyphindex(s, glyph_index).byte_range]).chars())
+    Vec::from_iter((s[validate_glyphindex(s, glyph_index).byte_range]).chars())
 }
 
 // ------------------------
@@ -79,28 +81,37 @@ pub fn get_glyphvector_from_glyphindex(s: &str, glyph_index: usize) -> Vec<Glyph
 // ------------------------
 // get byte iterator
 
-pub fn get_byteiterator_from_glyphindex<'a>(s: &'a str, glyph_index: usize) -> impl Iterator<Item = u8> + 'a {
+pub fn get_byteiterator_from_glyphindex(
+    s: &str,
+    glyph_index: usize,
+) -> impl Iterator<Item = u8> {
     s[validate_glyphindex(s, glyph_index).byte_range].bytes()
 }
 
 // ------------------------
 // get char iterator
 
-pub fn get_chariterator_from_glyphindex<'a>(s: &'a str, glyph_index: usize) -> impl Iterator<Item = char> + 'a {
-    Vec::from_iter((&s[validate_glyphindex(s, glyph_index).byte_range]).chars()).into_iter()
+pub fn get_chariterator_from_glyphindex(
+    s: &str,
+    glyph_index: usize,
+) -> impl Iterator<Item = char> {
+    Vec::from_iter((s[validate_glyphindex(s, glyph_index).byte_range]).chars()).into_iter()
 }
 
 // ------------------------
 // get glyph iterator
 
-pub fn get_glyphiterator_from_glyphindex<'a>(s: &'a str, glyph_index: usize) -> impl Iterator<Item = Glyph2> + 'a {
+pub fn get_glyphiterator_from_glyphindex(
+    s: &str,
+    glyph_index: usize,
+) -> impl Iterator<Item = Glyph2> {
     get_glyphvector_from_glyphindex(s, glyph_index).into_iter()
 }
 
 // ------------------------
 // get strref
 
-pub fn get_strref_from_glyphindex<'a>(s: &'a str, glyph_index: usize) -> &'a str {
+pub fn get_strref_from_glyphindex(s: &str, glyph_index: usize) -> &str {
     &s[validate_glyphindex(s, glyph_index).byte_range]
 }
 

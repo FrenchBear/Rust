@@ -37,7 +37,6 @@ impl Animal for Cow {
 //     }
 // }
 
-
 // Returns some struct that implements Animal, but we don't know which one at compile time.
 // Apparently I can create a temp object, and return a reference to it in some cases, athough
 // it doesn't work if I implement Drop trait...
@@ -51,5 +50,8 @@ fn random_animal<'a>(random_number: f64) -> &'a dyn Animal {
 fn main() {
     let random_number = 0.234;
     let animal = random_animal(random_number);
-    println!("You've randomly chosen an animal, and it says {}", animal.noise());
+    println!(
+        "You've randomly chosen an animal, and it says {}",
+        animal.noise()
+    );
 }

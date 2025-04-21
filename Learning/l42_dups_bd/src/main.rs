@@ -1,6 +1,7 @@
 // l42_dups_bd: App to find out duplicates BD after reloading in qBitTorrent
 //
 // 2025-04-12	PV      First version
+// 2025-04-21   PV      Clippy optimizations
 
 #![allow(unused)]
 
@@ -42,8 +43,12 @@ fn main() {
             MyGlobMatch::File(pb) => {
                 let basename = (pb.file_stem().unwrap().to_str().unwrap().to_lowercase());
                 let res = files.insert(basename.clone(), pb.clone());
-                if !res.is_none() {
-                    println!("Dup {basename}:\n  {}\n  {}\n", res.unwrap().display(), pb.display());
+                if res.is_some() {
+                    println!(
+                        "Dup {basename}:\n  {}\n  {}\n",
+                        res.unwrap().display(),
+                        pb.display()
+                    );
                 }
             }
             MyGlobMatch::Dir(_) => {}
@@ -59,7 +64,11 @@ fn main() {
     }
 
     let duration = start.elapsed();
-    println!("{} BD files found in {:.3}s", files.len(), duration.as_secs_f64());
+    println!(
+        "{} BD files found in {:.3}s",
+        files.len(),
+        duration.as_secs_f64()
+    );
 
     // Now enumerate files in
     let resgs2 = MyGlobSearch::build(r"C:\Users\Pierr\Downloads\A_Trier\!A_Trier_BD\**\*.pdf");
@@ -78,10 +87,18 @@ fn main() {
                     let size2 = get_file_size(mpb);
 
                     if size1.abs_diff(size2) < 500u64 {
-                        println!("Matching name/size:\n  {}\n  {}\n", pb.display(), mpb.display());
+                        println!(
+                            "Matching name/size:\n  {}\n  {}\n",
+                            pb.display(),
+                            mpb.display()
+                        );
                         trash::delete(pb);
                     } else {
-                        println!("Matching name but != size:\n  {}\n  {}\n", pb.display(), mpb.display());
+                        println!(
+                            "Matching name but != size:\n  {}\n  {}\n",
+                            pb.display(),
+                            mpb.display()
+                        );
                     }
                 }
             }

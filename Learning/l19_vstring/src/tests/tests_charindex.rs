@@ -15,7 +15,9 @@ fn test_validate_charindex() {
 }
 
 #[test]
-#[should_panic(expected = "char index out of bounds: &str contains 3 character(s), but the index is 5")]
+#[should_panic(
+    expected = "char index out of bounds: &str contains 3 character(s), but the index is 5"
+)]
 fn test_validate_charindex_panic_out_of_bounds() {
     let _ = validate_charindex("ABC", 5);
 }
@@ -27,7 +29,10 @@ fn test_validate_charindex_panic_out_of_bounds() {
 fn test_char_from_charindex_normal() {
     let s = "Aé♫山𝄞🐗";
     assert_eq!(get_char_from_charindex(s, 0), 'A');
-    assert_eq!(get_char_from_charindex(s, get_char_length(s) - 1), '\u{1F417}'); // U+1F417 BOAR = UTF8: F0 9F 90 97
+    assert_eq!(
+        get_char_from_charindex(s, get_char_length(s) - 1),
+        '\u{1F417}'
+    ); // U+1F417 BOAR = UTF8: F0 9F 90 97
     assert_eq!(get_char_from_charindex("🐻‍❄️", 2), '❄'); // U+1F43B BEAR FACE, U+200D ZWJ, U+2744 SNOWFLAKE, U+FE0F VS-16
 }
 
@@ -64,7 +69,9 @@ fn test_glyph_from_charindex_normal() {
     );
 }
 
-#[should_panic(expected = "char index out of bounds: &str contains 3 character(s), but the index is 5")]
+#[should_panic(
+    expected = "char index out of bounds: &str contains 3 character(s), but the index is 5"
+)]
 #[test]
 fn test_glyph_from_charindex_panic_out_of_bounds() {
     let _ = get_char_from_charindex("abc", 5);

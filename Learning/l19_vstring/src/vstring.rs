@@ -3,6 +3,7 @@
 //
 // 2024-11-10   PV
 // 2024-12-13   PV      Separated module, more functions
+// 2025-04-21   PV      Clippy optimizations
 
 #![allow(unused_mut, unused_imports)]
 
@@ -55,12 +56,12 @@ pub fn get_glyph_length(s: &str) -> usize {
 // Conversion to &str
 
 // Returns &str from bytes slice
-pub fn get_strref_from_byteslice<'a>(byteslice: &'a [u8]) -> &'a str {
+pub fn get_strref_from_byteslice(byteslice: &[u8]) -> &str {
     str::from_utf8(byteslice).unwrap()
 }
 
 // Returns str from bytes vector
-pub fn get_strref_from_bytevector<'a>(bytevector: &'a Vec<u8>) -> &'a str {
+pub fn get_strref_from_bytevector(bytevector: &Vec<u8>) -> &str {
     str::from_utf8(bytevector.as_slice()).unwrap()
 }
 
@@ -80,7 +81,7 @@ pub fn get_string_from_bytevector(bytevector: Vec<u8>) -> String {
 }
 
 // Returns String from byte vector ref &vec[u8]
-pub fn get_string_from_bytevectorref(bytevectorref: &Vec<u8>) -> String {
+pub fn get_string_from_bytevectorref(bytevectorref: &[u8]) -> String {
     //String::from_utf8(bytevectorref.clone()).unwrap()       // Inefficient because of clone()
     //str::from_utf8(bytevectorref).unwrap().to_string()
     String::from(str::from_utf8(bytevectorref).unwrap())
@@ -92,7 +93,9 @@ pub fn get_string_from_byteiterator(byteiterator: impl Iterator<Item = u8>) -> S
 }
 
 // DOn't know if unsafe variant is faster
-pub unsafe fn get_string_from_byteiterator_unsafe(byteiterator: impl Iterator<Item = u8>) -> String {
+pub unsafe fn get_string_from_byteiterator_unsafe(
+    byteiterator: impl Iterator<Item = u8>,
+) -> String {
     unsafe { String::from_utf8_unchecked(byteiterator.collect::<Vec<u8>>()) }
 }
 

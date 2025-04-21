@@ -3,7 +3,7 @@
 //
 // 2024-11-10   PV
 // 2024-12-13   PV      Separated module, more functions
-//
+// 2025-04-21   PV      Clippy optimizations
 
 #![allow(unused_mut)]
 
@@ -40,27 +40,27 @@ where
         Unbounded => count,
     };
 
-    if start>end {
+    if start > end {
         panic!("Invalid range, start {} is greater than end {}", start, end);
     }
-    if start>count {
+    if start > count {
         panic!("Invalid range, start {} is greater than byte count {}", start, count);
     }
-    if end>count {
+    if end > count {
         panic!("Invalid range, end {} is greater than byte count {}", end, count);
     }
-    start..end    
+    start..end
 }
 
 // ------------------------
 // get byte slice
 
 // Simple implementation, panicks if range is invalid or goes beyond s limits
-pub fn get_byteslice_from_byterange<'a, R>(s: &'a str, byte_range: R) -> &'a [u8]
+pub fn get_byteslice_from_byterange<R>(s: &str, byte_range: R) -> &[u8]
 where
     R: RangeBounds<usize>,
 {
-    &s[validate_byterange(s.len(), byte_range)].as_bytes()
+    s[validate_byterange(s.len(), byte_range)].as_bytes()
 }
 
 // Explore variants to return results in case of errors: basic version that panics, Option<&[u8]>, Result<&[u8], String>,
@@ -68,15 +68,15 @@ where
 // Here is a simplified implementation, only accepting a Range (and not RangeIncluded for instance)
 
 // Option<&[u8]> variant, returns None in cases causing basic version to panic, and Some<&[u8]> if Ok
-pub fn get_bytesliceoption_from_byterange<'a>(s: &'a str, byte_range: Range<usize>) -> Option<&'a [u8]> {
+pub fn get_bytesliceoption_from_byterange(s: &str, byte_range: Range<usize>) -> Option<&[u8]> {
     if byte_range.start > byte_range.end || byte_range.start > s.len() || byte_range.end > s.len() {
         return None;
     }
-    Some(&s[byte_range].as_bytes())
+    Some(s[byte_range].as_bytes())
 }
 
 // Result<&[u8],String> varant, return an error string in cases causing basic version to panic, ok Ok(&[u8])
-pub fn get_bytesliceresult_from_byterange<'a>(s: &'a str, byte_range: Range<usize>) -> Result<&'a [u8], String> {
+pub fn get_bytesliceresult_from_byterange(s: &str, byte_range: Range<usize>) -> Result<&[u8], String> {
     if byte_range.start > byte_range.end {
         return Err(format!(
             "Invalid range, start {} is greater than end {}",
@@ -89,11 +89,11 @@ pub fn get_bytesliceresult_from_byterange<'a>(s: &'a str, byte_range: Range<usiz
     if byte_range.end > s.len() {
         return Err(format!("Range.end {} is too large for s.len {}", byte_range.end, s.len()));
     }
-    Ok(&s[byte_range].as_bytes())
+    Ok(s[byte_range].as_bytes())
 }
 
 // Tolerant version, in invalid cases or range beyond s limits, return empty byte slice or limit range to actual s bounds
-pub fn get_byteslicetolerant_from_byterange<'a>(s: &'a str, byte_range: Range<usize>) -> &'a [u8] {
+pub fn get_byteslicetolerant_from_byterange(s: &str, byte_range: Range<usize>) -> &[u8] {
     // Invalid range or start after s end, return an empty byte slice
     if byte_range.start >= byte_range.end || byte_range.start >= s.len() {
         return b"";
@@ -101,15 +101,16 @@ pub fn get_byteslicetolerant_from_byterange<'a>(s: &'a str, byte_range: Range<us
 
     // Ensure that the actual range end is clipped to s.len()
     let en = if byte_range.end > s.len() { s.len() } else { byte_range.end };
-    &s[byte_range.start..en].as_bytes()
+    //s[byte_range.start..en].as_bytes()
+    &s.as_bytes()[byte_range.start..en]
 }
 
 // Specialized variants to extract by slice at the beginning or at the end
-pub fn get_byteslice_from_startbytecount<'a>(s: &'a str, byte_count: usize) -> &'a [u8] {
+pub fn get_byteslice_from_startbytecount(s: &str, byte_count: usize) -> &[u8] {
     get_byteslice_from_byterange(s, 0..byte_count)
 }
 
-pub fn get_byteslice_from_endbytecount<'a>(s: &'a str, byte_count: usize) -> &'a [u8] {
+pub fn get_byteslice_from_endbytecount(s: &str, byte_count: usize) -> &[u8] {
     get_byteslice_from_byterange(s, s.len() - byte_count..)
 }
 
@@ -141,7 +142,8 @@ where
 // get glyph vector
 
 pub fn get_glyphvector_from_byterange<R>(s: &str, byte_range: R) -> Vec<Glyph2>
-where R: RangeBounds<usize>,
+where
+    R: RangeBounds<usize>,
 {
     // Validate range and convert all varians into inclusive byte indexes for start and end
     let r = validate_byterange(s.len(), byte_range);
@@ -188,28 +190,37 @@ where R: RangeBounds<usize>,
 // ------------------------
 // get byte iterator
 
-pub fn get_byteiterator_from_byterange<'a, R>(s: &'a str, byte_range: R) -> impl Iterator<Item = u8> + 'a where R: RangeBounds<usize>, {
+pub fn get_byteiterator_from_byterange<R>(s: &str, byte_range: R) -> impl Iterator<Item = u8>
+where
+    R: RangeBounds<usize>,
+{
     s[validate_byterange(s.len(), byte_range)].bytes()
 }
 
 // ------------------------
 // get char iterator
 
-pub fn get_chariterator_from_byterange<'a, R>(s: &'a str, byte_range: R) -> impl Iterator<Item = char> + 'a where R: RangeBounds<usize>, {
+pub fn get_chariterator_from_byterange<R>(s: &str, byte_range: R) -> impl Iterator<Item = char>
+where
+    R: RangeBounds<usize>,
+{
     s[validate_byterange(s.len(), byte_range)].chars()
 }
 
 // ------------------------
 // get glyph iterator
 
-pub fn get_glyphiterator_from_byterange<R>(s: &str, byte_range: R) -> impl Iterator<Item = Glyph2> where R: RangeBounds<usize>, {
+pub fn get_glyphiterator_from_byterange<R>(s: &str, byte_range: R) -> impl Iterator<Item = Glyph2>
+where
+    R: RangeBounds<usize>,
+{
     get_glyphvector_from_byterange(s, byte_range).into_iter()
 }
 
 // ------------------------
 // get &str
 
-pub fn get_strref_from_byterange<'a, R>(s: &'a str, byte_range: R) -> &'a str 
+pub fn get_strref_from_byterange<R>(s: &str, byte_range: R) -> &str
 where
     R: RangeBounds<usize>,
 {

@@ -12,9 +12,9 @@
 
 #![allow(dead_code, unused_variables, unused_imports)]
 
-mod vstring;
 mod glyph2;
 mod tests;
+mod vstring;
 
 use glyph2::Glyph2;
 use vstring::*;
@@ -27,7 +27,6 @@ fn main() {
 }
 
 pub fn test_vstrings() {
-
     // let s = "Aé♫山𝄞🐗🐻‍❄️";
     // println!("s={s}");
 

@@ -2,6 +2,7 @@
 //
 // 2025-03-16	PV      First version
 // 2025-03-23   PV      check_filenames
+// 2025-04-21   PV      Clippy optimizations
 
 // https://docs.rs/glob/latest/glob/index.html
 // https://docs.rs/walkdir/latest/walkdir/
@@ -26,7 +27,6 @@ use std::fmt::Display;
 use std::time::Instant;
 use unicode_categories::UnicodeCategories;
 use walkdir::WalkDir as WalkSimple;
-use globmatch;
 
 fn main() {
     //test_walkdir();
@@ -41,21 +41,34 @@ fn main() {
 fn test_globmatch() {
     let builder = globmatch::Builder::new(r"**/cargo.toml")
         .case_sensitive(false)
-        .build(r"C:\Development").unwrap();
+        .build(r"C:\Development")
+        .unwrap();
+
+    // for p in builder
+    //     .into_iter()
+    //     // Doesn't exlude files in $RECYCLE.BIN (can filter on path), but since it's done after getting iterator, it's too late
+    //     .filter_entry(|p| !globmatch::is_hidden_entry(p))
+    // {
+    //     // match p {
+    //     //     Ok(path) => println!("{}", path.display()),
+    //     //     Err(_) => {}
+    //     // }
+    //     if let Ok(path) = p { println!("{}", path.display()); }
+    // }
+
+    // Since a Result<T,E> is iterable on Ok values and we only care about these, we can use flatten
     for p in builder
-            .into_iter()
-            // Doesn't exlude files in $RECYCLE.BIN (can filter on path), but since it's done after getting iterator, it's too late
-            .filter_entry(|p| !globmatch::is_hidden_entry(p)) 
-            {
-                match p {
-                    Ok(path) => println!("{}", path.display()),
-                    Err(_) => {},
-                }
+        .into_iter()
+        // Doesn't exlude files in $RECYCLE.BIN (can filter on path), but since it's done after getting iterator, it's too late
+        .filter_entry(|p| !globmatch::is_hidden_entry(p))
+        .flatten()
+    {
+        println!("{}", p.display());
     }
 }
 
 fn test_rust_search() {
-    let fi:FilterFn = |dir| dir.metadata().unwrap().is_file();
+    let fi: FilterFn = |dir| dir.metadata().unwrap().is_file();
 
     let search: Vec<String> = SearchBuilder::default()
         .location(r"C:\Development")

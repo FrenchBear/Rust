@@ -2,6 +2,7 @@
 // Use ? in a function returning Option<T>, chaining ?
 //
 // 2025-04-18	PV      First version
+// 2025-04-21   PV      Clippy optimizations
 
 #![allow(dead_code)]
 
@@ -57,7 +58,7 @@ fn test_option_and_then() {
     let t = s
         .map(|s| format!("«{}»", s)) // map fn(T) -> U
         .and_then(|st| st.find('k')) // and_then fn(T) -> Some(U)
-        .and_then(|x| Some(x + 1));
+        .map(|x| x + 1);
     // t is an Option<size>
     assert_eq!(t, None);
 }
@@ -163,7 +164,7 @@ fn main() {
 
     let oi: Option<i32> = Some(42);
     let oj = oi.filter(|x| x & 1 == 0); // Filter using predicate: Value None->None, Some(x): if predicate is true -> Some(x) else None
-    assert_eq!(oi, Some(42));
+    assert_eq!(oj, Some(42));
 
     oi.inspect(|x| println!("Value {} is even.\n", x)); // Call function(x) if value is Some(x)
 
@@ -187,6 +188,7 @@ fn main() {
     let mut x: Option<u32> = None;
     let y = x.take();
     assert_eq!(x, None);
+    assert_eq!(y, None);
 
     // fn take_if(&mut self, predicate: P) -> Option<i32>
     // Takes the value out of the option, but only if the predicate evaluates to true on a mutable reference to the value.
@@ -227,7 +229,7 @@ fn main() {
 
     // fn and(self, optb: Option<U>) -> Option<U>
     // Returns [None] if the option is [None], otherwise returns optb.
-    // Arguments passed to and are eagerly evaluated; if you are passing the result of a function call, 
+    // Arguments passed to and are eagerly evaluated; if you are passing the result of a function call,
     // it is recommended to use and_then, which is lazily evaluated.
     let x = Some(2);
     let y: Option<&str> = None;
@@ -240,7 +242,7 @@ fn main() {
     let x = Some(2);
     let y = Some("foo");
     assert_eq!(x.and(y), Some("foo"));
-    println!("y: {:?}", y);     // Works, because &str implements Copy (but not Clone)
+    println!("y: {:?}", y); // Works, because &str implements Copy (but not Clone)
 
     let x: Option<u32> = None;
     let y: Option<&str> = None;
@@ -252,9 +254,6 @@ fn main() {
 
     let app = Some(Fruit::Apple);
     let ora = Some(Fruit::Orange);
-    let zz = app.and(ora);
-    //println!("ora: {:?}", ora);    // Error, ora has been moved since Fluit doesn't implement Copy (or define enum Fruit with #[derive(Debug, Clone, Copy)])
-
-
-
+    let _ = app.and(ora);
+    //println!("ora: {:?}", ora);    // Error, ora has been moved since Fruit doesn't implement Copy (or define enum Fruit with #[derive(Debug, Clone, Copy)])
 }

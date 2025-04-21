@@ -2,6 +2,7 @@
 // Learning Rust again
 //
 // 2023-06-27   PV
+// 2025-04-21   PV      Clippy optimizations
 
 #![allow(unused, non_snake_case)]
 
@@ -16,7 +17,7 @@ fn main() {
 }
 
 fn simple_iter() {
-    let v1 = vec![1, 2, 3];
+    let v1 = [1, 2, 3];
     let v1_iter = v1.iter();
     for val in v1_iter {
         // the loop took ownership of v1_iter and made it mutable behind the scenes
@@ -25,7 +26,7 @@ fn simple_iter() {
 }
 
 fn next_demo() {
-    let v1 = vec![1, 2, 3];
+    let v1 = [1, 2, 3];
     let mut v1_iter = v1.iter(); // Must be mutable because its internal state changes after each call to next. This code consumes the iterator.
     assert_eq!(v1_iter.next(), Some(&1)); // next returns an immutable reference
     assert_eq!(v1_iter.next(), Some(&2)); // If we want to create an iterator that takes ownership of v1 and returns owned values, we can call into_iter instead of iter
@@ -40,7 +41,7 @@ pub trait MyIterator {
 
 // consuming adapters
 fn iterator_sum() {
-    let v1 = vec![1, 2, 3];
+    let v1 = [1, 2, 3];
     let v1_iter = v1.iter();
     let total: i32 = v1_iter.sum();
     assert_eq!(total, 6);
@@ -54,9 +55,9 @@ fn adapter() {
     let v2: Vec<_> = v1.into_iter().map(|x| x + 1).collect(); // into_iter takes owership of values (x is i32, not &i32 as we get with iter), v1 can't be used after that
     assert_eq!(v2, vec![2, 3, 4]);
 
-    let euler_gamma = 0.57721566490153286060651209008240243104215933593992; // More or less...
+    let euler_gamma = 0.5772156649015328; // More or less...
     let r = 1..=10000;
-    let l: f64 = r.map(|x| 1.0 / x as f64).sum::<f64>() - euler_gamma;  // FINALLY found the way to select a specific generic function
+    let l: f64 = r.map(|x| 1.0 / x as f64).sum::<f64>() - euler_gamma; // FINALLY found the way to select a specific generic function
     println!("l={} ln(1000)={}", l, f64::ln(10000.0));
 }
 
@@ -64,7 +65,6 @@ fn multiples(number: i32, upto: i32) -> Vec<i32> {
     (1..=upto).filter(|n| n % number == 0).collect()
 }
 
-use num;
 fn Σ<T>(items: impl Iterator<Item = T>) -> T
 where
     T: Add<Output = T> + num::Num,

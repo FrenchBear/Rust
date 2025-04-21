@@ -2,6 +2,7 @@
 // Learning rust 2024, A bunch of string helpers before working on dev for fun project String coding
 //
 // 2024-12-16   PV
+// 2025-04-21   PV      Clippy optimizations
 
 #![allow(unused_mut)]
 
@@ -14,14 +15,13 @@ use crate::glyph2::Glyph2;
 // ==========================================================================================
 // From charrange
 
-
 // ------------------------
 // Helpers
 
 use std::ops::Bound::*;
 
 #[derive(Debug, PartialEq)]
-pub struct ByteCharRange{
+pub struct ByteCharRange {
     pub byte_range: Range<usize>,
     pub char_range: Range<usize>,
 }
@@ -58,8 +58,7 @@ where
     // Convert char indexes into bytes indexes
     let mut startbyteindex = s.len();
     let mut endbyteindex = s.len();
-    let mut charindex = 0;
-    for (ix, _) in s.char_indices() {
+    for (charindex, (ix, _)) in s.char_indices().enumerate() {
         if charindex == startcharindex {
             startbyteindex = ix;
         }
@@ -67,29 +66,31 @@ where
             endbyteindex = ix;
             break;
         }
-        charindex += 1;
     }
 
-    ByteCharRange { byte_range: startbyteindex..endbyteindex, char_range: startcharindex..endcharindex }
+    ByteCharRange {
+        byte_range: startbyteindex..endbyteindex,
+        char_range: startcharindex..endcharindex,
+    }
 }
 
 // ------------------------
 // get byte slice
 
 // Simple implementation, panicks if range is invalid or goes beyond s limits
-pub fn get_byteslice_from_charrange<'a, R>(s: &'a str, char_range: R) -> &'a [u8]
+pub fn get_byteslice_from_charrange<R>(s: &str, char_range: R) -> &[u8]
 where
     R: RangeBounds<usize>,
 {
-    &s[validate_charrange(s, char_range).byte_range].as_bytes()
+    s[validate_charrange(s, char_range).byte_range].as_bytes()
 }
 
 // Specialized variants to extract by slice at the beginning or at the end
-pub fn get_byteslice_from_startcharcount<'a>(s: &'a str, char_count: usize) -> &'a [u8] {
+pub fn get_byteslice_from_startcharcount(s: &str, char_count: usize) -> &[u8] {
     get_byteslice_from_charrange(s, 0..char_count)
 }
 
-pub fn get_byteslice_from_endcharcount<'a>(s: &'a str, char_count: usize) -> &'a [u8] {
+pub fn get_byteslice_from_endcharcount(s: &str, char_count: usize) -> &[u8] {
     get_byteslice_from_charrange(s, s.chars().count() - char_count..)
 }
 
@@ -103,7 +104,7 @@ where
 {
     // ToDo: Check which version is the most efficient
     //Vec::from_iter((&s[validate_charrange(s, char_range)]).bytes())
-    (&s[validate_charrange(s, char_range).byte_range]).bytes().collect()
+    (s[validate_charrange(s, char_range).byte_range]).bytes().collect()
 }
 
 // ------------------------
@@ -173,28 +174,37 @@ where
 // ------------------------
 // get byte iterator
 
-pub fn get_byteiterator_from_charrange<'a, R>(s: &'a str, char_range: R) -> impl Iterator<Item = u8> + 'a where R: RangeBounds<usize>, {
+pub fn get_byteiterator_from_charrange<R>(s: &str, char_range: R) -> impl Iterator<Item = u8>
+where
+    R: RangeBounds<usize>,
+{
     s[validate_charrange(s, char_range).byte_range].bytes()
 }
 
 // ------------------------
 // get char iterator
 
-pub fn get_chariterator_from_charrange<'a, R>(s: &'a str, char_range: R) -> impl Iterator<Item = char> + 'a where R: RangeBounds<usize>, {
+pub fn get_chariterator_from_charrange<R>(s: &str, char_range: R) -> impl Iterator<Item = char>
+where
+    R: RangeBounds<usize>,
+{
     s[validate_charrange(s, char_range).byte_range].chars()
 }
 
 // ------------------------
 // get glyph iterator
 
-pub fn get_glyphiterator_from_charrange<R>(s: &str, char_range: R) -> impl Iterator<Item = Glyph2> where R: RangeBounds<usize>, {
+pub fn get_glyphiterator_from_charrange<R>(s: &str, char_range: R) -> impl Iterator<Item = Glyph2>
+where
+    R: RangeBounds<usize>,
+{
     get_glyphvector_from_charrange(s, char_range).into_iter()
 }
 
 // ------------------------
 // get &str
 
-pub fn get_strref_from_charrange<'a, R>(s: &'a str, char_range: R) -> &'a str
+pub fn get_strref_from_charrange<R>(s: &str, char_range: R) -> &str
 where
     R: RangeBounds<usize>,
 {

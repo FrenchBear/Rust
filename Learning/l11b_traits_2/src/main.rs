@@ -41,7 +41,6 @@ struct Triangle {
     side3: f64,
 }
 
-
 fn main() {
     let c = Circle { radius: 1.54 };
     println!("Circle surface 2: {}", c.area());
@@ -63,7 +62,11 @@ fn main() {
     }
 
     let s = Square { side: 4.28 };
-    let t = Triangle {side1: 3.0, side2:4.0, side3: 5.0};
+    let t = Triangle {
+        side1: 3.0,
+        side2: 4.0,
+        side3: 5.0,
+    };
     print_info(&c);
     print_info(&s);
     print_info(&t);

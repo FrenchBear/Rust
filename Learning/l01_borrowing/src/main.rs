@@ -2,6 +2,7 @@
 // Learning Rust again, Testing borrowing
 //
 // 2023-05-08   PV
+// 2025-04-21   PV      Clippy optimizations
 
 #![allow(unused)]
 
@@ -17,7 +18,7 @@ fn main() {
     println!("{w}");
 }
 
-fn get_length(s: &String) -> usize {
+fn get_length(s: &str) -> usize {
     s.len()
 }
 

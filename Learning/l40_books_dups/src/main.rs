@@ -2,8 +2,9 @@
 //
 // 2025-04-07	PV      First version, without command line parameters
 // 2025-04-11	PV      Moved from RUtils to learning, simple app, no need to make it an utility, removed options code
+// 2025-04-21   PV      Clippy optimizations
 
-//#![allow(unused)]
+#![allow(clippy::type_complexity)]
 
 // standard library imports
 use std::collections::HashMap;
@@ -43,8 +44,7 @@ struct DataBag {
 }
 
 fn main() {
-    let mut globstrsources: Vec<String> = Vec::new();
-    globstrsources.push(r"W:\Livres\**\**\*.{pdf,epub}".to_string());
+    let globstrsources: Vec<String> = vec![r"W:\Livres\**\*.{pdf,epub}".into()];
 
     // Prepare log writer
     let mut writer = logging::new(false);
@@ -122,7 +122,7 @@ fn main() {
 
             let data_ics = filter_alphanum(data);
             let entry_ics = counter_ics.entry(data_ics).or_insert((0, HashMap::<&str, u32>::new()));
-            (*entry_ics).0 += 1;
+            entry_ics.0 += 1;
             let subentry_ics = entry_ics.1.entry(data).or_insert(0);
             *subentry_ics += 1;
         }
@@ -177,8 +177,9 @@ fn main() {
         );
         for i in 0..vec_repr.len() {
             let (cnorm1, crepr1) = vec_repr[i];
-            for j in i + 1..vec_repr.len() {
-                let (cnorm2, crepr2) = vec_repr[j];
+            // for j in i + 1..vec_repr.len() {
+            //     let (cnorm2, crepr2) = vec_repr[j];
+            for (cnorm2, crepr2) in vec_repr.iter().skip(i + 1) {
                 let d = levenshtein_distance(cnorm1, cnorm2, 1);
                 if d == 1 {
                     // Found a close pair, print it
@@ -266,16 +267,12 @@ fn get_book_name(pb: PathBuf) -> Result<BookName, String> {
         _ => return Err(format!("Err: >4 seg: {}", filefp)),
     };
 
-    if !editor.is_empty() {
-        if !editor.starts_with('[') && editor.ends_with(']') {
-            return Err(format!("Err: Invalid editor: {}", file));
-        }
+    if !editor.is_empty() && !editor.starts_with('[') && editor.ends_with(']') {
+        return Err(format!("Err: Invalid editor: {}", file));
     }
 
-    if !isbn.is_empty() {
-        if !isbn.starts_with("ISBN ") {
-            return Err(format!("Err: Invalid ISBN: {}", filefp));
-        }
+    if !isbn.is_empty() && !isbn.starts_with("ISBN ") {
+        return Err(format!("Err: Invalid ISBN: {}", filefp));
     }
 
     // Transform &str in String to free mutable borrow of pb
@@ -306,7 +303,7 @@ fn get_book_name(pb: PathBuf) -> Result<BookName, String> {
         };
 
         (
-            String::from(String::from(base_title.trim())),
+            String::from(base_title.trim()),
             String::from(blockp),
             String::from(year),
             String::from(&ca[2]),
@@ -371,7 +368,7 @@ pub fn is_balanced(s: &str) -> bool {
                 current_state = c;
             }
             ')' | ']' | '}' | '»' | '›' => {
-                if stack.len() == 0 {
+                if stack.is_empty() {
                     return false;
                 }
 
@@ -402,7 +399,7 @@ pub fn levenshtein_distance(s1: &str, s2: &str, dmax: usize) -> usize {
     let len2 = s2.len();
 
     // If the difference in lengths exceeds dmax, return early
-    if (len1 as isize - len2 as isize).abs() as usize > dmax {
+    if (len1 as isize - len2 as isize).unsigned_abs() > dmax {
         return dmax + 1;
     }
 
