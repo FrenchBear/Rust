@@ -1,7 +1,7 @@
 // RNormalizeDates - Module re
 // Regular expressions build and helpers
 //
-// 2024-15-04   PV      Moved to a separate file to reduce size of main.rs
+// 2025-04-14   PV      Moved to a separate file to reduce size of main.rs
 // 2025-04-16   PV      Better normalization of n°
 
 use regex::Regex;

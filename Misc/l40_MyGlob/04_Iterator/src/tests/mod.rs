@@ -1,7 +1,7 @@
 // myglob tests
 // Mostly tests of conversion glob->regexp and matching strings
 //
-// 20245-03-29  PV
+// 2025-03-29  PV
 
 #![cfg(test)]
 
