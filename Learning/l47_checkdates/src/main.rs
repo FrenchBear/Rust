@@ -43,7 +43,7 @@ struct DataBag {
 }
 
 fn main() {
-    let globstrsources: Vec<String> = vec![r"C:\Development\**\*.{cs,rs,py}".to_string()];
+    let globstrsources: Vec<String> = vec![r"C:\Development\**\*.{cs,rs,py,fs,c,cpp,go,java,js,jl,lua,ts,vb}".to_string()];
     //let globstrsources: Vec<String> = vec![r"C:\Development\GitHub\Rust\Learning\l47_checkdates\src\*.rs".to_string()];
 
     // Prepare log writer
@@ -108,8 +108,10 @@ fn process_file(writer: &mut LogWriter, b: &mut DataBag, p: &Path) {
         Ok((Some(s), _)) => {
             let extension = p.extension().map(|p| p.to_str().unwrap()).unwrap_or("").to_ascii_lowercase();
             let comment = match extension.as_str() {
-                "cs" | "cpp" | "rs" => "//",
-                "py" => "#",
+                "cs" | "c" | "cpp" | "rs" | "fs" | "go" | "java" | "js" | "ts" => "//",
+                "py" | "jl" => "#",
+                "lua" => "--",
+                "vb" => "'",
                 _ => {
                     b.errors_count += 1;
                     logln(writer, format!("*** Unknown/unsupported extension: {}", p.display()).as_str());
@@ -154,6 +156,7 @@ fn process_text(writer: &mut LogWriter, p: &Path, source: &str, comment: &str, b
                 return;
             }
 
+            /*
             let d = NaiveDate::from_ymd_opt(y, m, d);
             if d.is_none() {
                 logln(writer, format!("*** Invalid date: {}\n    {}", p.display(), line).as_str());
@@ -167,6 +170,7 @@ fn process_text(writer: &mut LogWriter, p: &Path, source: &str, comment: &str, b
                 return;
             }
             last_date = d;
+            */
         }
 
         clc += 1;
