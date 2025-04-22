@@ -26,17 +26,17 @@ impl Options {
     fn header() {
         eprintln!(
             "{APP_NAME} {APP_VERSION}\n\
-            Simplified grep in rust"
+            Word count in rust"
         );
     }
 
     fn usage() {
         Options::header();
         eprintln!(
-            "\nUsage: {APP_NAME} [?|-?|-h|??] [-f] [-t] [-v] [source...]
+            "\nUsage: {APP_NAME} [?|-?|-h|??] [-a+|-a-] [-t] [-v] [source...]
 ?|-?|-h  Show this message
 ??       Show advanced usage notes
--f       Flat search, disable glob autorecurse
+-a+|-a-  Enable (default) or disable glob autorecurse mode (see extended usage)
 -t       Only show total line
 -v       Verbose output
 source   File or folder where to search, glob syntax supported. Without source, search stdin."
@@ -54,6 +54,12 @@ source   File or folder where to search, glob syntax supported. Without source, 
 "Copyright ©2025 Pierre Violent\n
 Advanced usage notes\n--------------------
 
+The four numerical fields report lines, words, characters and bytes counts. For utf-8 or utf-16 encoded files, a character is an Unicode codepoint, so bytes and characters counts may be different.
+
+Words are series of character(s) separated by space(s), spaces are either ASCII 9 (tab) or 32 (regular space).  Unicode \"fancy spaces\" are not considered.
+
+Lines end with \\r, \\n or \\r\\n. If the last line of the file ends with such termination character, an extra empty line is counted.
+
 Glob pattern rules:
 •   ? matches any single character.
 •   * matches any (possibly empty) sequence of characters.
@@ -64,7 +70,7 @@ Glob pattern rules:
 •   {choice1,choice2...}  match any of the comma-separated choices between braces. Can be nested, and include ?, * and character classes.
 •   Character classes [ ] accept regex syntax such as [\\d] to match a single digit, see https://docs.rs/regex/latest/regex/#character-classes for character classes and escape sequences supported.
 
-Autorecurse glob pattern transformation (active by default, use -f to disable):
+Autorecurse glob pattern transformation (active by default, use -a- to disable):
 •   Constant pattern (no filter, no **) pointing to a folder: \\**\\* is appended at the end to search all files of all subfolders.
 •   Patterns without ** and ending with a filter: \\** is inserted before final filter to find all matching files of all subfolders.";
 
@@ -135,7 +141,7 @@ Autorecurse glob pattern transformation (active by default, use -f to disable):
             autorecurse: true,
             ..Default::default()
         };
-        let mut opts = getopt::Parser::new(&args, "h?ftv");
+        let mut opts = getopt::Parser::new(&args, "h?ftva:");
 
         loop {
             match opts.next().transpose()? {
@@ -146,9 +152,11 @@ Autorecurse glob pattern transformation (active by default, use -f to disable):
                         return Err("".into());
                     }
 
-                    Opt('f', None) => {
-                        options.autorecurse = false;
-                    }
+                    Opt('a', attr) => match attr.unwrap().as_str() {
+                        "+" => options.autorecurse = true,
+                        "-" => options.autorecurse = false,
+                        _ => return Err("Only -a+ and -a- (enable/disable autorecurse) are supported".into()),
+                    },
 
                     Opt('t', None) => {
                         options.show_only_total = true;
@@ -165,8 +173,6 @@ Autorecurse glob pattern transformation (active by default, use -f to disable):
 
         // Check for extra argument
         for arg in args.split_off(opts.index()) {
-            // Don't check ? or help other than in first position, otherwise 'rgrep -F help source' will not search for word help
-
             if arg.starts_with("-") {
                 return Err(format!("Invalid/unsupported option {}", arg).into());
             }

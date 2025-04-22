@@ -1,6 +1,7 @@
 // rwc: Rust version of wc
 //
 // 2025-04-21	PV      First version
+// 2025-04-22	PV      1.1.0 Always show bytes; option -a+|- to control autorecurse
 
 // standard library imports
 use std::io;
@@ -25,7 +26,7 @@ use options::*;
 // Global constants
 
 const APP_NAME: &str = "rwc";
-const APP_VERSION: &str = "1.0.0";
+const APP_VERSION: &str = "1.1.0";
 
 // ==============================================================================================
 // Main
@@ -93,7 +94,11 @@ fn main() {
     let duration = start.elapsed();
 
     if b.files_count > 1 || options.show_only_total {
-        print_line(b.lines_count, b.words_count, b.chars_count, b.bytes_count, "total");
+        let mut name = String::from("total");
+        if b.files_count>1 {
+            name += format!(" ({} files)", b.files_count).as_str();
+        }
+        print_line(b.lines_count, b.words_count, b.chars_count, b.bytes_count, name.as_str());
     }
 
     if options.verbose {
@@ -101,8 +106,8 @@ fn main() {
     }
 }
 
-fn print_line(lines_count: usize, words_count: usize, chars_count: usize, _bytes_count: usize, filename: &str) {
-    println!("{:6} {:6} {:6} {}", lines_count, words_count, chars_count, filename);
+fn print_line(lines_count: usize, words_count: usize, chars_count: usize, bytes_count: usize, filename: &str) {
+    println!("{:7} {:7} {:8} {:8}  {}", lines_count, words_count, chars_count, bytes_count, filename);
 }
 
 /// First step processing a file, read text content from path and call process_text.

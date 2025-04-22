@@ -81,12 +81,12 @@ impl Action for ActionPrint {
 
 #[derive(Debug)]
 pub struct ActionDelete {
-    no_recycle: bool,
+    recycle: bool,
 }
 
 impl ActionDelete {
-    pub fn new(no_recycle: bool) -> Self {
-        ActionDelete { no_recycle }
+    pub fn new(recycle: bool) -> Self {
+        ActionDelete { recycle }
     }
 }
 
@@ -95,7 +95,7 @@ impl Action for ActionDelete {
         if path.is_file() {
             let s = quoted_path(path);
             let qp = s.as_str();
-            if self.no_recycle {
+            if !self.recycle {
                 logln(lw, format!("DEL {}", qp).as_str());
                 if !noaction {
                     match fs::remove_file(path) {
@@ -108,7 +108,7 @@ impl Action for ActionDelete {
                     }
                 }
             } else {
-                logln(lw, format!("PDEL {}", qp).as_str());
+                logln(lw, format!("RECYCLE {}", qp).as_str());
                 if !noaction {
                     match delete(path) {
                         Ok(_) => {
@@ -124,7 +124,7 @@ impl Action for ActionDelete {
     }
 
     fn name(&self) -> &'static str {
-        if self.no_recycle {
+        if self.recycle {
             "Delete files (permanent)"
         } else {
             "Delete files (use recycle bin for local files, permanently for remote files)"
@@ -142,12 +142,12 @@ fn quoted_path(path: &Path) -> String {
 
 #[derive(Debug)]
 pub struct ActionRmdir {
-    no_recycle: bool,
+    recycle: bool,
 }
 
 impl ActionRmdir {
-    pub fn new(no_recycle: bool) -> Self {
-        ActionRmdir { no_recycle }
+    pub fn new(recycle: bool) -> Self {
+        ActionRmdir { recycle }
     }
 }
 
@@ -156,7 +156,7 @@ impl Action for ActionRmdir {
         if path.is_dir() {
             let s = quoted_path(path);
             let qp = s.as_str();
-            if self.no_recycle {
+            if !self.recycle {
                 logln(writer, format!("RD /S {}", qp).as_str());
                 if !noaction {
                     match fs::remove_dir_all(path) {
@@ -169,7 +169,7 @@ impl Action for ActionRmdir {
                     }
                 }
             } else {
-                logln(writer, format!("PRD /S {}", quoted_path(path)).as_str());
+                logln(writer, format!("RECYCLE (dir) {}", quoted_path(path)).as_str());
                 if !noaction {
                     match delete(path) {
                         Ok(_) => {
@@ -185,7 +185,7 @@ impl Action for ActionRmdir {
     }
 
     fn name(&self) -> &'static str {
-        if self.no_recycle {
+        if self.recycle {
             "Delete directories (permanent)"
         } else {
             "Delete directories (use recycle bin for local files, permanently for remote files)"

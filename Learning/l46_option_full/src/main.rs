@@ -1,4 +1,4 @@
-// l46_option2: Learning Rust
+// l46_option_full: Learning Rust
 // Complete exploration of Option<T>
 //
 // 2025-04-20	PV      First version
