@@ -329,7 +329,8 @@ fn main() {
     let o24 = r24.and_then(|x| Ok(x as f64 + 0.5));
     assert_eq!(o24, Ok(18.5));
 
-    let r24b = "27322".parse::<i128>()
+    let r24b = "27322"
+        .parse::<i128>()
         .and_then(|x| Ok(x.to_string()))
         .and_then(|x| (x.as_str()).parse::<i64>())
         .and_then(|x| Ok(x.to_string()))
@@ -341,7 +342,7 @@ fn main() {
     // Function must return Ok(_) or Err(_), not just a new value
     let r25: Result<i32, char> = Err('Z');
     let o25 = r25.or_else(|x| Err(format!("Error {x}")));
-    assert_eq!(o25, Err("Error W".into()));
+    assert_eq!(o25, Err("Error Z".into()));
 
     // ## Comparison operators
     //
@@ -397,7 +398,39 @@ fn main() {
     assert_eq!(nums, [17, 99]);
     println!("results {results:?}");
     println!("errs {errs:?}");
-    println!("nums {nums:?}");
+    println!("nums {nums:?}\n");
+
+    // ---
+
+    // Ignore failed items with filter_map (after converting Result -> Option using Result::ok())
+    let strings = vec!["tofu", "93", "18"];
+    let numbers: Vec<_> = strings.into_iter().filter_map(|s| s.parse::<i32>().ok()).collect();
+    println!("Results: {:?}\n", numbers);
+
+    // map_err transforms Result<T, E> into Result<T, F>, applying .ok() to the result only returns Ok values as Some() that can be collected
+    let strings = vec!["42", "tofu", "93", "999", "18"];
+    let mut errors = vec![];
+    let numbers: Vec<_> = strings
+        .into_iter()
+        .map(|s| s.parse::<u8>())
+        .filter_map(|r| r.map_err(|e| errors.push(e)).ok())
+        .collect();
+    println!("Numbers: {:?}", numbers);
+    println!("Errors: {:?}\n", errors);
+
+    // A single error will fail entiere collect() operation
+    let strings = vec!["93", "tofu", "18"];
+    let numbers: Result<Vec<_>, _> = strings.into_iter().map(|s| s.parse::<i32>()).collect();
+    println!("Results: {:?}\n", numbers);
+
+    // Collect all valid values and failures with partition()
+    let strings = vec!["tofu", "93", "18"];
+    let (numbers, errors): (Vec<_>, Vec<_>) = strings.into_iter().map(|s| s.parse::<i32>()).partition(Result::is_ok);
+    // Cleanup
+    let numbers: Vec<_> = numbers.into_iter().map(Result::unwrap).collect();
+    let errors: Vec<_> = errors.into_iter().map(Result::unwrap_err).collect();
+    println!("Numbers: {:?}", numbers);
+    println!("Errors: {:?}\n", errors);
 
     // ## Collecting into `Result`
     //
