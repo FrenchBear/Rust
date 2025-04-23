@@ -6,19 +6,13 @@
 //#![allow(unused)]
 
 use myglob::{MyGlobMatch, MyGlobSearch};
-use std::time::Instant;
 use regex as _;
+use std::time::Instant;
 
 fn main() {
     println!("MyGlob lib version: {}\n", MyGlobSearch::version());
 
-    // Errors
-    let e = MyGlobSearch::build(r"C:\**z\\z").err().unwrap();
-    println!("{}", e);
-
-    test_myglob(r"C:\[\d&&\p{ascii]", true, &["d2"], 1);
-
-    //test_myglob(r"C:\Temp\*.log", true, &["d2"], 1);
+    test_myglob(r"C:\Development\*\*.*", false, &["d2"], 1);
 }
 
 // Entry point for testing
@@ -32,7 +26,7 @@ pub fn test_myglob(pattern: &str, autorecurse: bool, ignore_dirs: &[&str], loops
         for ignore_dir in ignore_dirs {
             builder = builder.add_ignore_dir(ignore_dir);
         }
-        let resgs=builder.compile();
+        let resgs = builder.compile();
 
         match resgs {
             Ok(gs) => {

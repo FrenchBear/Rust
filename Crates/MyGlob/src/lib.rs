@@ -15,6 +15,7 @@
 // 2025-04-09   PV      1.4.0 New MyGlob API with MyBlobBuilder, version, new, compile and add_ignore_dir.
 // 2025-04-13   PV      1.5.0 Autorecurse
 // 2025-04-18   PV      1.5.1 MyGlobError implements std::error::Error
+// 2025-04-23   PV      1.5.2 Added impl From<regex::Error> for MyGlobError and fn source in impl Error for MyGlobError
 
 #![allow(unused_variables, dead_code, unused_imports)]
 
@@ -80,13 +81,23 @@ impl Display for MyGlobError {
     }
 }
 
-impl Error for MyGlobError {}
+impl Error for MyGlobError {
+    // Optional to implement, not really testes
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            MyGlobError::IoError(e) => Some(e),
+            MyGlobError::RegexError(e) => Some(e),
+            MyGlobError::GlobError(_) => None,
+        }
+    }
+}
 
 impl MyGlobSearch {
     pub fn version() -> &'static str {
         LIB_VERSION
     }
 
+    #[allow(clippy::new_ret_no_self)]
     pub fn new(glob_pattern: &str) -> MyGlobBuilder {
         MyGlobBuilder {
             glob_pattern: glob_pattern.to_string(),
@@ -256,13 +267,16 @@ impl MyGlobBuilder {
                         }
 
                         let repat = format!("(?i)^{}$", regex_buffer);
-                        let resre = Regex::new(&repat);
-                        match resre {
-                            Ok(re) => segments.push(Segment::Filter(re)),
-                            Err(e) => {
-                                return Err(MyGlobError::RegexError(e));
-                            }
-                        }
+                        // let resre = Regex::new(&repat);
+                        // match resre {
+                        //     Ok(re) => segments.push(Segment::Filter(re)),
+                        //     Err(e) => {
+                        //         return Err(MyGlobError::RegexError(e));
+                        //     }
+                        // }
+
+                        // Shorter thanks to impl From<regex::Error> for MyGlobError
+                        segments.push(Segment::Filter(Regex::new(&repat)?));
                     } else {
                         segments.push(Segment::Constant(constant_buffer.clone()));
                     }
@@ -319,6 +333,12 @@ impl MyGlobBuilder {
         }
 
         Ok(segments)
+    }
+}
+
+impl From<regex::Error> for MyGlobError {
+    fn from(value: regex::Error) -> Self {
+        MyGlobError::RegexError(value)
     }
 }
 

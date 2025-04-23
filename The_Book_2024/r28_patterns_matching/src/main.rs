@@ -142,7 +142,7 @@ fn main() {
     // note that _x binds whereas a simple _ does not bind
     let _unused = 12;
 
-    // Ignoring Remaining Parts of a Value with .., quicker than including missing parts as _ (but must be non ambiguous)
+    // Ignoring remaining parts of a value with .., quicker than including missing parts as _ (but must be non ambiguous)
     let origin = Point3D { x: 0, y: 0, z: 0 };
     match origin {
         Point3D { x, .. } => println!("x is {x}"),

@@ -5,7 +5,12 @@
 // 2025-04-21	PV      Added copied() and cloned()
 
 #![allow(dead_code, unused)]
-#![allow(clippy::bool_assert_comparison, clippy::unnecessary_literal_unwrap,clippy::unnecessary_lazy_evaluations, clippy::bind_instead_of_map)]
+#![allow(
+    clippy::bool_assert_comparison,
+    clippy::unnecessary_literal_unwrap,
+    clippy::unnecessary_lazy_evaluations,
+    clippy::bind_instead_of_map
+)]
 
 fn main() {
     // Optional values.
@@ -195,6 +200,11 @@ fn main() {
     let o19: Option<char> = Some('k');
     let r19 = o19.map_or_else(|| '?', |c| c.to_ascii_uppercase());
     assert_eq!(r19, 'K');
+
+    // BEWARE: map: Option<T> -> Option<U>  while  map_or also unwraps: Option<T> -> U !!!
+    let k = Some(12);
+    let l = k.map(|x| x + 1);
+    let m = k.map_or(-1, |x| x + 1);
 
     // These methods combine the [`Some`] variants of two [`Option`] values:
     // * [`zip`] returns [`Some((s, o))`] if `self` is [`Some(s)`] and the provided [`Option`] value is [`Some(o)`];
@@ -390,9 +400,7 @@ fn main() {
     assert_eq!(o34b, Some(3));
     assert_eq!(r34b, None);
 
-
-
-    // Extra: 
+    // Extra:
     // Option Copied transforms an Option<&T> in a Option<T> where T:Copy by copying content
     // Option Cloned transforms an Option<&T> in a Option<T> where T:Copy by cloning content
     let f34 = 53.98;

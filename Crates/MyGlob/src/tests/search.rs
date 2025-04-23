@@ -2,6 +2,7 @@
 // Unit tests for MyGlob
 //
 // 2025-04-09   PV
+// 2025-04-23   PV      Added search_error tests
 
 #![cfg(test)]
 use crate::*;
@@ -100,9 +101,21 @@ fn search_1() -> io::Result<()> {
     assert_eq!(search_count_autorecurse(r"C:\Temp\search1"), (9, 2));
 
     // Testing ignore
-    assert_eq!(search_count_ignore(r"C:\Temp\search1\**\*.txt", &vec!["Légumes"]), (5, 0));
+    assert_eq!(search_count_ignore(r"C:\Temp\search1\**\*.txt", &["Légumes"]), (5, 0));
 
     fs::remove_dir_all(r"C:\Temp\search1")?;
 
     Ok(())
+}
+
+#[test]
+fn search_error_1() {
+    let e = MyGlobSearch::build(r"C:\**z\\z");
+    assert!(matches!(e.unwrap_err(), MyGlobError::GlobError(..)));
+}
+
+#[test]
+fn search_error_2() {
+    let e = MyGlobSearch::build(r"C:\[\d&&\p{ascii]");
+    assert!(matches!(e.unwrap_err(), MyGlobError::RegexError(..)));
 }

@@ -323,13 +323,25 @@ fn main() {
     // | [`or_else`]  | `Err(e)` | `e`            | `Ok(y)`         | `Ok(y)`  |
     // | [`or_else`]  | `Ok(x)`  | (not provided) | (not evaluated) | `Ok(x)`  |
 
+    // result::and_then transforms Ok value, preserve error
+    // Function must return Ok(_) or Err(_), not just a new value
     let r24: Result<i32, char> = Ok(18);
-    let o24 = r24.and_then(|x| Ok(2.718));
-    assert_eq!(o24, Ok(2.718));
+    let o24 = r24.and_then(|x| Ok(x as f64 + 0.5));
+    assert_eq!(o24, Ok(18.5));
 
+    let r24b = "27322".parse::<i128>()
+        .and_then(|x| Ok(x.to_string()))
+        .and_then(|x| (x.as_str()).parse::<i64>())
+        .and_then(|x| Ok(x.to_string()))
+        .and_then(|x| (x.as_str()).parse::<i32>())
+        .and_then(|x| Ok(x.to_string()))
+        .and_then(|x| (x.as_str()).parse::<i16>());
+
+    // result::or_else preserve Ok value, transform error
+    // Function must return Ok(_) or Err(_), not just a new value
     let r25: Result<i32, char> = Err('Z');
-    let o25 = r25.or_else(|x| Err('W'));
-    assert_eq!(o25, Err('W'));
+    let o25 = r25.or_else(|x| Err(format!("Error {x}")));
+    assert_eq!(o25, Err("Error W".into()));
 
     // ## Comparison operators
     //
