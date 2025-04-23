@@ -5,6 +5,8 @@
 
 #![allow(dead_code, unused)]
 
+use std::num::ParseIntError;
+
 fn main() {
     // Error handling with the `Result` type.
 
@@ -67,6 +69,18 @@ fn main() {
     // Consume the result and return the contents with `unwrap`.
     let final_awesome_result = good_result.unwrap();
     assert!(final_awesome_result);
+
+    fn multiply_1(first_number_str: &str, second_number_str: &str) -> Result<i32, std::num::ParseIntError> {
+        first_number_str
+            .parse::<i32>()
+            .and_then(|first_number| second_number_str.parse::<i32>().map(|second_number| first_number * second_number))
+    }
+    assert_eq!(multiply_1("12", "3"), Ok(36));
+
+    fn multiply_2(first_number_str: &str, second_number_str: &str) -> Result<i32, std::num::ParseIntError> {
+        Ok(first_number_str.parse::<i32>()? * second_number_str.parse::<i32>()?)
+    }
+    assert_eq!(multiply_2("12", "3"), Ok(36));
 
     // # Results must be used
     //
@@ -325,11 +339,11 @@ fn main() {
     // [`Result<T, E>`].
 
     assert!(Ok(1) < Err(0));
-    
+
     let r26a: Result<i32, ()> = Ok(0);
     let r26b = Ok(1);
     assert!(r26a < r26b);
-    
+
     let r27a: Result<(), i32> = Err(0);
     let r27b = Err(1);
     assert!(r27a < r27b);
@@ -351,22 +365,22 @@ fn main() {
     // You might want to use an iterator chain to do multiple instances of an operation that can fail, but would like to
     // ignore failures while continuing to process the successful results. In this example, we take advantage of the
     // iterable nature of [`Result`] to select only the [`Ok`] values using [`flatten`][Iterator::flatten].
-    
+
     use std::str::FromStr;
     let mut results = vec![];
     let mut errs = vec![];
     let nums: Vec<_> = ["17", "not a number", "99", "-27", "768"]
-       .into_iter()
-       .map(u8::from_str)
-       // Save clones of the raw `Result` values to inspect
-       .inspect(|x| results.push(x.clone()))
-       // Challenge: explain how this captures only the `Err` values
-       // Ok: my understanding: This inspect process all values, but .err() transform errors in an Option<E>, keeping errors,
-       // while Ok results produce None. Then this option is iterable, error values are appended (using .extend) to errs vec,
-       // while Null options produced by .err() generate an empty iterable, which does not add anything to errs vec.
-       .inspect(|x| errs.extend(x.clone().err()))
-       .flatten()
-       .collect();
+        .into_iter()
+        .map(u8::from_str)
+        // Save clones of the raw `Result` values to inspect
+        .inspect(|x| results.push(x.clone()))
+        // Challenge: explain how this captures only the `Err` values
+        // Ok: my understanding: This inspect process all values, but .err() transform errors in an Option<E>, keeping errors,
+        // while Ok results produce None. Then this option is iterable, error values are appended (using .extend) to errs vec,
+        // while Null options produced by .err() generate an empty iterable, which does not add anything to errs vec.
+        .inspect(|x| errs.extend(x.clone().err()))
+        .flatten()
+        .collect();
     assert_eq!(errs.len(), 3);
     assert_eq!(nums, [17, 99]);
     println!("results {results:?}");
