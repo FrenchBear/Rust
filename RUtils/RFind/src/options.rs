@@ -47,7 +47,7 @@ impl Options {
 -f|-type f       Search for files
 -d|-type d       Search for directories
 -e|-empty        Only find empty files or directories
--r+|-r-          Delete to recycle bin (default) or relete forever; Recycle bin is not allowed on network sources
+-r+|-r-          Delete to recycle bin (default) or delete forever; Recycle bin is not allowed on network sources
 -a+|-a-          Enable (default) or disable glob autorecurse mode (see extended usage)
 source           File or folder where to search (autorecurse glob pattern, see advanced notes)
 
@@ -68,7 +68,10 @@ Actions:
         };
         let text =
 "Copyright ©2025 Pierre Violent\n
-Advanced usage notes\n--------------------\n
+Advanced usage notes\n--------------------
+
+Option -norecycle can be used instead of -r-, to indicate to delete forever.
+
 Glob pattern rules:
 •   ? matches any single character.
 •   * matches any (possibly empty) sequence of characters.
@@ -180,7 +183,7 @@ Autorecurse glob pattern transformation (active by default, use -a- to deactivat
                     "e" | "empty" => options.isempty = true,
 
                     "r+" => options.recycle = true,
-                    "r-" => options.recycle = false,
+                    "r-" | "norecycle" => options.recycle = false,
 
                     "a+" => options.autorecurse = true,
                     "a-" => options.autorecurse = false,
