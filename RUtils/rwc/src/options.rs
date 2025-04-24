@@ -79,7 +79,7 @@ Autorecurse glob pattern transformation (active by default, use -a- to disable):
 
     fn format_text(text: &str, width: usize) -> String {
         let mut s = String::new();
-        for line in text.split('\n') {
+        for line in text.lines() {
             if !s.is_empty() {
                 s.push('\n');
             }

@@ -1,4 +1,4 @@
-// r11_kollections/vectors.rs
+// r11_collections/vectors.rs
 // Learning rust 2024, The Book §8, common collections
 //
 // 2024-11-10   PV

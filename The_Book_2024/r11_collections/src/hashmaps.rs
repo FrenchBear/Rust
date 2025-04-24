@@ -1,4 +1,4 @@
-// r11_kollections/hashmaps.rs
+// r11_collections/hashmaps.rs
 // Learning rust 2024, The Book §8, common collections
 //
 // 2024-11-10   PV
@@ -9,7 +9,7 @@ use std::collections::HashMap;
 pub fn test_hashmaps() {
     println!("\ntest_hashmaps");
 
-    // Creating and filling anew hashmap
+    // Creating and filling a new HashMap
     let mut scores = HashMap::new();
     scores.insert(String::from("Blue"), 10);
     scores.insert(String::from("Yellow"), 20);

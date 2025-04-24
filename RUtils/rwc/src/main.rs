@@ -139,6 +139,8 @@ fn process_text(b: &mut DataBag, txt: &str, filename: &str, options: &Options) {
 
     for line in txt.lines() {
         lines += 1;
+        // Don't want to use Unicode-aware split_whitespace() because of too many fancy spaces
+        // split_ascii_whitespace() is Ok, it includes space, tab, LF, CR and FF, but just space and tab are enough
         for word in line.trim().split([' ', '\t']) {
             if !word.is_empty() {
                 words += 1;

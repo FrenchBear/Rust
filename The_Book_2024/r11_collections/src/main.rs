@@ -1,8 +1,9 @@
-// r11_kollections
+// r11_collections
 // Learning rust 2024, The Book §8, common collections
 //
 // 2024-11-10   PV
 // 2025-04-21   PV      Clippy suggestions
+// 2025-04-24   PV      Added HashSets
 
 #![allow(dead_code, unused_variables)]
 
@@ -11,17 +12,19 @@ use std::collections::HashMap;
 pub mod hashmaps;
 pub mod strings;
 pub mod vectors;
+pub mod hashsets;
 
 fn main() {
     // vectors::test_vectors();
     // strings::test_strings();
     // hashmaps::test_hashmaps();
+    hashsets::test_hashsets();
 
-    println!("\n\n---------------------\nExercises\n");
-    exercice_median();
-    exercise_mod();
-    exercise_pig_latin();
-    exercise_text_interface();
+    // println!("\n\n---------------------\nExercises\n");
+    // exercice_median();
+    // exercise_mod();
+    // exercise_pig_latin();
+    // exercise_text_interface();
 }
 
 fn exercice_median() {
