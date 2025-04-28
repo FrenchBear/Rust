@@ -27,7 +27,6 @@ use myglob::{MyGlobMatch, MyGlobSearch};
 mod options;
 mod actions;
 mod logging;
-mod tests;
 
 use options::*;
 use logging::*;
