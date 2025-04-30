@@ -2,6 +2,7 @@
 // Logging support
 //
 // 2025-04-03   PV      Moved to separate file
+// 2025-04-30   PV      Use colored instead of termcolor
 
 // stdlib
 use std::fs::File;
@@ -9,7 +10,7 @@ use std::io::{BufWriter, Write};
 
 // external crates imports
 use chrono::{DateTime, Local};
-use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
+use colored::*;
 
 use super::*;
 
@@ -17,13 +18,7 @@ pub type LogWriter = Option<BufWriter<File>>;
 
 pub fn logln(lw: &mut LogWriter, msg: &str) {
     if msg.starts_with("***") {
-        let mut stdout = StandardStream::stdout(ColorChoice::Always);
-        let mut err_color = ColorSpec::new();
-        err_color.set_fg(Some(Color::Red)).set_bold(true);
-
-        let _ = stdout.set_color(&err_color);
-        let _ = writeln!(&mut stdout, "{}", msg);
-        let _ = stdout.reset();
+        println!("{}", msg.red().bold());
     } else {
         println!("{}", msg);
     }
@@ -31,7 +26,6 @@ pub fn logln(lw: &mut LogWriter, msg: &str) {
         let _ = writeln!(bw, "{}", msg);
     }
 }
-
 #[allow(unused)]
 pub fn log(lw: &mut LogWriter, msg: &str) {
     print!("{}", msg);

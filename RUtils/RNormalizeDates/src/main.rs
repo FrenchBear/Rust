@@ -36,7 +36,7 @@ use re::*;
 // Global constants
 
 const APP_NAME: &str = "rnormalizedates";
-const APP_VERSION: &str = "1.1.1";
+const APP_VERSION: &str = "1.1.2";
 
 // -----------------------------------
 // Main

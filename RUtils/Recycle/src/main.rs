@@ -31,7 +31,7 @@ use reparse::*;
 // Globals
 
 const APP_NAME: &str = "recycle";
-const APP_VERSION: &str = "1.1.0";
+const APP_VERSION: &str = "1.1.1";
 
 // ==============================================================================================
 // Options processing

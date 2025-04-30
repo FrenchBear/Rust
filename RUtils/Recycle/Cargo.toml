@@ -1,13 +1,13 @@
 [package]
 name = "recycle"
 description = "Delete files and folders to trash"
-version = "1.1.0"
+version = "1.1.1"
 authors = ["Pierre Violent"]
 edition = "2024"
 
 [dependencies]
 getopt = "1.1.7"
-termcolor = "1.4.1"
+colored = "3.0.0"
 chrono = "0.4.40"
 trash = "5.2.2"
 myglob = { path = "../../Crates/MyGlob" }

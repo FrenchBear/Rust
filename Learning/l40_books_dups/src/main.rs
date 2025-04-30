@@ -30,8 +30,8 @@ use logging::*;
 // -----------------------------------
 // Global constants
 
-const APP_NAME: &str = "rsegment";
-const APP_VERSION: &str = "1.0.0";
+const APP_NAME: &str = "books_errors";
+const APP_VERSION: &str = "1.2.1";
 
 // -----------------------------------
 // Main

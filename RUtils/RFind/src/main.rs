@@ -35,7 +35,7 @@ use logging::*;
 // Global constants
 
 const APP_NAME: &str = "rfind";
-const APP_VERSION: &str = "1.5.0";
+const APP_VERSION: &str = "1.5.1";
 
 // -----------------------------------
 // Traits

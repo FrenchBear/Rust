@@ -32,7 +32,7 @@ pub mod tests;
 // Globals
 
 const APP_NAME: &str = "rcheckfiles";
-const APP_VERSION: &str = "1.4.0";
+const APP_VERSION: &str = "1.4.1";
 
 const SPECIAL_CHARS: &str = "€®™©–—…×·•∶⧹⧸／⚹†‽¿🎜🎝♫♪“”⚡♥";
 

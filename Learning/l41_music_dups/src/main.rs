@@ -28,7 +28,7 @@ use logging::*;
 // Global constants
 
 const APP_NAME: &str = "music_dups";
-const APP_VERSION: &str = "1.0.0";
+const APP_VERSION: &str = "1.0.1";
 
 // -----------------------------------
 // Main

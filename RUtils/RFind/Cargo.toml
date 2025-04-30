@@ -1,12 +1,12 @@
 [package]
 name = "rfind"
 description = "Rust version of find/XFind/Search"
-version = "1.5.0"
+version = "1.5.1"
 authors = ["Pierre Violent"]
 edition = "2024"
 
 [dependencies]
-termcolor = "1.4.1"
+colored = "3.0.0"
 myglob = { path = "../../Crates/MyGlob" }
 trash = "5.2.2"
 chrono = "0.4.40"

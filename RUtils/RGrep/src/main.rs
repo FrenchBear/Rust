@@ -13,7 +13,7 @@
 
 // standard library imports
 use std::error::Error;
-use std::io::{self, Write};
+use std::io;
 use std::path::{Path, PathBuf};
 use std::process;
 use std::time::Instant;
@@ -22,7 +22,7 @@ use std::time::Instant;
 use getopt::Opt;
 use myglob::{MyGlobMatch, MyGlobSearch};
 use regex::Regex;
-use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
+use colored::*;
 use terminal_size::{Width, terminal_size};
 
 // -----------------------------------
@@ -38,7 +38,7 @@ use decode_encoding::*;
 // Global constants
 
 const APP_NAME: &str = "rgrep";
-const APP_VERSION: &str = "1.5.0";
+const APP_VERSION: &str = "1.5.1";
 
 // ==============================================================================================
 // Options processing
@@ -379,13 +379,8 @@ fn process_path(re: &Regex, path: &Path, options: &Options) {
 fn process_text(re: &Regex, txt: &str, filename: &str, options: &Options) {
     let mut matchlinecount = 0;
 
+    // Note that this test is actually useless since colored doesn't emit ANSI sequences when stdout is not a tty
     if atty::is(atty::Stream::Stdout) {
-        let mut stdout = StandardStream::stdout(ColorChoice::Always);
-        let mut match_color = ColorSpec::new();
-        match_color.set_fg(Some(Color::Red)).set_bold(true);
-        let mut file_color = ColorSpec::new();
-        file_color.set_fg(Some(Color::Black)).set_intense(true);
-
         for gi in grepiterator::GrepLineMatches::new(txt, re) {
             matchlinecount += 1;
 
@@ -396,18 +391,13 @@ fn process_text(re: &Regex, txt: &str, filename: &str, options: &Options) {
 
             if options.out_level == 0 {
                 if options.show_path {
-                    let _ = stdout.set_color(&file_color);
-                    let _ = write!(&mut stdout, "{}: ", filename);
-                    let _ = stdout.reset();
+                    print!("{}: ", filename.bright_black());
                 }
 
                 let mut p: usize = 0;
                 for ma in gi.ranges {
                     let e = ma.end;
-                    print!("{}", &gi.line[p..ma.start]);
-                    let _ = stdout.set_color(&match_color);
-                    let _ = write!(&mut stdout, "{}", &gi.line[ma]);
-                    let _ = stdout.reset();
+                    print!("{}{}", &gi.line[p..ma.start], &gi.line[ma].red().bold());
                     p = e;
                 }
                 println!("{}", &gi.line[p..]);
