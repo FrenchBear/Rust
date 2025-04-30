@@ -9,7 +9,7 @@ use threadpool::ThreadPool;
 
 fn main() {
     let lst = Vec::<i32>::new();
-    let res = run_threads(as_static(&lst));
+    run_threads(as_static(&lst));
 }
 
 fn as_static<'a, T>(data: &'a T) -> &'static T {
@@ -18,6 +18,7 @@ fn as_static<'a, T>(data: &'a T) -> &'static T {
     }
 }
 
+// Note that I can't remplace &'static Vec<i32> by &'static [i32] as Clippy suggests, not sure why...
 fn run_threads(lst: &'static Vec<i32>) {
 	let pool = ThreadPool::new(4);
 	for i in 1..10 {

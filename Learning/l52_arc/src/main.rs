@@ -23,7 +23,7 @@ fn run_threads(lst: &Arc<Vec<i32>>) {
         pool.execute(move || {
             // Do something with lst_clone
             let _len = lst_clone.len(); // Example usage
-            process(&(*lst_clone));
+            process(&lst_clone);
         });
     }
 
@@ -31,6 +31,6 @@ fn run_threads(lst: &Arc<Vec<i32>>) {
     println!("Done");
 }
 
-fn process(lst_clone: &Vec<i32>) {
+fn process(lst_clone: &[i32]) {
     // Do something
 }

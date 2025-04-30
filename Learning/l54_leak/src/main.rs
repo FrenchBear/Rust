@@ -11,10 +11,10 @@ fn main() {
     let lst = Vec::<i32>::new();
     let lst_box = Box::new(lst);
     let lst_static: &'static Vec<i32> = Box::leak(lst_box);
-    let res = run_threads(lst_static);
+    run_threads(lst_static);
 }
 
-fn run_threads(lst: &'static Vec<i32>) {
+fn run_threads(lst: &'static [i32]) {
 	let pool = ThreadPool::new(4);
 	for i in 1..10 {
 		pool.execute(move || {
