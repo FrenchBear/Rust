@@ -3,6 +3,7 @@
 //
 // 2025-03-13   PV      First version
 // 2025-04-01   PV      New version, read only the first 1000 bytes at first for detection, faster for large non-text files
+// 2025-05-01   PV      ok_string2 should contain at least 75% of ASCII codes (some source files contain many semi-graphic characters)
 
 use std::fs::File;
 use std::io::{self, BufReader, Read, Seek};
@@ -27,7 +28,7 @@ pub fn read_text_file(path: &Path) -> Result<(Option<String>, &str), io::Error> 
     let mut buffer_full = Vec::new();
     let mut buffer_full_read = false;
 
-    // Check that string s doesn't contain a null char and contains at least 90% of ASCII 32..127, CR, LF, TAB
+    // Check that string s doesn't contain a null char and contains at least 75% of ASCII 32..127, CR, LF, TAB
     // Type std::str::Chars<'_> is just an iterable on chars
     fn ok_string2(chars: std::str::Chars<'_>) -> bool {
         let mut acount = 0;
@@ -42,11 +43,8 @@ pub fn read_text_file(path: &Path) -> Result<(Option<String>, &str), io::Error> 
                 acount += 1;
             }
         }
-        if len < 10 {
-            true
-        } else {
-            acount * 10 >= 9 * len
-        }
+
+        if len < 10 { true } else { acount as f64 / len as f64 >= 0.75 }
     }
 
     // Define the encodings to try, in order of preference.

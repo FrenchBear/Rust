@@ -1,5 +1,5 @@
 // l55_panic_hook
-// Intercept a panic in current thread in rust
+// Intercept a panic in current thread in Rust
 // While you can't truly "stop" the panic in the same scope, you can potentially prevent the entire program from crashing
 // if the panic happens within a spawned thread.
 //

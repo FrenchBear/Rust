@@ -1,5 +1,5 @@
 // r03_loops
-// Play with loops in rust
+// Play with loops in Rust
 // In rust, break can return a value for a block, and/or specify a loop label to indicate wich look should break
 //
 // 2024-11-04   PV

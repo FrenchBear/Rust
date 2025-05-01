@@ -1,0 +1,23 @@
+rtt utility specs (Rust Text Type)
+Determine text files type
+
+glob argument, or process stdin (similar to rwc)
+
+Show information about text files:
+- ASCII (7-bit), 8-bit (likely OEM or ANSI), UTF-8, UTF-16 (with BOM detection)
+- Ends of line Windows (\r\n), Unix (\n), Mac (\r)
+
+Detects:
+- Empty files
+- No characters <32 other than \r, \n, \t
+- Presence of UTF-16 header in UTF-8 file
+
+For dev debug, based on extension, some files should be text files, otherwise emit a visible warning:
+Sources: *.{awk,c,cpp,cs,fs,go,h,java,jl,js,lua,py,rs,sql,ts,vb,xaml}
+VB6: *.{bas,frm,cls,ctl,vbp,vbg}
+Projects *.{sln,csproj,vbproj,fsproj,pyproj,vcxproj}
+Misc: *.{appxmanifest,clang-format,classpath,ruleset,editorconfig,gitignore,globalconfig,resx,targets,pubxml,filters}
+Config: *.{ini,xml,yml,yaml,json,toml}
+Scripts: *.{bat,cmd,ps1,sh,vbs}
+Text: *.{txt,md}
+Other: Makefile

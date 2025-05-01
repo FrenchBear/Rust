@@ -11,11 +11,11 @@ use std::sync::LazyLock;
 use std::time::Instant;
 use std::{collections::HashMap, fmt::Debug};
 
-use chrono::NaiveDate;
 // external crates imports
 use myglob::{MyGlobMatch, MyGlobSearch};
 use regex::Regex;
 use unicode_normalization::UnicodeNormalization;
+use chrono::NaiveDate;
 
 // -----------------------------------
 // Submodules
@@ -40,10 +40,11 @@ struct DataBag {
     files_count: usize,
     errors_count: usize,
     comment_lines_count: usize,
+    ext_counter: HashMap<String, usize>,
 }
 
 fn main() {
-    let globstrsources: Vec<String> = vec![r"C:\Development\**\*.{cs,rs,py,fs,c,cpp,go,java,js,jl,lua,ts,vb}".to_string()];
+    let globstrsources: Vec<String> = vec![r"C:\Development\**\*.{awk,c,cpp,cs,fs,go,h,java,jl,js,lua,py,rs,sql,ts,vb}".to_string()];
 
     // Prepare log writer
     let mut writer = logging::new(false);
@@ -96,8 +97,15 @@ fn main() {
         logln(&mut writer, format!(" found in {:.3}s", duration.as_secs_f64()).as_str());
         logln(
             &mut writer,
-            format!("Average comment header size: {:.1} line(s)", b.comment_lines_count as f64 / b.files_count as f64).as_str(),
+            format!("Average comment header size: {:.2} line(s)", b.comment_lines_count as f64 / b.files_count as f64).as_str(),
         );
+
+        println!();
+        let mut kvp = b.ext_counter.into_iter().collect::<Vec<_>>();
+        kvp.sort_by_key(|(k, v)| -(*v as i32));
+        for (ext, cnt) in kvp {
+            println!("{:5} {:5}", ext, cnt);
+        }
     }
 }
 
@@ -107,9 +115,9 @@ fn process_file(writer: &mut LogWriter, b: &mut DataBag, p: &Path) {
         Ok((Some(s), _)) => {
             let extension = p.extension().map(|p| p.to_str().unwrap()).unwrap_or("").to_ascii_lowercase();
             let comment = match extension.as_str() {
-                "cs" | "c" | "cpp" | "rs" | "fs" | "go" | "java" | "js" | "ts" => "//",
-                "py" | "jl" => "#",
-                "lua" => "--",
+                "cs" | "c" | "h" | "cpp" | "rs" | "fs" | "go" | "java" | "js" | "ts" => "//",
+                "py" | "jl" | "awk" => "#",
+                "lua" | "sql" => "--",
                 "vb" => "'",
                 _ => {
                     b.errors_count += 1;
@@ -118,11 +126,21 @@ fn process_file(writer: &mut LogWriter, b: &mut DataBag, p: &Path) {
                 }
             };
 
+            // Count extension
+            let e = b.ext_counter.entry(extension);
+            *e.or_insert(0) += 1;
+
             process_text(writer, p, s.as_str(), comment, b);
         }
         Ok((None, _)) => {
-            // Non-text files are ignored
-            // println!("{APP_NAME}: ignored non-text file {}", pb.display());
+            // Non-text files are silently ignored
+            // Note that this can include some source files with many semi-graphic characters such as:
+            // - C:\Development\GitHub\Python\Learning\041_Unicode\BoxesAndSymbols.py
+            // - C:\Development\GitHub\Julia\Learning\17_operators\test_Sm.jl
+            // - C:\Development\GitHub\Go\src\golang.org\x\text\collate\tools\colcmp\chars.go
+            
+            // b.errors_count += 1;
+            // logln(writer, format!("*** Non-text file: {}", p.display()).as_str());
         }
         Err(e) => {
             b.errors_count += 1;
@@ -158,6 +176,7 @@ fn process_text(writer: &mut LogWriter, p: &Path, source: &str, comment: &str, b
                 return;
             }
 
+            // There are too many date sequence issues, and it's painful to fix, so for now, ignore.
             /*
             let d = NaiveDate::from_ymd_opt(y, m, d);
             if d.is_none() {

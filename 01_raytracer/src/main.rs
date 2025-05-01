@@ -1,4 +1,4 @@
-// raytracer in rust
+// Raytracer in Rust
 // from https://joshondesign.com/2014/09/17/rustlang
 // 2018-10-23	PV	    Significant updates to make original code compilable (language has changed??)
 

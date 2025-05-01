@@ -26,7 +26,7 @@ impl Options {
     fn header() {
         eprintln!(
             "{APP_NAME} {APP_VERSION}\n\
-            Word count in rust"
+            Word count in Rust"
         );
     }
 

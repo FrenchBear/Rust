@@ -60,7 +60,7 @@ impl ImportantExcerpt<'_> {
 }
 
 // ------------------------------------------------------------------------
-// Lifetime elision example, built-in rule in rust compiler
+// Lifetime elision example, built-in rule in Rust compiler
 // Equivalent to fn first_word<'a>(s: &'a str) -> &'a str {
 // Lifetimes on function or method parameters are called input lifetimes,
 // and lifetimes on return values are called output lifetimes.

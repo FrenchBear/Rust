@@ -61,7 +61,7 @@ impl Options {
     fn header() {
         eprintln!(
             "{APP_NAME} {APP_VERSION}\n\
-            Simplified grep in rust"
+            Simplified grep in Rust"
         );
     }
 

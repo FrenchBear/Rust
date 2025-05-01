@@ -4,7 +4,7 @@
 // 2024-11-10   PV
 // 2025-04-21   PV      Clippy suggestions
 //
-// Two strings in rust:
+// Two strings in Rust:
 // - str:    in the core language, usually seen in its borrowed form &str. String slices are references to some UTF-8 encoded string data stored elsewhere.
 //           String literals, for example, are stored in the program’s binary and are therefore string slices.
 // - String: Provided by Rust’s standard library is a growable, mutable, owned, UTF-8 encoded string type.
