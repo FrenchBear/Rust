@@ -1,0 +1,6 @@
+[package]
+name = "l56_char_case"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
