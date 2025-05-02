@@ -1,9 +1,9 @@
 [package]
 name = "myglob"
 description = "Efficient glob iterator with early filtering"
-version = "1.5.2"
+version = "1.5.3"
 edition = "2024"
 authors = ["Pierre Violent"]
 
 [dependencies]
-regex = "1.11.1"
+regex = "1.11"

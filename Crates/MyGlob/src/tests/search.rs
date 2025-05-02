@@ -6,6 +6,7 @@
 
 #![cfg(test)]
 use crate::*;
+use std::fs::File;
 use std::io::{self, Write};
 
 fn create_directory(path: &str) -> io::Result<()> {

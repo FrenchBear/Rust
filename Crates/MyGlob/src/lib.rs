@@ -16,15 +16,16 @@
 // 2025-04-13   PV      1.5.0 Autorecurse
 // 2025-04-18   PV      1.5.1 MyGlobError implements std::error::Error
 // 2025-04-23   PV      1.5.2 Added impl From<regex::Error> for MyGlobError and fn source in impl Error for MyGlobError
+// 2025-05-03   PV      1.5.3 Removed #![allow(...)]
 
-#![allow(unused_variables, dead_code, unused_imports)]
+//#![allow(unused_variables, dead_code, unused_imports)]
 
 use regex::Regex;
 use std::error::Error;
 use std::fmt::Display;
-use std::fs::{self, File};
+use std::fs;
 use std::io::Error as IOError;
-use std::path::{Iter, Path, PathBuf};
+use std::path::{Path, PathBuf};
 
 // -----------------------------------
 // Submodules
@@ -34,7 +35,7 @@ mod tests;
 // -----------------------------------
 // Globals
 
-const LIB_VERSION: &str = "1.5.0";
+const LIB_VERSION: &str = "1.5.3";
 
 // -----------------------------------
 // Structures

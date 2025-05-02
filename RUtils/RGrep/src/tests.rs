@@ -2,63 +2,9 @@
 //
 // 2025-03-14   PV
 // 2025-04-01   PV      Adapted tests to read_text_file_2
+// 2025-05-02   PV      Removed decode_encoding tests, moved to crate TextAutoDecode
 
 #[cfg(test)]
-pub mod read_text {
-    use std::{io, path::Path};
-
-    #[test]
-    fn text_utf8() {
-        let r = crate::read_text_file(Path::new(
-            r"C:\DocumentsOD\Doc tech\Encodings\prenoms-utf8.txt",
-        ));
-        assert!(r.is_ok());
-        let res = r.unwrap();
-        assert!(res.0.is_some());
-        let s = res.0.unwrap();
-        assert_eq!(&s[25..35], "géraldine");
-    }
-
-    #[test]
-    fn text_1252() {
-        let r = crate::read_text_file(Path::new(
-            r"C:\DocumentsOD\Doc tech\Encodings\prenoms-ansi,1252.txt",
-        ));
-        assert!(r.is_ok());
-        let res = r.unwrap();
-        assert!(res.0.is_some());
-        let s = res.0.unwrap();
-        assert_eq!(&s[25..35], "géraldine");
-    }
-
-    #[test]
-    fn text_utf16() {
-        let r = crate::read_text_file(Path::new(
-            r"C:\DocumentsOD\Doc tech\Encodings\prenoms-utf16lebom.txt",
-        ));
-        assert!(r.is_ok());
-        let res = r.unwrap();
-        assert!(res.0.is_some());
-        let s = res.0.unwrap();
-        assert_eq!(&s[25..35], "géraldine");
-    }
-
-    #[test]
-    fn binary_file() {
-        let r = crate::read_text_file(Path::new(r"C:\Utils\BookApps\Astructw.exe"));
-        assert!(r.is_ok());
-        let res = r.unwrap();
-        assert!(res.0.is_none());
-    }
-
-    #[test]
-    fn inexistent_file() {
-        let r = crate::read_text_file(Path::new(r"C:\Utils\BookApps\Astructw.com"));
-        assert!(r.is_err());
-        let e = r.err().unwrap();
-        assert_eq!(e.kind(), io::ErrorKind::NotFound);
-    }
-}
 
 #[cfg(test)]
 pub mod grep_iterator {

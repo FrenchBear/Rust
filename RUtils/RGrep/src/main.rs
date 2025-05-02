@@ -10,6 +10,7 @@
 // 2025-04-08   PV      1.4.0   When stdout is redirected, don't use colors (atty crate)
 // 2025-04-18   PV      1.4.1   Only check help and ? on first position in command line; more extended help
 // 2025-04-18   PV      1.5.0   End of glob crate and options -1/-2
+// 2025-05-02   PV      1.6.0   Use crate textautodecode instead of decode_encoding module
 
 // standard library imports
 use std::error::Error;
@@ -19,26 +20,24 @@ use std::process;
 use std::time::Instant;
 
 // external crates imports
+use colored::*;
 use getopt::Opt;
 use myglob::{MyGlobMatch, MyGlobSearch};
 use regex::Regex;
-use colored::*;
 use terminal_size::{Width, terminal_size};
+use textautodecode::{TextAutoDecode, TextFileEncoding};
 
 // -----------------------------------
 // Submodules
 
-mod decode_encoding;
 mod grepiterator;
 pub mod tests;
-
-use decode_encoding::*;
 
 // -----------------------------------
 // Global constants
 
 const APP_NAME: &str = "rgrep";
-const APP_VERSION: &str = "1.5.1";
+const APP_VERSION: &str = "1.6.0";
 
 // ==============================================================================================
 // Options processing
@@ -357,16 +356,17 @@ pub fn build_re(options: &Options) -> Result<Regex, regex::Error> {
 
 /// First step processing a file, read text content from path and call process_text.
 fn process_path(re: &Regex, path: &Path, options: &Options) {
-    let res = read_text_file(path);
+    let res = TextAutoDecode::read_text_file(path);
     match res {
-        Ok((Some(s), _)) => {
-            let filename = path.display().to_string();
-            process_text(re, s.as_str(), filename.as_str(), options);
-        }
-        Ok((None, _)) => {
-            // Non-text files are ignored
-            if options.verbose == 1 {
-                println!("{APP_NAME}: ignored non-text file {}", path.display());
+        Ok(tad) => {
+            if tad.encoding == TextFileEncoding::NotText {
+                // Non-text files are ignored
+                if options.verbose == 1 {
+                    println!("{APP_NAME}: ignored non-text file {}", path.display());
+                }
+            } else {
+                let filename = path.display().to_string();
+                process_text(re, tad.text.unwrap().as_str(), filename.as_str(), options);
             }
         }
         Err(e) => {

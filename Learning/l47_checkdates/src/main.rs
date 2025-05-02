@@ -1,6 +1,7 @@
 // l47_checkdates: Check dates in source files headers
 //
 // 2025-04-21	PV      First version
+// 2025-05-02   PV      Use crate textautodecode instead of decode_encoding module
 
 #![allow(unused)]
 
@@ -12,25 +13,23 @@ use std::time::Instant;
 use std::{collections::HashMap, fmt::Debug};
 
 // external crates imports
+use chrono::NaiveDate;
 use myglob::{MyGlobMatch, MyGlobSearch};
 use regex::Regex;
+use textautodecode::{TextAutoDecode, TextFileEncoding};
 use unicode_normalization::UnicodeNormalization;
-use chrono::NaiveDate;
 
 // -----------------------------------
 // Submodules
 
-mod decode_encoding;
 mod logging;
-
-use decode_encoding::*;
 use logging::*;
 
 // -----------------------------------
 // Global constants
 
 const APP_NAME: &str = "check_dates";
-const APP_VERSION: &str = "1.0.1";
+const APP_VERSION: &str = "1.1.0";
 
 // -----------------------------------
 // Main
@@ -97,7 +96,11 @@ fn main() {
         logln(&mut writer, format!(" found in {:.3}s", duration.as_secs_f64()).as_str());
         logln(
             &mut writer,
-            format!("Average comment header size: {:.2} line(s)", b.comment_lines_count as f64 / b.files_count as f64).as_str(),
+            format!(
+                "Average comment header size: {:.2} line(s)",
+                b.comment_lines_count as f64 / b.files_count as f64
+            )
+            .as_str(),
         );
 
         println!();
@@ -110,37 +113,38 @@ fn main() {
 }
 
 fn process_file(writer: &mut LogWriter, b: &mut DataBag, p: &Path) {
-    let res = read_text_file(p);
+    let res = TextAutoDecode::read_text_file(p);
     match res {
-        Ok((Some(s), _)) => {
-            let extension = p.extension().map(|p| p.to_str().unwrap()).unwrap_or("").to_ascii_lowercase();
-            let comment = match extension.as_str() {
-                "cs" | "c" | "h" | "cpp" | "rs" | "fs" | "go" | "java" | "js" | "ts" => "//",
-                "py" | "jl" | "awk" => "#",
-                "lua" | "sql" => "--",
-                "vb" => "'",
-                _ => {
-                    b.errors_count += 1;
-                    logln(writer, format!("*** Unknown/unsupported extension: {}", p.display()).as_str());
-                    return;
-                }
-            };
+        Ok(tad) => {
+            if tad.encoding == TextFileEncoding::NotText {
+                // Non-text files are silently ignored
+                // Note that this can include some source files with many semi-graphic characters such as:
+                // - C:\Development\GitHub\Python\Learning\041_Unicode\BoxesAndSymbols.py
+                // - C:\Development\GitHub\Julia\Learning\17_operators\test_Sm.jl
+                // - C:\Development\GitHub\Go\src\golang.org\x\text\collate\tools\colcmp\chars.go
 
-            // Count extension
-            let e = b.ext_counter.entry(extension);
-            *e.or_insert(0) += 1;
+                // b.errors_count += 1;
+                // logln(writer, format!("*** Non-text file: {}", p.display()).as_str());
+            } else {
+                let extension = p.extension().map(|p| p.to_str().unwrap()).unwrap_or("").to_ascii_lowercase();
+                let comment = match extension.as_str() {
+                    "cs" | "c" | "h" | "cpp" | "rs" | "fs" | "go" | "java" | "js" | "ts" => "//",
+                    "py" | "jl" | "awk" => "#",
+                    "lua" | "sql" => "--",
+                    "vb" => "'",
+                    _ => {
+                        b.errors_count += 1;
+                        logln(writer, format!("*** Unknown/unsupported extension: {}", p.display()).as_str());
+                        return;
+                    }
+                };
 
-            process_text(writer, p, s.as_str(), comment, b);
-        }
-        Ok((None, _)) => {
-            // Non-text files are silently ignored
-            // Note that this can include some source files with many semi-graphic characters such as:
-            // - C:\Development\GitHub\Python\Learning\041_Unicode\BoxesAndSymbols.py
-            // - C:\Development\GitHub\Julia\Learning\17_operators\test_Sm.jl
-            // - C:\Development\GitHub\Go\src\golang.org\x\text\collate\tools\colcmp\chars.go
-            
-            // b.errors_count += 1;
-            // logln(writer, format!("*** Non-text file: {}", p.display()).as_str());
+                // Count extension
+                let e = b.ext_counter.entry(extension);
+                *e.or_insert(0) += 1;
+
+                process_text(writer, p, tad.text.unwrap().as_str(), comment, b);
+            }
         }
         Err(e) => {
             b.errors_count += 1;

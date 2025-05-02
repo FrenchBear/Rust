@@ -1,0 +1,10 @@
+[package]
+name = "textautodecode"
+description = "Read a text file, automatically detecting text encoding"
+version = "1.0.0"
+edition = "2024"
+authors = ["Pierre Violent"]
+
+[dependencies]
+myglob = { path = "../../Crates/MyGlob" }
+encoding_rs = "0.8"

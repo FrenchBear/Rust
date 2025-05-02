@@ -6,7 +6,6 @@
 
 #![cfg(test)]
 use crate::*;
-use regex::Regex;
 
 #[derive(Debug, PartialEq, Clone)]
 enum ConvResult {

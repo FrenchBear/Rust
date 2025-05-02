@@ -2,31 +2,31 @@
 //
 // 2025-04-21	PV      First version
 // 2025-04-22	PV      1.1.0 Always show bytes; option -a+|- to control autorecurse
+// 2025-05-02   PV      1.2.0 Use crate textautodecode instead of decode_encoding module. Also use file length instead of string bytes count to include BOM size
 
 // standard library imports
-use std::io;
+use std::{io, os::windows::fs::MetadataExt};
 use std::path::Path;
 use std::process;
 use std::time::Instant;
 
 // external crates imports
 use myglob::{MyGlobMatch, MyGlobSearch};
+use textautodecode::{TextAutoDecode, TextFileEncoding};
 
 // -----------------------------------
 // Submodules
 
-mod decode_encoding;
 mod options;
 pub mod tests;
 
-use decode_encoding::*;
 use options::*;
 
 // -----------------------------------
 // Global constants
 
 const APP_NAME: &str = "rwc";
-const APP_VERSION: &str = "1.1.0";
+const APP_VERSION: &str = "1.2.0";
 
 // ==============================================================================================
 // Main
@@ -89,13 +89,13 @@ fn main() {
             println!("Reading from stdin");
         }
         let s = io::read_to_string(io::stdin()).unwrap();
-        process_text(&mut b, s.as_str(), "(stdin)", &options);
+        process_text(&mut b, s.as_str(), "(stdin)", &options, s.len());
     }
     let duration = start.elapsed();
 
     if b.files_count > 1 || options.show_only_total {
         let mut name = String::from("total");
-        if b.files_count>1 {
+        if b.files_count > 1 {
             name += format!(" ({} files)", b.files_count).as_str();
         }
         print_line(b.lines_count, b.words_count, b.chars_count, b.bytes_count, name.as_str());
@@ -112,16 +112,18 @@ fn print_line(lines_count: usize, words_count: usize, chars_count: usize, bytes_
 
 /// First step processing a file, read text content from path and call process_text.
 fn process_file(b: &mut DataBag, path: &Path, options: &Options) {
-    let res = read_text_file(path);
+    let res = TextAutoDecode::read_text_file(path);
     match res {
-        Ok((Some(s), _)) => {
-            let filename = path.display().to_string();
-            process_text(b, s.as_str(), filename.as_str(), options);
-        }
-        Ok((None, _)) => {
-            // Non-text files are ignored
-            if options.verbose {
-                println!("{APP_NAME}: ignored non-text file {}", path.display());
+        Ok(tad) => {
+            if tad.encoding == TextFileEncoding::NotText {
+                // Non-text files are ignored
+                if options.verbose {
+                    println!("{APP_NAME}: ignored non-text file {}", path.display());
+                }
+            } else {
+                let filesize = path.metadata().unwrap().file_size() as usize;
+                let filename = path.display().to_string();
+                process_text(b, tad.text.unwrap().as_str(), filename.as_str(), options, filesize);
             }
         }
         Err(e) => {
@@ -131,11 +133,10 @@ fn process_file(b: &mut DataBag, path: &Path, options: &Options) {
 }
 
 /// Core rgrep process, search for re in txt, read from filename, according to options.
-fn process_text(b: &mut DataBag, txt: &str, filename: &str, options: &Options) {
+fn process_text(b: &mut DataBag, txt: &str, filename: &str, options: &Options, filesize: usize) {
     let mut lines = 0;
     let mut words = 0;
     let chars = txt.chars().count();
-    let bytes = txt.len();
 
     for line in txt.lines() {
         lines += 1;
@@ -149,12 +150,12 @@ fn process_text(b: &mut DataBag, txt: &str, filename: &str, options: &Options) {
     }
 
     if !options.show_only_total {
-        print_line(lines, words, chars, bytes, filename);
+        print_line(lines, words, chars, filesize, filename);
     }
 
     b.files_count += 1;
     b.lines_count += lines;
     b.words_count += words;
     b.chars_count += chars;
-    b.bytes_count += bytes;
+    b.bytes_count += filesize;
 }

@@ -1,15 +1,15 @@
 [package]
 name = "rgrep"
 description = "Basic grep project in Rust"
-version = "1.5.1"
+version = "1.6.0"
 authors = ["Pierre Violent"]
 edition = "2024"
 
 [dependencies]
 myglob = { path = "../../Crates/MyGlob" }
+textautodecode = { path = "../../Crates/TextAutoDecode" }
 getopt = "1.1.7"
 regex = "1.11.1"
-encoding_rs = "0.8.35"
 colored = "3.0.0"
 terminal_size = "0.4.2"
 atty = "0.2.14"
