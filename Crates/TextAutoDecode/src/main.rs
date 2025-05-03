@@ -1,6 +1,10 @@
 // textautodecode
 // Read a text file, automatically detecting encoding
 //
+// Note: Because of this test app, there's a dependency on MyGlob crate in cargo.toml which is not needed by library; I don't know
+// when this crate is used by other apps if MyGlob is also included...
+// ToDo: verify.
+//
 // 2025-05-02   PV      First version
 
 #![allow(unused)]

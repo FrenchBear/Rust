@@ -2,14 +2,16 @@
 // Read a text file automatically decoding encoding
 //
 // 2025-05-02   PV      First version, deep rewrite of decode_encoding module, with bugs fixed and tests
+// 2025-05-03   PV      1.0.1 Detection of UTF-16 without BOM is only for files with more than 20 bytes (10 characters)
 
 // ToDo: Add a helper function to determine end of lines style
 
 #![allow(unused_variables, dead_code, unused_imports)]
 
-use encoding_rs::mem::is_ascii;
+// I hope that MyGlob is not included in actual library transitive dependencies...
 use myglob as _;
 
+// Std library imports
 use std::borrow::Cow;
 use std::fs::File;
 use std::io::{self, BufReader, Read, Seek};
@@ -26,7 +28,7 @@ mod tests;
 // -----------------------------------
 // Globals
 
-const LIB_VERSION: &str = "1.0.0";
+const LIB_VERSION: &str = "1.0.1";
 
 // -----------------------------------
 // Structures
@@ -59,14 +61,13 @@ impl TextAutoDecode {
     }
 
     /// Detects encoding of a text file.
-    /// Reads only 1000 bytes max at first to detect encoding and
-    /// check for heuristics, and read the full file only if this stage is successful.
-    /// This is
-    /// more efficient on large binary files that don't need to be fully loaded to detect content.
     ///
+    /// Reads only 1000 bytes max at first to detect encoding and check for heuristics, and read the full file only if
+    /// this stage is successful. This is more efficient on large binary files that don't need to be fully loaded to
+    /// detect content.
     /// Returns an error in case of io::Error
-    /// If encoding is recognized, returns TextAutoDecode with text as a Ok(String) and encoding as TextFileEncoding.
-    /// If encoding is not recognized, returns TextAutoDecode with text:None, and encoding:NotText.
+    /// If encoding is recognized, returns TextAutoDecode with text as a Some(String) and encoding as TextFileEncoding.
+    /// If encoding is not recognized, returns TextAutoDecode with text:None, and encoding NotText.
     pub fn read_text_file(path: &Path) -> Result<TextAutoDecode, io::Error> {
         let mut file = File::open(path)?;
         let mut buffer_1000 = [0; 1000];
@@ -84,7 +85,9 @@ impl TextAutoDecode {
         let mut buffer_full = Vec::new();
         let mut buffer_full_read = false;
 
-        // First, check for BOM that will directly indocate encoding
+        // First, check for BOM that will directly indicate encoding. If BOM is present but detection fails, no need to
+        // continue testing other possible formats.
+
         // UTF-8 BOM?
         // Since we have a BOM, no need to check for ASCII subset
         if n >= 3 && buffer_1000[0] == 0xEF && buffer_1000[1] == 0xBB && buffer_1000[2] == 0xBF {
@@ -156,11 +159,13 @@ impl TextAutoDecode {
         }
 
         // Then check encodings without BOM
-        // UTF-8?
+        
+        // UTF-8 without BOM?
+        // Note that if string is only ASCII text, then type is assumed ASCII instead of UTF-8
         if let Some(cow) = Self::check_utf8(&buffer_1000, n) {
             if n < 1000 {
                 let s = cow.into_owned();
-                let e = if is_ascii(s.as_bytes()) {
+                let e = if is_ascii_text(s.as_bytes()) {
                     TextFileEncoding::ASCII
                 } else {
                     TextFileEncoding::UTF8
@@ -172,39 +177,41 @@ impl TextAutoDecode {
         }
 
         // UTF-16 LE? (Windows)
-        // Without BOM, LE variant is assumed by UTF_16LE decoder
-        if let Some(s) = Self::check_utf16(&buffer_1000, n, UTF_16LE) {
-            if n < 1000 {
-                return Ok(TextAutoDecode {
-                    text: Some(s),
-                    encoding: TextFileEncoding::UTF16LE,
-                });
-            } else {
-                return Self::final_read(
-                    &mut buffer_full_read,
-                    &mut buffer_full,
-                    &mut file,
-                    UTF_16LE,
-                    Some(TextFileEncoding::UTF16LE),
-                );
+        // Only files with more than 10 characters (20 bytes) are tested and checked for 75% ASCII, or many small binary non text-files will match
+        if n > 20 {
+            if let Some(s) = Self::check_utf16(&buffer_1000, n, UTF_16LE) {
+                if n < 1000 {
+                    return Ok(TextAutoDecode {
+                        text: Some(s),
+                        encoding: TextFileEncoding::UTF16LE,
+                    });
+                } else {
+                    return Self::final_read(
+                        &mut buffer_full_read,
+                        &mut buffer_full,
+                        &mut file,
+                        UTF_16LE,
+                        Some(TextFileEncoding::UTF16LE),
+                    );
+                }
             }
-        }
 
-        // UTF-16 BE?
-        if let Some(s) = Self::check_utf16(&buffer_1000, n, UTF_16BE) {
-            if n < 1000 {
-                return Ok(TextAutoDecode {
-                    text: Some(s),
-                    encoding: TextFileEncoding::UTF16BE,
-                });
-            } else {
-                return Self::final_read(
-                    &mut buffer_full_read,
-                    &mut buffer_full,
-                    &mut file,
-                    UTF_16BE,
-                    Some(TextFileEncoding::UTF16BE),
-                );
+            // UTF-16 BE?
+            if let Some(s) = Self::check_utf16(&buffer_1000, n, UTF_16BE) {
+                if n < 1000 {
+                    return Ok(TextAutoDecode {
+                        text: Some(s),
+                        encoding: TextFileEncoding::UTF16BE,
+                    });
+                } else {
+                    return Self::final_read(
+                        &mut buffer_full_read,
+                        &mut buffer_full,
+                        &mut file,
+                        UTF_16BE,
+                        Some(TextFileEncoding::UTF16BE),
+                    );
+                }
             }
         }
 
@@ -235,7 +242,7 @@ impl TextAutoDecode {
 
     // Check that string s doesn't contain a null char and contains at least 75% of ASCII 32..127, CR, LF, TAB
     // Type std::str::Chars<'_> is just an iterable on chars
-    fn ok_string2(chars: std::str::Chars<'_>) -> bool {
+    fn is_75percent_ascii(chars: std::str::Chars<'_>) -> bool {
         let mut acount = 0;
         let mut len = 0;
         for c in chars {
@@ -271,7 +278,7 @@ impl TextAutoDecode {
 
         let mut check_ascii = false;
         let my_encoding = if let Some(e) = my_encoding_opt {
-            check_ascii = e==TextFileEncoding::UTF8;
+            check_ascii = e == TextFileEncoding::UTF8;
             e
         } else if used_encoding == UTF_8 {
             TextFileEncoding::UTF8
@@ -285,22 +292,19 @@ impl TextAutoDecode {
             unreachable!();
         };
 
-        if !had_errors && Self::ok_string2(decoded_string.chars()) {
+        if !had_errors && Self::is_75percent_ascii(decoded_string.chars()) {
             let s = decoded_string.into_owned();
             let e = if check_ascii {
-                        if is_ascii(s.as_bytes()) {
-                            TextFileEncoding::ASCII
-                        } else {
-                            TextFileEncoding::UTF8
-                        }
-                    } else {
-                        my_encoding
-                    };
+                if is_ascii_text(s.as_bytes()) {
+                    TextFileEncoding::ASCII
+                } else {
+                    TextFileEncoding::UTF8
+                }
+            } else {
+                my_encoding
+            };
 
-            return Ok(TextAutoDecode {
-                text: Some(s),
-                encoding: e,
-            });
+            return Ok(TextAutoDecode { text: Some(s), encoding: e });
         } else {
             return Ok(TextAutoDecode {
                 text: None,
@@ -332,7 +336,7 @@ impl TextAutoDecode {
         let (decoded_string, used_encoding, had_errors) = UTF_8.decode(test_buffer);
 
         // Return decoding succeeded without errors and content is text
-        if !had_errors && Self::ok_string2(decoded_string.chars()) {
+        if !had_errors && Self::is_75percent_ascii(decoded_string.chars()) {
             Some(decoded_string)
         } else {
             None
@@ -362,7 +366,7 @@ impl TextAutoDecode {
         let (decoded_string, used_encoding, had_errors) = encoding.decode(test_buffer);
 
         // Return decoding succeeded without errors and content is text
-        if !had_errors && Self::ok_string2(decoded_string.chars()) {
+        if !had_errors && Self::is_75percent_ascii(decoded_string.chars()) {
             Some(decoded_string.into_owned())
         } else {
             None
@@ -374,10 +378,20 @@ impl TextAutoDecode {
         let (decoded_string, used_encoding, had_errors) = WINDOWS_1252.decode(buffer_1000);
 
         // Return decoding succeeded without errors and content is text
-        if !had_errors && Self::ok_string2(decoded_string.chars()) {
+        if !had_errors && Self::is_75percent_ascii(decoded_string.chars()) {
             Some(decoded_string.into_owned())
         } else {
             None
         }
     }
+}
+
+// Stricter version of encoding_rs::mem::is_ascii, presence of chars <32  other than \r, \n or \t are not considered ASCII here
+fn is_ascii_text(bytes: &[u8]) -> bool {
+    for &b in bytes.iter() {
+        if b > 126 || (b < 32 && b != b'\r' && b != b'\n' && b != b'\t') {
+            return false;
+        }
+    }
+    true
 }
