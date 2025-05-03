@@ -4,9 +4,9 @@
 
 #![allow(unused)]
 
-use std::{collections::HashMap, ops::AddAssign};
 // standard library imports
-use std::io;
+use std::collections::HashMap;
+use std::io::{self, Read, Write};
 use std::path::Path;
 use std::process;
 use std::time::Instant;
@@ -14,6 +14,7 @@ use std::time::Instant;
 // external crates imports
 use colored::*;
 use myglob::{MyGlobMatch, MyGlobSearch};
+use tempfile::Builder;
 use textautodecode::{TextAutoDecode, TextFileEncoding};
 
 // -----------------------------------
@@ -30,6 +31,7 @@ use options::*;
 const APP_NAME: &str = "rtt";
 const APP_VERSION: &str = "1.0.0";
 
+// These extensions should indicate a text content
 const TEXT_EXT: [&str; 53] = [
     // Sources
     "awk",
@@ -131,6 +133,47 @@ struct EOLStyleCounts {
     mixed: usize,
 }
 
+// fn main() -> Result<(), io::Error> {
+//     let model: [u8; 24] = [
+//         0x41, 0x00, // A
+//         0x42, 0x00, // B
+//         0x43, 0x00, // C
+//         0x44, 0x00, // D
+//         0x45, 0x00, // E
+//         b'\n', 0x00, // Unix EOL
+//         0x61, 0x00, // a
+//         0x62, 0x00, // b
+//         0x63, 0x00, // c
+//         0x64, 0x00, // d
+//         0x65, 0x00, // e
+//         b'\n', 0x00 // Unix EOL
+//     ];
+
+//     let mut temp_file = Builder::new().tempfile()?;
+//     temp_file.write_all(&model);
+//     let o = Options {..Default::default()};
+//     let mut b = DataBag {..Default::default()};
+//     let res = process_file(&mut b, temp_file.path(), Path::new("(test utf16le)"), &o);
+
+//     assert_eq!(res.as_str(), "(test utf16le): UTF-16 LE «without BOM», Unix");
+
+//     assert_eq!(b.files_types.total, 1);
+//     assert_eq!(b.files_types.empty, 0);
+//     assert_eq!(b.files_types.ascii, 0);
+//     assert_eq!(b.files_types.utf8, 0);
+//     assert_eq!(b.files_types.utf16, 1);
+//     assert_eq!(b.files_types.eightbit, 0);
+//     assert_eq!(b.files_types.nontext, 0);
+
+//     assert_eq!(b.eol_styles.total, 1);
+//     assert_eq!(b.eol_styles.windows, 0);
+//     assert_eq!(b.eol_styles.unix, 1);
+//     assert_eq!(b.eol_styles.mac, 0);
+//     assert_eq!(b.eol_styles.mixed, 0);
+
+//     Ok(())
+// }
+
 fn main() {
     // Process options
     let options = Options::new().unwrap_or_else(|err| {
@@ -153,7 +196,7 @@ fn main() {
                 for ma in gs.explore_iter() {
                     match ma {
                         MyGlobMatch::File(pb) => {
-                            process_file(&mut b, &pb, &options);
+                            print_result(process_file(&mut b, &pb, &pb, &options).as_str(), &options);
                         }
 
                         // We ignore matching directories in rgrep, we only look for files
@@ -224,12 +267,7 @@ fn main() {
 
     // If no source has been provided, use stdin
     if options.sources.is_empty() {
-        if options.verbose {
-            println!("Reading from stdin");
-        }
-        let s = io::read_to_string(io::stdin()).unwrap();
-        let eol = get_eol(s.as_str());
-        println!("(stdin): {:?}", eol);
+        process_stdin(&mut b, &options);
     }
 
     let duration = start.elapsed();
@@ -240,8 +278,29 @@ fn main() {
         print_eol_styles_counts(&b.eol_styles);
 
         println!("\n{} files(s) searched in {:.3}s", b.files_types.total, duration.as_secs_f64());
-        // ToDo: print other stats and warnings par folder+extension
     }
+}
+
+fn process_stdin(b: &mut DataBag, options: &Options) -> Result<(), io::Error> {
+    if options.verbose {
+        println!("Reading from stdin");
+    }
+
+    // Create a temporary file.  The file will be automatically deleted when temp_file goes out of scope.
+    let mut temp_file = Builder::new().tempfile()?;
+
+    // Read all bytes from stdin until EOF.
+    let mut stdin = io::stdin();
+    let mut buffer = Vec::new();
+    stdin.read_to_end(&mut buffer)?;
+
+    // Write the bytes to the temporary file.
+    std::io::Write::write_all(&mut temp_file, &buffer)?;
+    temp_file.flush()?; // Ensure all bytes are written to the file.
+
+    process_file(b, temp_file.path(), Path::new("(stdin)"), options);
+
+    Ok(())
 }
 
 fn print_files_types_counts(f: &FileTypeCounts) {
@@ -284,23 +343,72 @@ fn print_eol_styles_counts(e: &EOLStyleCounts) {
     }
 }
 
-fn warning(path: &Path, msg: &str) {
-    println!("{}: {}", path.display(), msg);
+// Print in red parts between « »
+fn print_result(msg: &str, options: &Options) {
+    if !options.show_only_warnings || msg.find('«').is_some() {
+        print_result_core(msg);
+    }
+}
+
+fn print_result_core(msg: &str) {
+    let mut p0 = 0;
+    loop {
+        let p1 = find_from_position(&msg, '«', p0);
+        if p1.is_none() {
+            println!("{}", &msg[p0..]);
+            return;
+        }
+        let p1 = p1.unwrap();
+
+        if p1 > p0 {
+            print!("{}", &msg[p0..p1]);
+        }
+
+        let p2 = find_from_position(&msg, '»', p1 + '»'.len_utf8()).expect(format!("Internal error, unbalanced « » in {msg}").as_str());
+        print!("{}", &msg[p1 + '«'.len_utf8()..p2].red().bold());
+        p0 = p2 + '»'.len_utf8()
+    }
+}
+
+// fn test_print_result() {
+//     print_result_core("");
+//     print_result_core("«»");
+//     print_result_core("Once upon a time");
+//     print_result_core("Once «upon» a time");
+//     print_result_core("«Once upon a time»");
+//     print_result_core("«Once» upon «a» time");
+//     print_result_core("«O»«n»«c»«e» «u»p«o»n «a» t«i»m«e»");
+// }
+
+/// Similar to (&str).find(char), but starts search at byte index start_position.
+/// Returns the byte index of the first character of this string slice that matches the pattern.
+/// Returns None if the pattern doesn't match.
+fn find_from_position(s: &str, pattern: char, start_position: usize) -> Option<usize> {
+    if start_position >= s.len() {
+        return None; // Start position is out of bounds
+    }
+
+    let search_slice = &s[start_position..];
+    // Note that the following map is NOT the usual iterator map, but Option::map
+    // Maps an Option<T> to Option<U> by applying a function to a contained value (if Some) or returns None (if None).
+    search_slice.find(pattern).map(|relative_position| start_position + relative_position)
 }
 
 /// First step processing a file, read text content from path and call process_text.
-fn process_file(b: &mut DataBag, path: &Path, options: &Options) {
-    let res = TextAutoDecode::read_text_file(path);
+fn process_file(b: &mut DataBag, path_for_read: &Path, path_for_name: &Path, options: &Options) -> String {
+    let mut res = String::new();
+    let tad_res = TextAutoDecode::read_text_file(path_for_read);
+
     b.files_types.total += 1;
-    match res {
+    match tad_res {
         Ok(tad) => {
-            let ext = match path.extension() {
+            let ext = match path_for_name.extension() {
                 Some(e) => e.to_string_lossy().to_lowercase(),
                 None => String::new(),
             };
 
             // Collect stats per directory+ext
-            let dir = match path.parent() {
+            let dir = match path_for_name.parent() {
                 Some(p) => p.to_string_lossy().to_lowercase(),
                 None => String::new(),
             };
@@ -313,19 +421,18 @@ fn process_file(b: &mut DataBag, path: &Path, options: &Options) {
                     fc.files_types.nontext += 1;
                     // Silently ignore non-text files, but check whether it should have contained text
                     if TEXT_EXT.contains(&ext.as_str()) {
-                        warning(
-                            path,
-                            format!("Non-text file detected, but extension {ext} is usually a text file").as_str(),
+                        return format!(
+                            "{}: «Non-text file detected, but extension {ext} is usually a text file»",
+                            path_for_name.display()
                         );
                     }
-                    return;
+                    return res;
                 }
                 TextFileEncoding::Empty => {
                     b.files_types.empty += 1;
                     // Don't collect infos per folder+ext for empty files
-                    warning(path, "Empty file");
                     // No need to continue if it's empty
-                    return;
+                    return format!("{}: «Empty file»", path_for_name.display());
                 }
                 TextFileEncoding::ASCII => {
                     b.files_types.ascii += 1;
@@ -374,30 +481,31 @@ fn process_file(b: &mut DataBag, path: &Path, options: &Options) {
             b.eol_styles.mac += eol.mac;
             b.eol_styles.mixed += eol.mixed;
             b.eol_styles.total += eol.total;
-            
-            print!("{}: {}", path.display(), enc);
+
+            res.push_str(format!("{}: {}", path_for_name.display(), enc).as_str());
             if !war.is_empty() {
-                print!(" {}", war.red().bold())
+                res.push_str(format!(" «{}»", war).as_str());
             }
-            print!(", ");
+            res.push_str(", ");
 
             if eol.mixed > 0 {
-                print!("{}", "Mixed EOL styles".red().bold());
+                res.push_str("«Mixed EOL styles»");
             } else if eol.windows + eol.unix + eol.mac == 0 {
-                print!("No EOL detected");
+                res.push_str("No EOL detected");
             } else if eol.windows > 0 {
-                print!("Windows");
+                res.push_str("Windows");
             } else if eol.unix > 0 {
-                print!("Unix");
+                res.push_str("Unix");
             } else if eol.mac > 0 {
-                print!("Mac");
+                res.push_str("Mac");
             }
-            println!();
         }
         Err(e) => {
-            eprintln!("*** Error reading file {}: {}", path.display(), e);
+            eprintln!("*** Error reading file {}: {}", path_for_name.display(), e);
         }
     }
+
+    res
 }
 
 /// Core rgrep process, search for re in txt, read from filename, according to options.
@@ -422,10 +530,14 @@ fn get_eol(txt: &str) -> EOLStyleCounts {
     }
 
     // Don't count files without EOL detected in total
-    eol.total += eol.windows + eol.unix + eol.mac;
+    if eol.windows + eol.unix + eol.mac > 0 {
+        eol.total += 1;
+    }
 
     // Helper
-    eol.mixed = if eol.windows + eol.unix + eol.mac > 1 { 1 } else { 0 };
+    if eol.windows + eol.unix + eol.mac > 1 {
+        eol.mixed = 1;
+    }
 
     eol
 }

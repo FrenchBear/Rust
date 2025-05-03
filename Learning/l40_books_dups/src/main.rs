@@ -344,6 +344,9 @@ fn get_book_name(pb: PathBuf) -> Result<BookName, String> {
     })
 }
 
+/// Similar to (&str).find(char), but starts search at byte index start_position.
+/// Returns the byte index of the first character of this string slice that matches the pattern.
+/// Returns None if the pattern doesn't match.
 fn find_from_position(s: &str, c: char, start_position: usize) -> Option<usize> {
     if start_position >= s.len() {
         return None; // Start position is out of bounds
