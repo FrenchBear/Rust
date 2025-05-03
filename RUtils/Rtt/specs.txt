@@ -25,7 +25,7 @@ Other: Makefile
 Encoding warnings:
 - UTF8BOM: UTF8 shouldn't have BOM
 - UTF16BE, UTF16LE without BOM: UTF16 should have BOM
-- Mixed encogings for a same file type (extension) in a folder
+- Different encogings for a same file type (extension) in a folder (but ASCII+UTF-8 is Ok, ASCII+8-bit is Ok)
 
 EOL warnings:
 - Mixed EOL style in a file

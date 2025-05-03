@@ -133,6 +133,7 @@ fn process_file(b: &mut DataBag, path: &Path, options: &Options) {
 }
 
 /// Core rgrep process, search for re in txt, read from filename, according to options.
+/// filename is a &str and not a &Path because of "(stdin)" name
 fn process_text(b: &mut DataBag, txt: &str, filename: &str, options: &Options, filesize: usize) {
     let mut lines = 0;
     let mut words = 0;
