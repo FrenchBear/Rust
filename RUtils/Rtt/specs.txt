@@ -22,36 +22,15 @@ Scripts: *.{bat,cmd,ps1,sh,vbs}
 Text: *.{txt,md}
 Other: Makefile
 
----
+Encoding warnings:
+- UTF8BOM: UTF8 shouldn't have BOM
+- UTF16BE, UTF16LE without BOM: UTF16 should have BOM
+- Mixed encogings for a same file type (extension) in a folder
 
-Build a crate that contains read_text_file
-Returns Result<TextData, io::Error>
+EOL warnings:
+- Mixed EOL style in a file
+- Different EOL style for a same file type (extension) in a folder
 
-struct TextData {
-	text: Option<String>,
-	encoding: TextFileEncoding,
-}
-
-enum TextFileEncoding {
-	NotText,
-	Empty,
-	ASCII,
-	EightBit,
-	UTF8,
-	UTF8BOM,		// Starts with EF BB BF
-	UTF16,			// No BOM, assume UTF16LE (should use heuristics)
-	UTF16LE,		// Starts with FF FE (Windows)
-	UTF16BE,		// Starts with FE FF
-}
-
-- Read first 1000 bytes max to detect text encoding, if it's not recognized as text, return quickly
-- Otherwise read and decode full text (without BOM), return text and TextFileEncoding
-
-Crate can also expose a function to detect EOL from a &str, returning an enum:
-enum TextFileEOLStyle {
-	None,
-	Windows,
-	Unix,
-	Mac,
-	Mixed,
-}
+Options: 
+-w	 	Only show warnings
+-a[+-]	Autorecurse control

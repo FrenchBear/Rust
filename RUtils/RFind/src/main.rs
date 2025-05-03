@@ -8,15 +8,16 @@
 // 2025-04-13	PV      1.4.1 Use MyGlobSearch autorecurse
 // 2025-04-13	PV      1.4.2 Option -noa[utorecurse]
 // 2025-04-22	PV      1.5.0 Options -a+|-, -r+|-, options module
+// 2025-05-03	PV      1.6.0 Option -name
 
 //#![allow(unused)]
 
 // standard library imports
 use std::fmt::Debug;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::process;
 use std::time::Instant;
-use std::fs;
 
 // external crates imports
 use myglob::{MyGlobMatch, MyGlobSearch};
@@ -24,18 +25,18 @@ use myglob::{MyGlobMatch, MyGlobSearch};
 // -----------------------------------
 // Submodules
 
-mod options;
 mod actions;
 mod logging;
+mod options;
 
-use options::*;
 use logging::*;
+use options::*;
 
 // -----------------------------------
 // Global constants
 
 const APP_NAME: &str = "rfind";
-const APP_VERSION: &str = "1.5.1";
+const APP_VERSION: &str = "1.6.0";
 
 // -----------------------------------
 // Traits
@@ -50,7 +51,7 @@ trait Action: Debug {
 
 fn main() {
     // Process options
-    let options = Options::new().unwrap_or_else(|err| {
+    let mut options = Options::new().unwrap_or_else(|err| {
         let msg = format!("{}", err);
         if msg.is_empty() {
             process::exit(0);
@@ -63,6 +64,32 @@ fn main() {
     let mut writer = logging::new(options.verbose);
 
     let start = Instant::now();
+
+    // Adjust sources if option -name is used (for compatibility with XFind/Search)
+    // In this case, appends \**\name to each source that is a valid folder
+    if !options.names.is_empty() {
+        let name = if options.names.len() == 1 {
+            options.names.first().unwrap().clone()
+        } else {
+            String::from("{") + &options.names.join(",") + "}"
+        };
+
+        for source in &mut options.sources {
+            let p = Path::new(&source);
+            match p.metadata() {
+                Ok(m) => {
+                    if m.is_dir() {
+                        if !(source.ends_with('/') || source.ends_with('\\')) {
+                            (*source) += "\\";
+                        }
+                        *source += "**\\";
+                        *source += name.as_str();
+                    }
+                }
+                Err(_) => {}
+            }
+        }
+    }
 
     // Convert String sources into MyGlobSearch structs
     let mut sources: Vec<(&String, MyGlobSearch)> = Vec::new();
@@ -179,7 +206,7 @@ fn main() {
 }
 
 fn is_file_empty(path: &PathBuf) -> bool {
-    fs::metadata(path).unwrap().len()>0
+    fs::metadata(path).unwrap().len() > 0
 }
 
 fn is_dir_empty(path: &PathBuf) -> bool {

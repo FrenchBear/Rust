@@ -2,6 +2,7 @@
 // Process command line options
 //
 // 2025-04-22   PV      Moved to a separate file
+// 2025-05-03	PV      Option -name
 
 // standard library imports
 use std::collections::HashSet;
@@ -21,6 +22,7 @@ pub struct Options {
     pub actions_names: HashSet<&'static str>,
     pub search_files: bool,
     pub search_dirs: bool,
+    pub names: Vec<String>,
     pub isempty: bool,
     pub recycle: bool,
     pub autorecurse: bool,
@@ -39,7 +41,9 @@ impl Options {
     fn usage() {
         Options::header();
         eprintln!(
-            "\nUsage: {APP_NAME} [?|-?|-h|??] [-v] [-n] [-f|-type f|-d|-type d] [-e|-empty] [-r+|-r-] [-a+|-a-] [action...] source...
+            "\nUsage: {APP_NAME} [?|-?|-h|??] [-v] [-n] [-f|-type f|-d|-type d] [-e|-empty] [-r+|-r-] [-a+|-a-] [action...] [-name name] source...
+
+Options:
 ?|-?|-h          Show this message
 ??               Show advanced usage notes
 -v               Verbose output
@@ -49,7 +53,8 @@ impl Options {
 -e|-empty        Only find empty files or directories
 -r+|-r-          Delete to recycle bin (default) or delete forever; Recycle bin is not allowed on network sources
 -a+|-a-          Enable (default) or disable glob autorecurse mode (see extended usage)
-source           File or folder where to search (autorecurse glob pattern, see advanced notes)
+-name name       Appends **/name to each source directory (compatibility with XFinf/Search)
+source           File or directory where to search (autorecurse glob pattern, see advanced notes)
 
 Actions:
 -print           Default, print matching files names and dir names (dir names end with \\)
@@ -180,6 +185,14 @@ Autorecurse glob pattern transformation (active by default, use -a- to deactivat
                         }
                     }
 
+                    "name" => {
+                        if let Some(name) = args_iter.next() {
+                            options.names.push(name.clone());
+                        } else {
+                            return Err("Option -name requires an argument".into());
+                        }
+                    }
+
                     "e" | "empty" => options.isempty = true,
 
                     "r+" => options.recycle = true,
@@ -201,7 +214,6 @@ Autorecurse glob pattern transformation (active by default, use -a- to deactivat
                         options.actions_names.insert("rmdir");
                     }
 
-                    //"print" => options.actions.push(Box::new(actions::ActionPrint::new())),
                     _ => {
                         return Err(format!("Invalid/unsupported option {}", arg).into());
                     }
