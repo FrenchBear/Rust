@@ -4,12 +4,7 @@
 // 2025-05-02   PV      First version, deep rewrite of decode_encoding module, with bugs fixed and tests
 // 2025-05-03   PV      1.0.1 Detection of UTF-16 without BOM is only for files with more than 20 bytes (10 characters)
 
-// ToDo: Add a helper function to determine end of lines style
-
 #![allow(unused_variables, dead_code, unused_imports)]
-
-// I hope that MyGlob is not included in actual library transitive dependencies...
-use myglob as _;
 
 // Std library imports
 use std::borrow::Cow;

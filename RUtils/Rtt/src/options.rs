@@ -24,7 +24,7 @@ pub struct Options {
 
 impl Options {
     fn header() {
-        eprintln!(
+        println!(
             "{APP_NAME} {APP_VERSION}\n\
             Text type in Rust"
         );
@@ -32,7 +32,7 @@ impl Options {
 
     fn usage() {
         Options::header();
-        eprintln!(
+        println!(
             "\nUsage: {APP_NAME} [?|-?|-h|??] [-a+|-a-] [-w] [-v] [source...]
 ?|-?|-h  Show this message
 ??       Show advanced usage notes

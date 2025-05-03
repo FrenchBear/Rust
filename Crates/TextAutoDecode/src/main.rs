@@ -1,37 +1,23 @@
 // textautodecode
 // Read a text file, automatically detecting encoding
 //
-// Note: Because of this test app, there's a dependency on MyGlob crate in cargo.toml which is not needed by library; I don't know
-// when this crate is used by other apps if MyGlob is also included...
-// ToDo: verify.
-//
 // 2025-05-02   PV      First version
 
 #![allow(unused)]
 
+use std::path::Path;
+
 use encoding_rs as _;
 pub use textautodecode::*;
-use myglob::{MyGlobMatch, MyGlobSearch};
 
 fn main() {
     println!("TextAutoDecode lib version: {}\n", TextAutoDecode::version());
 
-    let gs = MyGlobSearch::build(r"C:\DocumentsOD\Doc tech\Encodings\prenoms*.txt").unwrap();
-    for ma in gs.explore_iter() {
-        match ma {
-            MyGlobMatch::File(pb) => {
-                print!("{:60}", pb.display());
+    let file = Path::new(r"C:\DocumentsOD\Doc tech\Encodings\prenoms-utf8.txt");
+    let tad = TextAutoDecode::read_text_file(file)
+        .expect("Error decoding file");
 
-                let r = TextAutoDecode::read_text_file(&pb);
-                match r {
-                    Ok(tad) => {
-                        println!("{:?}", tad.encoding);
-                    },
-                    Err(e) => println!("*** Error {e}"),
-                }
-            }
-            _ => { }
-        }
-    }   
+    println!("File: {}", file.display());
+    println!("Encoding: {:?}", tad.encoding);
+    println!("Content:\n{}", tad.text.unwrap());
 }
-

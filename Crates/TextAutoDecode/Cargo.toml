@@ -6,5 +6,4 @@ edition = "2024"
 authors = ["Pierre Violent"]
 
 [dependencies]
-myglob = { path = "../../Crates/MyGlob" }
 encoding_rs = "0.8"

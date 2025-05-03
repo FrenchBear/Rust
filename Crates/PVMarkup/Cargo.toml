@@ -1,0 +1,9 @@
+[package]
+name = "PVMarkup"
+description = "My own text markup rendering engine"
+version = "1.0.0"
+edition = "2024"
+authors = ["Pierre Violent"]
+
+[dependencies]
+colored = "3.0.0"
