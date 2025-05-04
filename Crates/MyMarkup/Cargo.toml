@@ -6,3 +6,4 @@ edition = "2024"
 authors = ["Pierre Violent"]
 
 [dependencies]
+terminal_size = "0.4.2"

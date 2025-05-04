@@ -84,4 +84,29 @@ pub mod build_re {
         let res: Vec<GrepLineMatches> = GrepLineMatches::new(haystack, &re).collect();
         assert_eq!(res.len(), 1);
     }
+
+    #[test]
+    fn special_question_mark() {
+        let haystack = "Astérix et Obélix?\r\nTom [et] Jerry\r\nLaurel*Hardy\r\n";
+        let options = Options {
+            pattern: String::from(r"[?]"),
+            ..Default::default()
+        };
+        let re = build_re(&options).unwrap();
+        let res: Vec<GrepLineMatches> = GrepLineMatches::new(haystack, &re).collect();
+        assert_eq!(res.len(), 1);
+    }
+
+    #[test]
+    fn special_question_bracket() {
+        let haystack = "Astérix et Obélix?\r\nTom [et] Jerry\r\nLaurel*Hardy\r\n";
+        let options = Options {
+            pattern: String::from(r"[\[]"),
+            ..Default::default()
+        };
+        let re = build_re(&options).unwrap();
+        let res: Vec<GrepLineMatches> = GrepLineMatches::new(haystack, &re).collect();
+        assert_eq!(res.len(), 1);
+    }
+
 }

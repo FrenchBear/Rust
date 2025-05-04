@@ -58,6 +58,10 @@ impl Iterator for GrepIteratorState<'_> {
                 m
             };
 
+            if ma.as_str()=="\r" || ma.as_str()=="\n" {
+                continue;
+            }
+
             // We have a match, find position of immediately preceding \r or \n or 0 if not found.
             // directly testing bytes is valid because of UTF-8 properties
             let mut matchix = ma.start();

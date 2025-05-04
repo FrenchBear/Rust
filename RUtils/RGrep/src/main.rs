@@ -11,6 +11,9 @@
 // 2025-04-18   PV      1.4.1   Only check help and ? on first position in command line; more extended help
 // 2025-04-18   PV      1.5.0   End of glob crate and options -1/-2
 // 2025-05-02   PV      1.6.0   Use crate textautodecode instead of decode_encoding module
+// 2025-05-04   PV      1.7.0   Do not crash with patterns as [^abc]. Created Options module. Use MyMarkup for extended help formatting.
+
+#![allow(unused)]
 
 // standard library imports
 use std::error::Error;
@@ -22,6 +25,7 @@ use std::time::Instant;
 // external crates imports
 use colored::*;
 use getopt::Opt;
+use grepiterator::GrepLineMatches;
 use myglob::{MyGlobMatch, MyGlobSearch};
 use regex::Regex;
 use terminal_size::{Width, terminal_size};
@@ -30,220 +34,17 @@ use textautodecode::{TextAutoDecode, TextFileEncoding};
 // -----------------------------------
 // Submodules
 
+mod options;
 mod grepiterator;
-pub mod tests;
+mod tests;
+
+use options::*;
 
 // -----------------------------------
 // Global constants
 
 const APP_NAME: &str = "rgrep";
-const APP_VERSION: &str = "1.6.0";
-
-// ==============================================================================================
-// Options processing
-
-// Dedicated struct to store command line arguments
-#[derive(Debug, Default)]
-pub struct Options {
-    pattern: String,
-    sources: Vec<String>,
-    ignore_case: bool,
-    whole_word: bool,
-    fixed_string: bool,
-    autorecurse: bool,
-    show_path: bool,
-    out_level: u8, // 0: normal output, 1: (-l) matching filenames only, 2: (-c) filenames and matching lines count, 3: (-c -l) only matching filenames and matching lines count
-    verbose: u8,
-}
-
-impl Options {
-    fn header() {
-        eprintln!(
-            "{APP_NAME} {APP_VERSION}\n\
-            Simplified grep in Rust"
-        );
-    }
-
-    fn usage() {
-        Options::header();
-        eprintln!(
-            "\nUsage: {APP_NAME} [?|-?|-h|??] [-i] [-w] [-F] [-r] [-v] [-c] [-l] pattern [source...]
-?|-?|-h  Show this message
-??       Show advanced usage notes
--i       Ignore case during search
--w       Whole word search
--F       Fixed string search (no regexp interpretation), also for patterns starting with - ? or help
--r       Use autorecurse, see advanced help
--c       Suppress normal output, show count of matching lines for each file
--l       Suppress normal output, show matching file names only
--v       Verbose output
-pattern  Regular expression to search
-source   File or folder where to search, glob syntax supported. Without source, search stdin."
-        );
-    }
-
-    fn extended_usage() {
-        Options::header();
-        let width = if let Some((Width(w), _)) = terminal_size() {
-            w as usize
-        } else {
-            80usize
-        };
-        let text =
-"Copyright ©2025 Pierre Violent\n
-Advanced usage notes\n--------------------
-
-Options -c (show count of matching lines) and -l (show matching file names only) can be used together to show matching lines count only for matching files.
-
-To search for help or ?, use option -F: rgrep -F help C:\\Sources\\**\\*.rs
-To search for a string containing double quotes, surround string by double quotes, and double individual double quotes inside. To search for \"help\": rgrep \"\"\"help\"\"\" C:\\Sources\\**\\*.rs
-
-Glob pattern rules:
-•   ? matches any single character.
-•   * matches any (possibly empty) sequence of characters.
-•   ** matches the current directory and arbitrary subdirectories. To match files in arbitrary subdirectories, use **\\*. This sequence must form a single path component, so both **a and b** are invalid and will result in an error.
-•   [...] matches any character inside the brackets. Character sequences can also specify ranges of characters, as ordered by Unicode, so e.g. [0-9] specifies any character between 0 and 9 inclusive. An unclosed bracket is invalid.
-•   [!...] is the negation of [...], i.e. it matches any characters not in the brackets.
-•   The metacharacters ?, *, [, ] can be matched by using brackets (e.g. [?]). When a ] occurs immediately following [ or [! then it is interpreted as being part of, rather then ending, the character set, so ] and NOT ] can be matched by []] and [!]] respectively. The - character can be specified inside a character sequence pattern by placing it at the start or the end, e.g. [abc-].
-•   {choice1,choice2...}  match any of the comma-separated choices between braces. Can be nested, and include ?, * and character classes.
-•   Character classes [ ] accept regex syntax such as [\\d] to match a single digit, see https://docs.rs/regex/latest/regex/#character-classes for character classes and escape sequences supported.
-
-Autorecurse glob pattern transformation (option -r):
-•   Constant pattern (no filter, no **) pointing to a folder: \\**\\* is appended at the end to search all files of all subfolders.
-•   Patterns without ** and ending with a filter: \\** is inserted before final filter to find all matching files of all subfolders.";
-
-        println!("{}", Self::format_text(text, width));
-    }
-
-    fn format_text(text: &str, width: usize) -> String {
-        let mut s = String::new();
-        for line in text.split('\n') {
-            if !s.is_empty() {
-                s.push('\n');
-            }
-            s.push_str(Self::format_line(line, width).as_str());
-        }
-        s
-    }
-
-    fn format_line(line: &str, width: usize) -> String {
-        let mut result = String::new();
-        let mut current_line_length = 0;
-
-        let left_margin = if line.starts_with('•') { "  " } else { "" };
-
-        for word in line.split_whitespace() {
-            let word_length = word.len();
-
-            if current_line_length + word_length < width {
-                if !result.is_empty() {
-                    result.push(' ');
-                    current_line_length += 1; // Add space
-                }
-                result.push_str(word);
-                current_line_length += word_length;
-            } else {
-                if !result.is_empty() {
-                    result.push('\n');
-                    current_line_length = if !left_margin.is_empty() {
-                        result.push_str(left_margin);
-                        2
-                    } else {
-                        0
-                    };
-                }
-                result.push_str(word);
-                current_line_length += word_length;
-            }
-        }
-        result
-    }
-
-    /// Build a new struct Options analyzing command line parameters.<br/>
-    /// Some invalid/inconsistent options or missing arguments return an error.
-    fn new() -> Result<Options, Box<dyn Error>> {
-        let mut args: Vec<String> = std::env::args().collect();
-        if args.len() > 1 {
-            if args[1] == "?" || args[1].to_lowercase() == "help" {
-                Self::usage();
-                return Err("".into());
-            }
-
-            if args[1] == "??" || args[1] == "-??" {
-                Self::extended_usage();
-                return Err("".into());
-            }
-        }
-
-        let mut options = Options { ..Default::default() };
-        let mut opts = getopt::Parser::new(&args, "h?12iwFrvcl");
-
-        loop {
-            match opts.next().transpose()? {
-                None => break,
-                Some(opt) => match opt {
-                    Opt('h', None) | Opt('?', None) => {
-                        Self::usage();
-                        return Err("".into());
-                    }
-
-                    Opt('i', None) => {
-                        options.ignore_case = true;
-                    }
-
-                    Opt('w', None) => {
-                        options.whole_word = true;
-                    }
-
-                    Opt('F', None) => {
-                        options.fixed_string = true;
-                    }
-
-                    Opt('r', None) => {
-                        options.autorecurse = true;
-                    }
-
-                    Opt('l', None) => {
-                        options.out_level |= 1;
-                    }
-
-                    Opt('c', None) => {
-                        options.out_level |= 2;
-                    }
-
-                    Opt('v', None) => {
-                        options.verbose += 1;
-                    }
-
-                    _ => unreachable!(),
-                },
-            }
-        }
-
-        // Check for extra argument
-        for arg in args.split_off(opts.index()) {
-            // Don't check ? or help other than in first position, otherwise 'rgrep -F help source' will not search for word help
-
-            if arg.starts_with("-") {
-                return Err(format!("Invalid/unsupported option {}", arg).into());
-            }
-
-            if options.pattern.is_empty() {
-                options.pattern = arg;
-            } else {
-                options.sources.push(arg);
-            }
-        }
-
-        if options.pattern.is_empty() {
-            Self::header();
-            eprintln!("\nNo pattern specified.\nUse {APP_NAME} ? to show options or {APP_NAME} ?? for advanced usage notes.");
-            return Err("".into());
-        }
-
-        Ok(options)
-    }
-}
+const APP_VERSION: &str = "1.7.0";
 
 // -----------------------------------
 // Main
@@ -396,9 +197,11 @@ fn process_text(re: &Regex, txt: &str, filename: &str, options: &Options) {
 
                 let mut p: usize = 0;
                 for ma in gi.ranges {
-                    let e = ma.end;
-                    print!("{}{}", &gi.line[p..ma.start], &gi.line[ma].red().bold());
-                    p = e;
+                    if ma.start < gi.line.len() {
+                        let e = ma.end;
+                        print!("{}{}", &gi.line[p..ma.start], &gi.line[ma].red().bold());
+                        p = e;
+                    }
                 }
                 println!("{}", &gi.line[p..]);
             }

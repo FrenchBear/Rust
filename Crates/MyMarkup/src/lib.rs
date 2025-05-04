@@ -12,6 +12,7 @@ use std::io::{self, BufReader, Read, Seek};
 use std::path::Path;
 
 // external crates imports
+use terminal_size::{Width, terminal_size};
 
 // -----------------------------------
 // Submodules
@@ -22,6 +23,7 @@ mod tests;
 // Globals
 
 const LIB_VERSION: &str = "1.0.0";
+const SHOW_LIMITS: bool = false; // For dev
 
 // Styles
 pub const STYLE_CLEAR: &str = "\x1b[0m";
@@ -97,11 +99,22 @@ impl MyMarkup {
             txt_string.push('\n');
         }
 
-        let width = 40;
-        for _ in 0..width {
-            print!("-");
+        let width = if let Some((Width(w), _)) = terminal_size() {
+            w as usize
+        } else {
+            80usize
+        };
+
+        //let width = 40;
+
+        if SHOW_LIMITS {
+            for _ in 0..width {
+                print!("-");
+            }
+            println!();
         }
-        println!();
+
+        // ToDo: Tabs expansion
 
         let mut word = String::new();
         let mut len = 0;
@@ -110,33 +123,60 @@ impl MyMarkup {
         let mut tab = 0;
         for c in txt_string.chars() {
             match c {
-                '⟪' => word.push_str(STYLE_BOLD_ON),
-                '⟫' => word.push_str(STYLE_BOLD_OFF),
-                '⌊' => word.push_str(STYLE_UNDERLINE_ON),
-                '⟦' => word.push_str(FG_BRIGHT_CYAN),
-                '⟧' => word.push_str(FG_DEFAULT),
-                '⌋' => word.push_str(STYLE_UNDERLINE_OFF),
-                '\r' => {}
+                '⟪' => {
+                    word.push_str(STYLE_BOLD_ON);
+                    continue;
+                }
+                '⟫' => {
+                    word.push_str(STYLE_BOLD_OFF);
+                    continue;
+                }
+                '⌊' => {
+                    word.push_str(STYLE_UNDERLINE_ON);
+                    continue;
+                }
+                '⌋' => {
+                    word.push_str(STYLE_UNDERLINE_OFF);
+                    continue;
+                }
+                '⟦' => {
+                    word.push_str(FG_CYAN);
+                    continue;
+                }
+                '⟧' => {
+                    word.push_str(FG_DEFAULT);
+                    continue;
+                }
+                '⦃' => {
+                    word.push_str(FG_YELLOW);
+                    continue;
+                }
+                '⦄' => {
+                    word.push_str(FG_DEFAULT);
+                    continue;
+                }
+                '\r' => continue,
                 '\n' => {
                     if !word.is_empty() && !is_only_spaces(&word) {
                         if col + len <= width {
                             print!("{}", word);
-                            col+=len;
-                            // dev ------
-                            while col < width {
-                                col += 1;
-                                print!(" ");
+                            if SHOW_LIMITS {
+                                col += len;
+                                while col < width {
+                                    col += 1;
+                                    print!(" ");
+                                }
+                                print!("|");
                             }
-                            println!("|");
-                            // ----------
+                            println!();
                         } else {
-                            // dev ------
-                            while col < width {
-                                col += 1;
-                                print!(" ");
+                            if SHOW_LIMITS {
+                                while col < width {
+                                    col += 1;
+                                    print!(" ");
+                                }
+                                print!("|");
                             }
-                            print!("|");
-                            // ----------
                             println!("");
                             for _ in 0..tab {
                                 print!(" ");
@@ -146,14 +186,14 @@ impl MyMarkup {
                                 len -= 1;
                             }
                             print!("{}", word);
-                            col = tab+len;
-                            // dev ------
-                            while col <= width-1 {
-                                col += 1;
-                                print!(" ");
+                            col = tab + len;
+                            if SHOW_LIMITS {
+                                while col <= width - 1 {
+                                    col += 1;
+                                    print!(" ");
+                                }
+                                print!("|");
                             }
-                            print!("|");
-                            // ----------
                             println!();
                         }
                     } else {
@@ -161,7 +201,9 @@ impl MyMarkup {
                             col += 1;
                             print!(" ");
                         }
-                        print!("|");
+                        if SHOW_LIMITS {
+                            print!("|");
+                        }
                         println!();
                     }
                     word.clear();
@@ -190,12 +232,13 @@ impl MyMarkup {
                             word.clear();
                             len = 0;
                         } else {
-                            while col < width {
-                                col += 1;
-                                print!(" ");
+                            if SHOW_LIMITS {
+                                while col < width {
+                                    col += 1;
+                                    print!(" ");
+                                }
+                                print!("|");
                             }
-                            print!("|");
-
                             println!("");
                             for _ in 0..tab {
                                 print!(" ");
@@ -209,20 +252,54 @@ impl MyMarkup {
                             print!("{}", word);
                             col += len;
                             word.clear();
-                            len=0;
+                            len = 0;
                         }
                     }
                     word.push(' ');
                     len += 1;
                 }
                 _ => {
-                    
+                    if tab + len >= width - 1 {
+                        // We can't accumulate char, it would be longer than width
+                        if col > tab {
+                            // if we have already printed some chars, we need to flush and start a new line
+                            if SHOW_LIMITS {
+                                while col < width {
+                                    col += 1;
+                                    print!(" ");
+                                }
+                                print!("|");
+                            }
+                            println!();
+
+                            for _ in 0..tab {
+                                print!(" ");
+                            }
+                            col = tab;
+                        }
+
+                        while word.starts_with(' ') {
+                            word.remove(0);
+                            len -= 1;
+                        }
+
+                        if col + len >= width {
+                            println!("{}|", word);
+
+                            word.clear();
+                            len = 0;
+                            for _ in 0..tab {
+                                print!(" ");
+                            }
+                            col = tab;
+                        }
+                    }
+
                     word.push(c);
                     len += 1;
                 }
             }
         }
-
         println!();
     }
 }

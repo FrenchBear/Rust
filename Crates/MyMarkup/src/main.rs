@@ -5,27 +5,33 @@
 
 #![allow(unused)]
 
+use terminal_size as _;
+
 use mymarkup::*;
 
 fn main() {
-    let text = "⟪⌊Advanced usage notes⌋⟫
+    // test_own();
+    // return;
 
-⌊Warnings report⌋
-• ¬Empty files
-• ¬Source text files (based on extension) that should contain text, but with unrecognized content
-• ¬UTF-8 files with BOM
-• ¬UTF-16 files without BOM
-• ¬Different encodings for a given file type (extension) in a folder
-• ¬Mixed EOL styles in a file
-• ¬Different EOL styles for a given file type (extension) in a folder
+    let text = "⟪⌊Advanced usage notes⌋⟫
 
 Counts include with and without BOM variants.
 8-bit text files are likely Windows 1252/Latin-1/ANSI or OEM 850/OEM 437, there is no detailed analysis.
+Files without BOM must be more than 10 characters for auto-detection of UTF-8 or UTF-16.
 
 ⌊EOL Styles⌋
 - ¬⟪Windows⟫: \\r\\n
 - ¬⟪Unix⟫: \\n
 - ¬⟪Mac⟫: \\r
+
+⌊Warnings reported⌋
+• ¬Empty files.
+• ¬Source text files (based on extension) that should contain text, but with unrecognized content.
+• ¬UTF-8 files with BOM.
+• ¬UTF-16 files without BOM.
+• ¬Different encodings for a given file type (extension) in a folder.
+• ¬Mixed EOL styles in a file.
+• ¬Different EOL styles for a given file type (extension) in a folder.
 
 ⌊Glob pattern rules⌋
 • ¬⟦?⟧ matches any single character.
@@ -42,13 +48,11 @@ Counts include with and without BOM variants.
 • ¬⟪Patterns without ⟦**⟧ and ending with a filter⟫: ⟦\\**⟧ is inserted before final filter to find all matching files of all subfolders.
 ";
 
-
-    let text = "see https://docs.rs/regex/latest/regex/#character-classes for character classes and escape sequences supported.";
+    //let text = "to match a single digit, see https://docs.rs/regex/latest/regex/#character-classes for character classes and escape sequences supported.";
 
     MyMarkup::render_markup(text);
     //test_own();
 }
-
 
 fn test_own() {
     println!("Style Default");
@@ -61,4 +65,29 @@ fn test_own() {
     println!("Style {}Reverse{}, and default", STYLE_REVERSE_ON, STYLE_REVERSE_OFF);
     println!("Style {}Hidden{}, and default", STYLE_HIDDEN_ON, STYLE_HIDDEN_OFF);
     println!("Style {}Strikethrough{}, and default", STYLE_STRIKETHROUGH_ON, STYLE_STRIKETHROUGH_OFF);
+
+    println!("\nColors");
+    let fga = [
+        ("Black", FG_BLACK),
+        ("Red", FG_RED),
+        ("Green", FG_GREEN),
+        ("Yellow", FG_YELLOW),
+        ("Blue", FG_BLUE),
+        ("Magenta", FG_MAGENTA),
+        ("Cyan", FG_CYAN),
+        ("White", FG_WHITE),
+        ("Default", FG_DEFAULT),
+        ("Bright Black", FG_BRIGHT_BLACK),
+        ("Bright Red", FG_BRIGHT_RED),
+        ("Bright Green", FG_BRIGHT_GREEN),
+        ("Bright Yellow", FG_BRIGHT_YELLOW),
+        ("Bright Blue", FG_BRIGHT_BLUE),
+        ("Bright Magenta", FG_BRIGHT_MAGENTA),
+        ("Bright Cyan", FG_BRIGHT_CYAN),
+        ("Bright White", FG_BRIGHT_WHITE),
+    ];
+
+    for (name, fg) in fga {
+        println!("{}{:?}{}", fg, name, FG_DEFAULT);
+    }
 }

@@ -17,6 +17,7 @@
 // 2025-04-18   PV      1.5.1 MyGlobError implements std::error::Error
 // 2025-04-23   PV      1.5.2 Added impl From<regex::Error> for MyGlobError and fn source in impl Error for MyGlobError
 // 2025-05-03   PV      1.5.3 Removed #![allow(...)]
+// 2025-05-04   PV      1.5.4 Added glob_syntax()
 
 //#![allow(unused_variables, dead_code, unused_imports)]
 
@@ -35,7 +36,7 @@ mod tests;
 // -----------------------------------
 // Globals
 
-const LIB_VERSION: &str = "1.5.3";
+const LIB_VERSION: &str = "1.5.4";
 
 // -----------------------------------
 // Structures
@@ -96,6 +97,23 @@ impl Error for MyGlobError {
 impl MyGlobSearch {
     pub fn version() -> &'static str {
         LIB_VERSION
+    }
+
+    pub fn glob_syntax() -> &'static str {
+        "⌊Glob pattern rules⌋
+• ¬⟦?⟧ matches any single character.
+• ¬⟦*⟧ matches any (possibly empty) sequence of characters.
+• ¬⟦**⟧ matches the current directory and arbitrary subdirectories. To match files in arbitrary subdirectories, use ⟦**\\*⟧. This sequence must form a single path component, so both **a and b** are invalid and will result in an error.
+• ¬⟦[...]⟧ matches any character inside the brackets. Character sequences can also specify ranges of characters, as ordered by Unicode, so e.g. ⟦[0-9]⟧ specifies any character between 0 and 9 inclusive. Special cases: ⟦[[]⟧ represents an opening bracket, ⟦[]]⟧ represents a closing bracket. 
+• ¬⟦[!...]⟧ is the negation of ⟦[...]⟧, i.e. it matches any characters not in the brackets.
+• ¬The metacharacters ⟦?⟧, ⟦*⟧, ⟦[⟧, ⟦]⟧ can be matched by escaping them between brackets such as ⟦[\\?]⟧ or ⟦[\\[]⟧. When a ⟦]⟧ occurs immediately following ⟦[⟧ or ⟦[!⟧ then it is interpreted as being part of, rather then ending, the character set, so ⟦]⟧ and NOT ⟦]⟧ can be matched by ⟦[]]⟧ and ⟦[!]]⟧ respectively. The ⟦-⟧ character can be specified inside a character sequence pattern by placing it at the start or the end, e.g. ⟦[abc-]⟧.
+• ¬⟦{choice1,choice2...}⟧  match any of the comma-separated choices between braces. Can be nested, and include ⟦?⟧, ⟦*⟧ and character classes.
+• ¬Character classes ⟦[ ]⟧ accept regex syntax such as ⟦[\\d]⟧ to match a single digit, see https://docs.rs/regex/latest/regex/#character-classes for character classes and escape sequences supported.
+
+⌊Autorecurse glob pattern transformation⌋
+• ¬⟪Constant pattern (no filter, no ⟦**⟧) pointing to a folder⟫: ⟦\\**\\*⟧ is appended at the end to search all files of all subfolders.
+• ¬⟪Patterns without ⟦**⟧ and ending with a filter⟫: ⟦\\**⟧ is inserted before final filter to find all matching files of all subfolders.
+"
     }
 
     #[allow(clippy::new_ret_no_self)]
