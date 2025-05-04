@@ -9,17 +9,19 @@
 // 2025-04-13	PV      1.4.2 Option -noa[utorecurse]
 // 2025-04-22	PV      1.5.0 Options -a+|-, -r+|-, options module
 // 2025-05-03	PV      1.6.0 Option -name
+// 2025-05-03	PV      1.6.0 Option -name
+// 2025-05-04   PV      1.6.1 Use MyMarkup for extended help formatting.
 
 //#![allow(unused)]
 
-// standard library imports
+// Standard library imports
 use std::fmt::Debug;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process;
 use std::time::Instant;
 
-// external crates imports
+// External crates imports
 use myglob::{MyGlobMatch, MyGlobSearch};
 
 // -----------------------------------
@@ -36,7 +38,7 @@ use options::*;
 // Global constants
 
 const APP_NAME: &str = "rfind";
-const APP_VERSION: &str = "1.6.0";
+const APP_VERSION: &str = "1.6.1";
 
 // -----------------------------------
 // Traits

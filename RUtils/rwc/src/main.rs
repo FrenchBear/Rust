@@ -3,14 +3,17 @@
 // 2025-04-21	PV      First version
 // 2025-04-22	PV      1.1.0 Always show bytes; option -a+|- to control autorecurse
 // 2025-05-02   PV      1.2.0 Use crate textautodecode instead of decode_encoding module. Also use file length instead of string bytes count to include BOM size
+// 2025-05-04   PV      1.2.1 Use MyMarkup crate to format usage and extended help
 
-// standard library imports
+//#![allow(unused)]
+
+// Standard library imports
 use std::{io, os::windows::fs::MetadataExt};
 use std::path::Path;
 use std::process;
 use std::time::Instant;
 
-// external crates imports
+// External crates imports
 use myglob::{MyGlobMatch, MyGlobSearch};
 use textautodecode::{TextAutoDecode, TextFileEncoding};
 
@@ -26,7 +29,7 @@ use options::*;
 // Global constants
 
 const APP_NAME: &str = "rwc";
-const APP_VERSION: &str = "1.2.0";
+const APP_VERSION: &str = "1.2.1";
 
 // ==============================================================================================
 // Main

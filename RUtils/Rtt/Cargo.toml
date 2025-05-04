@@ -1,15 +1,15 @@
 [package]
 name = "rtt"
 description = "Text type utility in Rust"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["Pierre Violent"]
 edition = "2024"
 
 [dependencies]
 myglob = { path = "../../Crates/MyGlob" }
 textautodecode = { path = "../../Crates/TextAutoDecode" }
+mymarkup = { path = "../../Crates/MyMarkup" }
 getopt = "1.1.7"
-terminal_size = "0.4.2"
 colored = "3.0.0"
 tempfile = "3.19.1"
 

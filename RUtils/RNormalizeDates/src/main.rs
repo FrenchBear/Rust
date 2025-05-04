@@ -4,20 +4,20 @@
 // 2025-04-16   PV      Better normalization of n°
 // 2025-04-16   PV      1.1 Final counts, DataBag, Implementation of option -S, improved filtering of HS
 // 2025-04-18   PV      1.1.1 Better normalization of Ça m'intéresse
+// 2025-05-04   PV      1.1.3 Use MyMarkup crate to format usage and extended help
 
 //#![allow(unused)]
 
-// standard library imports
+// Standard library imports
 use std::fs;
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process;
 use std::time::Instant;
 
-// external crates imports
+// External crates imports
 use getopt::Opt;
 use myglob::{MyGlobMatch, MyGlobSearch};
-use terminal_size::{Width, terminal_size};
 use unicode_normalization::UnicodeNormalization;
 
 // -----------------------------------
@@ -36,7 +36,7 @@ use re::*;
 // Global constants
 
 const APP_NAME: &str = "rnormalizedates";
-const APP_VERSION: &str = "1.1.2";
+const APP_VERSION: &str = "1.1.3";
 
 // -----------------------------------
 // Main

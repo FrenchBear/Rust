@@ -1,14 +1,14 @@
 [package]
 name = "rnormalizedates"
 description = "Rust version of NormalizeDates, Normalizes dates in filenames, replace 'January 2020' by '2020-01'"
-version = "1.1.2"
+version = "1.1.3"
 authors = ["Pierre Violent"]
 edition = "2024"
 
 [dependencies]
 myglob = { path = "../../Crates/MyGlob" }
+mymarkup = { path = "../../Crates/MyMarkup" }
 getopt = "1.1.7"
-terminal_size = "0.4.2"
 unicode-normalization = "0.1.24"
 regex = "1.11.1"
 chrono = "0.4.40"

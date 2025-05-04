@@ -13,22 +13,20 @@
 // 2025-05-02   PV      1.6.0   Use crate textautodecode instead of decode_encoding module
 // 2025-05-04   PV      1.7.0   Do not crash with patterns as [^abc]. Created Options module. Use MyMarkup for extended help formatting.
 
-#![allow(unused)]
+//#![allow(unused)]
 
-// standard library imports
+// Standard library imports
 use std::error::Error;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::process;
 use std::time::Instant;
 
-// external crates imports
+// External crates imports
 use colored::*;
 use getopt::Opt;
-use grepiterator::GrepLineMatches;
 use myglob::{MyGlobMatch, MyGlobSearch};
 use regex::Regex;
-use terminal_size::{Width, terminal_size};
 use textautodecode::{TextAutoDecode, TextFileEncoding};
 
 // -----------------------------------

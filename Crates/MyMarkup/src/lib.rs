@@ -2,16 +2,20 @@
 // Parse and render my own markup language
 //
 // 2025-05-05   PV      First version
+//
+// MyMarkup use pecialized brackets for formatting text:
+// ⟪Bold⟫           ~W  ~X
+// ⟨Italic⟩         ~w  ~x
+// ⌊Underline⌋      ~D  ~F
+// ⌈Striketrough⌉   ~Q  ~S
+// ⟦Color1⟧         ~c  ~v  Cyan
+// ⦃Color2⦄         ~C  ~V  Yellow
+// ⟮⟯               ~à  ~)  (Unused for now)
+// ¬ (AltGr+7) sets left margin
 
-#![allow(unused_variables, dead_code, unused_imports)]
+//#![allow(unused)]
 
-// Std library imports
-use std::borrow::Cow;
-use std::fs::File;
-use std::io::{self, BufReader, Read, Seek};
-use std::path::Path;
-
-// external crates imports
+// External crates imports
 use terminal_size::{Width, terminal_size};
 
 // -----------------------------------
@@ -129,6 +133,14 @@ impl MyMarkup {
                 }
                 '⟫' => {
                     word.push_str(STYLE_BOLD_OFF);
+                    continue;
+                }
+                '⟨' => {
+                    word.push_str(STYLE_ITALIC_ON);
+                    continue;
+                }
+                '⟩' => {
+                    word.push_str(STYLE_ITALIC_OFF);
                     continue;
                 }
                 '⌊' => {

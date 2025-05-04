@@ -1,17 +1,18 @@
-// rtt: Text type utility in Rust
+// rtt: Text type information in Rust
 //
 // 2025-05-03	PV      First version
+// 2025-05-04   PV      1.0.1 Use MyMarkup crate to format usage and extended help
 
-#![allow(unused)]
+//#![allow(unused)]
 
-// standard library imports
+// Standard library imports
 use std::collections::HashMap;
 use std::io::{self, Read, Write};
 use std::path::Path;
 use std::process;
 use std::time::Instant;
 
-// external crates imports
+// External crates imports
 use colored::*;
 use myglob::{MyGlobMatch, MyGlobSearch};
 use tempfile::Builder;
@@ -29,7 +30,7 @@ use options::*;
 // Global constants
 
 const APP_NAME: &str = "rtt";
-const APP_VERSION: &str = "1.0.0";
+const APP_VERSION: &str = "1.0.1";
 
 // These extensions should indicate a text content
 const TEXT_EXT: [&str; 53] = [
@@ -267,7 +268,7 @@ fn main() {
 
     // If no source has been provided, use stdin
     if options.sources.is_empty() {
-        process_stdin(&mut b, &options);
+        let _ = process_stdin(&mut b, &options);
     }
 
     let duration = start.elapsed();
@@ -370,16 +371,6 @@ fn print_result_core(msg: &str) {
     }
 }
 
-// fn test_print_result() {
-//     print_result_core("");
-//     print_result_core("«»");
-//     print_result_core("Once upon a time");
-//     print_result_core("Once «upon» a time");
-//     print_result_core("«Once upon a time»");
-//     print_result_core("«Once» upon «a» time");
-//     print_result_core("«O»«n»«c»«e» «u»p«o»n «a» t«i»m«e»");
-// }
-
 /// Similar to (&str).find(char), but starts search at byte index start_position.
 /// Returns the byte index of the first character of this string slice that matches the pattern.
 /// Returns None if the pattern doesn't match.
@@ -395,7 +386,7 @@ fn find_from_position(s: &str, pattern: char, start_position: usize) -> Option<u
 }
 
 /// First step processing a file, read text content from path and call process_text.
-fn process_file(b: &mut DataBag, path_for_read: &Path, path_for_name: &Path, options: &Options) -> String {
+fn process_file(b: &mut DataBag, path_for_read: &Path, path_for_name: &Path, _options: &Options) -> String {
     let mut res = String::new();
     let tad_res = TextAutoDecode::read_text_file(path_for_read);
 
@@ -465,7 +456,6 @@ fn process_file(b: &mut DataBag, path_for_read: &Path, path_for_name: &Path, opt
                         },
                     )
                 }
-                _ => unreachable!(),
             };
 
             let eol = get_eol(tad.text.unwrap().as_str());

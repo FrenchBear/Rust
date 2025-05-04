@@ -9,7 +9,7 @@ use crate::*;
 #[test]
 fn test_empty() -> Result<(), io::Error> {
     let mut temp_file = Builder::new().tempfile()?;
-    temp_file.write_all(&[]);
+    temp_file.write_all(&[])?;
     let o = Options {..Default::default()};
     let mut b = DataBag {..Default::default()};
     let res = process_file(&mut b, temp_file.path(), Path::new("(test empty)"), &o);
@@ -36,7 +36,7 @@ fn test_empty() -> Result<(), io::Error> {
 #[test]
 fn test_ascii() -> Result<(), io::Error> {
     let mut temp_file = Builder::new().tempfile()?;
-    temp_file.write_all(&[b'H', b'e', b'l', b'l', b'o', b'\r', b'\n']);
+    temp_file.write_all(&[b'H', b'e', b'l', b'l', b'o', b'\r', b'\n'])?;
     let o = Options {..Default::default()};
     let mut b = DataBag {..Default::default()};
     let res = process_file(&mut b, temp_file.path(), Path::new("(test ascii)"), &o);
@@ -63,7 +63,7 @@ fn test_ascii() -> Result<(), io::Error> {
 #[test]
 fn test_nontext1() -> Result<(), io::Error> {
     let mut temp_file = Builder::new().tempfile()?;
-    temp_file.write_all(&[0xCA, 0xFE, 0xDE, 0xAD, 0xBE, 0xEF]);
+    temp_file.write_all(&[0xCA, 0xFE, 0xDE, 0xAD, 0xBE, 0xEF])?;
     let o = Options {..Default::default()};
     let mut b = DataBag {..Default::default()};
     let res = process_file(&mut b, temp_file.path(), Path::new("(test non-text)"), &o);
@@ -90,7 +90,7 @@ fn test_nontext1() -> Result<(), io::Error> {
 #[test]
 fn test_nontext2() -> Result<(), io::Error> {
     let mut temp_file = Builder::new().tempfile()?;
-    temp_file.write_all(&[0xCA, 0xFE, 0xDE, 0xAD, 0xBE, 0xEF]);
+    temp_file.write_all(&[0xCA, 0xFE, 0xDE, 0xAD, 0xBE, 0xEF])?;
     let o = Options {..Default::default()};
     let mut b = DataBag {..Default::default()};
     let res = process_file(&mut b, temp_file.path(), Path::new("non-text.rs"), &o);
@@ -126,7 +126,7 @@ fn test_utf8() -> Result<(), io::Error> {
     ];
 
     let mut temp_file = Builder::new().tempfile()?;
-    temp_file.write_all(&model);
+    temp_file.write_all(&model)?;
     let o = Options {..Default::default()};
     let mut b = DataBag {..Default::default()};
     let res = process_file(&mut b, temp_file.path(), Path::new("(test utf8)"), &o);
@@ -159,7 +159,7 @@ fn test_utf8bom() -> Result<(), io::Error> {
     ];
 
     let mut temp_file = Builder::new().tempfile()?;
-    temp_file.write_all(&model);
+    temp_file.write_all(&model)?;
     let o = Options {..Default::default()};
     let mut b = DataBag {..Default::default()};
     let res = process_file(&mut b, temp_file.path(), Path::new("(test utf8bom)"), &o);
@@ -196,7 +196,7 @@ fn test_utf16lebom() -> Result<(), io::Error> {
     ];
 
     let mut temp_file = Builder::new().tempfile()?;
-    temp_file.write_all(&model);
+    temp_file.write_all(&model)?;
     let o = Options {..Default::default()};
     let mut b = DataBag {..Default::default()};
     let res = process_file(&mut b, temp_file.path(), Path::new("(test utf16lebom)"), &o);
@@ -238,7 +238,7 @@ fn test_utf16le1() -> Result<(), io::Error> {
     ];
 
     let mut temp_file = Builder::new().tempfile()?;
-    temp_file.write_all(&model);
+    temp_file.write_all(&model)?;
     let o = Options {..Default::default()};
     let mut b = DataBag {..Default::default()};
     let res = process_file(&mut b, temp_file.path(), Path::new("(test utf16le1)"), &o);
@@ -272,7 +272,7 @@ fn test_utf16le2() -> Result<(), io::Error> {
     ];
 
     let mut temp_file = Builder::new().tempfile()?;
-    temp_file.write_all(&model);
+    temp_file.write_all(&model)?;
     let o = Options {..Default::default()};
     let mut b = DataBag {..Default::default()};
     let res = process_file(&mut b, temp_file.path(), Path::new("(test utf16le1)"), &o);

@@ -21,6 +21,7 @@
 
 //#![allow(unused_variables, dead_code, unused_imports)]
 
+// Standard library imports
 use regex::Regex;
 use std::error::Error;
 use std::fmt::Display;
@@ -100,7 +101,7 @@ impl MyGlobSearch {
     }
 
     pub fn glob_syntax() -> &'static str {
-        "⌊Glob pattern rules⌋
+        "⌊Glob pattern rules:⌋
 • ¬⟦?⟧ matches any single character.
 • ¬⟦*⟧ matches any (possibly empty) sequence of characters.
 • ¬⟦**⟧ matches the current directory and arbitrary subdirectories. To match files in arbitrary subdirectories, use ⟦**\\*⟧. This sequence must form a single path component, so both **a and b** are invalid and will result in an error.
@@ -110,7 +111,7 @@ impl MyGlobSearch {
 • ¬⟦{choice1,choice2...}⟧  match any of the comma-separated choices between braces. Can be nested, and include ⟦?⟧, ⟦*⟧ and character classes.
 • ¬Character classes ⟦[ ]⟧ accept regex syntax such as ⟦[\\d]⟧ to match a single digit, see https://docs.rs/regex/latest/regex/#character-classes for character classes and escape sequences supported.
 
-⌊Autorecurse glob pattern transformation⌋
+⌊Autorecurse glob pattern transformation:⌋
 • ¬⟪Constant pattern (no filter, no ⟦**⟧) pointing to a folder⟫: ⟦\\**\\*⟧ is appended at the end to search all files of all subfolders.
 • ¬⟪Patterns without ⟦**⟧ and ending with a filter⟫: ⟦\\**⟧ is inserted before final filter to find all matching files of all subfolders.
 "

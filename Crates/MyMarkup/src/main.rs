@@ -13,7 +13,20 @@ fn main() {
     // test_own();
     // return;
 
-    let text = "⟪⌊Advanced usage notes⌋⟫
+    let text = "⌊Usage⌋: rgrep ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄] [⦃-i⦄] [⦃-w⦄] [⦃-F⦄] [⦃-r⦄] [⦃-v⦄] [⦃-c⦄] [⦃-l⦄] pattern [source...]
+⦃?⦄|⦃-?⦄|⦃-h⦄  ¬Show this message
+⦃??⦄       ¬Show advanced usage notes
+⦃-i⦄       ¬Ignore case during search
+⦃-w⦄       ¬Whole word search
+⦃-F⦄       ¬Fixed string search (no regexp interpretation), also for patterns starting with - ? or help
+⦃-r⦄       ¬Use autorecurse, see advanced help
+⦃-c⦄       ¬Suppress normal output, show count of matching lines for each file
+⦃-l⦄       ¬Suppress normal output, show matching file names only
+⦃-v⦄       ¬Verbose output
+pattern  ¬Regular expression to search
+source   ¬File or folder where to search, glob syntax supported. Without source, search stdin
+
+⟪⌊Advanced usage notes⌋⟫
 
 Counts include with and without BOM variants.
 8-bit text files are likely Windows 1252/Latin-1/ANSI or OEM 850/OEM 437, there is no detailed analysis.
