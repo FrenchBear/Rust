@@ -1,102 +1,8 @@
-/*
-Bright
-w		⟨		27E8
-x		⟩		27E9
-
-Bold
-W		⟪		27EA
-X		⟫		27EB
-
-Italic
-Q		⌈		2308
-S		⌉		2309
-
-Underline
-D		⌊		230A
-F		⌋		230B
-
-(Available)
-c		⟦		27E6
-v		⟧		27E7
-C		⦃		2983
-V		⦄		2984
-à		⟮		27EE
-)		⟯		27EF
-
-Left margin tab (AltGr)
-7		¬		00AC
-
-h		←		2190
-k		↑		2191
-l		→		2192
-j		↓		2193
-g		↔		2194
-m		↕		2195
-H		⇦		21E6
-K		⇧		21E7
-L		⇨		21E8
-J		⇩		21E9
-G		⇔		21D4
-M		⇳		21F3
-s		▲		25B2
-f		▼		25BC
-q		◄		25C4
-d		►		25BA
-/		⁄		2044
-:		⧸		29F8
-5		※		203B
-*/
-
-/*
-Tags
-⌈x,y,...⌉   Turns on attributes x, y, ...
-⌊x,y,...⌋   Turns off attributes x, y, ...
-¬           Sets left margin
-
-Tabs expand to 4 places
-
-Styles
-0           Clear (turns off all style attributes)
-*           Bold
-/           Italic
-_           Underline
--			Striketrgough
-d 			Dimmed
-b 			Blink
-r			Reversed
-
-Captions/Headers
-w2 			Double wide
-hw2 		Double wide, double height
-
-Color
-Cx			Foreground color x
-Bx			Background color x
-Cfg			Foreground color f, background color g
-
-Colors codes (ANSI order, NOT console COLOR command or VBA QBColor() order)
-0 Black
-1 Red
-2 Green
-3 Yellow
-4 Blue
-5 Magenta
-6 Cyan
-7 White
-8 BrightBlack
-9 BrightRed
-A BrightGreen
-B BrightYellow
-C BrightBlue
-D BrightMagenta
-E BrightCyan
-F BrightWhite
-
-*/
 
 let text =
 "Copyright ©2025 Pierre Violent\n
-⌈*,b,_⌉Advanced usage notes⌊*,b,_⌋\n--------------------
+⌈*,b,_⌉Advanced usage notes⌊*,b,_⌋
+--------------------
 
 ⌈_⌉Warnings report⌊_⌋
 •  ¬Empty files
@@ -128,3 +34,4 @@ Counts include with and without BOM variants.
 ⌈i⌉Autorecurse glob pattern transformation⌊i⌋
 •  ¬Constant pattern (no filter, no **) pointing to a folder: \\**\\* is appended at the end to search all files of all subfolders.
 •  ¬Patterns without ** and ending with a filter: \\** is inserted before final filter to find all matching files of all subfolders.";
+
