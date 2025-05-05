@@ -247,7 +247,8 @@ impl MyGlobBuilder {
     // This is used internally and for testing, but not called by applications hence pub(crate)
     pub(crate) fn glob_to_segments(glob_pattern: &str) -> Result<Vec<Segment>, MyGlobError> {
         // glob_pattern ends with \ so no duplicate code to process last segment
-        assert!(glob_pattern.ends_with('\\'));
+        let dir_sep = if cfg!(target_os = "windows") { '\\' } else { '/' };
+        assert!(glob_pattern.ends_with(dir_sep));
 
         let mut segments = Vec::<Segment>::new();
         let mut regex_buffer = String::new();
