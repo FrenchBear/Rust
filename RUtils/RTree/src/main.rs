@@ -10,6 +10,7 @@ use std::fs;
 use std::io;
 #[cfg(target_os = "windows")]
 use std::os::windows::fs::MetadataExt;
+use std::path;
 use std::path::{Path, PathBuf};
 use std::process;
 use std::time::Instant;
@@ -27,7 +28,7 @@ use options::*;
 // Global constants
 
 const APP_NAME: &str = "rtree";
-const APP_VERSION: &str = "1.0.0";
+const APP_VERSION: &str = "1.0.1";
 
 // ==============================================================================================
 // Main
@@ -35,6 +36,7 @@ const APP_VERSION: &str = "1.0.0";
 #[derive(Debug, Default)]
 struct DataBag {
     dirs_count: usize,
+    links_count: usize,
 }
 
 fn main() {
@@ -62,7 +64,11 @@ fn main() {
     let duration = start.elapsed();
 
     if options.verbose {
-        println!("{} directories in {:.3}s", b.dirs_count, duration.as_secs_f64());
+        print!("{} directorie(s)", b.dirs_count);
+        if b.links_count > 0 {
+            print!(", {} link(s)", b.links_count);
+        }
+        println!(" in {:.3}s", duration.as_secs_f64());
     }
 }
 
@@ -92,8 +98,22 @@ fn do_print(b: &mut DataBag, source: &str) -> Result<(), io::Error> {
 }
 
 fn print_tree(b: &mut DataBag, dir: &Path, prefix: &str, is_last: bool) -> io::Result<()> {
-    b.dirs_count += 1;
     let entry_prefix = if is_last { "└── " } else { "├── " };
+
+    if dir.is_symlink() {
+        let target_path = fs::read_link(dir)?;
+        println!(
+            "{}{}{} -> {}",
+            prefix,
+            entry_prefix,
+            dir.file_name().unwrap_or_default().to_string_lossy(),
+            target_path.display()
+        );
+        b.links_count += 1;
+        return Ok(());
+    }
+
+    b.dirs_count += 1;
     println!("{}{}{}", prefix, entry_prefix, dir.file_name().unwrap_or_default().to_string_lossy());
 
     let new_prefix = if is_last {
