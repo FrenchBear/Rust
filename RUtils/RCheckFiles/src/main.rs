@@ -8,6 +8,7 @@
 // 2025-04-03	PV      1.3.0 Code reorganization, module logging
 // 2025-04-08	PV      1.4.0 Check brackets (incl. unit tests)
 // 2025-05-05   PV      1.4.2 Use MyMarkup crate to format usage
+// 2025-05-05	PV      1.4.3 Logging crate
 
 // Standard library imports
 use std::collections::HashSet;
@@ -27,7 +28,6 @@ use unicode_normalization::{UnicodeNormalization, is_nfc};
 // -----------------------------------
 // Submodules
 
-mod logging;
 pub mod tests;
 
 // -----------------------------------
@@ -207,7 +207,7 @@ fn main() {
     };
 
     // Prepare log writer
-    let mut writer = logging::new(true);
+    let mut writer = logging::new(APP_NAME, APP_VERSION, true);
 
     let mut files_stats = Statistics { ..Default::default() };
     let mut dirs_stats = Statistics { ..Default::default() };

@@ -3,6 +3,7 @@
 // 2025-04-03	PV      First version
 // 2025-04-17	PV      1.1.0 Fixed logic errors (return statement misplaced in embedded is blocks)
 // 2025-05-05   PV      1.1.2 Use MyMarkup crate to format usage and extended help
+// 2025-05-05	PV      1.1.3 Logging crate
 
 //#![allow(unused)]
 
@@ -16,24 +17,23 @@ use std::time::Instant;
 use getopt::Opt;
 use myglob::{MyGlobMatch, MyGlobSearch};
 use mymarkup::MyMarkup;
+use logging::*;
 
 // -----------------------------------
 // Submodules
 
 mod drive_type;
-mod logging;
 mod reparse;
 mod tests;
 
 use drive_type::*;
-use logging::*;
 use reparse::*;
 
 // -----------------------------------
 // Globals
 
 const APP_NAME: &str = "recycle";
-const APP_VERSION: &str = "1.1.2";
+const APP_VERSION: &str = "1.1.3";
 
 // ==============================================================================================
 // Options processing
@@ -161,7 +161,7 @@ fn main() {
     });
 
     // Prepare log writer
-    let mut writer = logging::new(options.verbose);
+    let mut writer = logging::new(APP_NAME, APP_VERSION, options.verbose);
 
     let mut files_count = 0;
     let mut dirs_count = 0;

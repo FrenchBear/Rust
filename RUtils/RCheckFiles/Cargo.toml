@@ -7,7 +7,6 @@ edition = "2024"
 
 [dependencies]
 mymarkup = { path = "../../Crates/MyMarkup" }
+logging = { path = "../../Crates/Logging" }
 getopt = "1.1.7"
-colored = "3.0.0"
 unicode-normalization = "0.1.24"
-chrono = "0.4.40"

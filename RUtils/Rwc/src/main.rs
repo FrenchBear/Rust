@@ -4,11 +4,13 @@
 // 2025-04-22	PV      1.1.0 Always show bytes; option -a+|- to control autorecurse
 // 2025-05-02   PV      1.2.0 Use crate textautodecode instead of decode_encoding module. Also use file length instead of string bytes count to include BOM size
 // 2025-05-04   PV      1.2.1 Use MyMarkup crate to format usage and extended help
+// 2025-05-05   PV      1.2.2 Linux compatibility; Ignore files larger than 1GB
+
 
 //#![allow(unused)]
 
 // Standard library imports
-use std::{io, os::windows::fs::MetadataExt};
+use std::io;
 use std::path::Path;
 use std::process;
 use std::time::Instant;
@@ -29,7 +31,7 @@ use options::*;
 // Global constants
 
 const APP_NAME: &str = "rwc";
-const APP_VERSION: &str = "1.2.1";
+const APP_VERSION: &str = "1.2.2";
 
 // ==============================================================================================
 // Main
@@ -124,9 +126,16 @@ fn process_file(b: &mut DataBag, path: &Path, options: &Options) {
                     println!("{APP_NAME}: ignored non-text file {}", path.display());
                 }
             } else {
-                let filesize = path.metadata().unwrap().file_size() as usize;
-                let filename = path.display().to_string();
-                process_text(b, tad.text.unwrap().as_str(), filename.as_str(), options, filesize);
+                let filesize = path.metadata().unwrap().len();
+                // Anything above 1GB is ignored
+                if filesize >= 1024u64 * 1024u64 * 1024u64 {    
+                    if options.verbose {
+                        println!("{APP_NAME}: ignored very large file {}, size: {}", path.display(), filesize);
+                    }
+                } else {
+                    let filename = path.display().to_string();
+                    process_text(b, tad.text.unwrap().as_str(), filename.as_str(), options, filesize as usize);
+                }
             }
         }
         Err(e) => {
