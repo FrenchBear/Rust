@@ -39,7 +39,8 @@ pub fn test_myglob(pattern: &str, autorecurse: bool, ignore_dirs: &[&str], loops
                             nf += 1;
                         }
                         MyGlobMatch::Dir(pb) => {
-                            println!("{}\\", pb.display());
+                            let dir_sep = if cfg!(windows) { '\\' } else { '/' };
+                            println!("{}{dir_sep}", pb.display());
                             nd += 1;
                         }
                         MyGlobMatch::Error(e) => {

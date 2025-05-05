@@ -4,6 +4,7 @@
 // 2025-04-22   PV      Moved to a separate file
 // 2025-05-03	PV      Option -name
 // 2025-05-04   PV      Use MyMarkup for formatting
+// 2025-05-05   PV      is_option for Linux compatibility
 
 // Application imports
 use crate::*;
@@ -58,7 +59,7 @@ impl Options {
 ⟨source⟩           ¬File or directory to search
 
 ⌊Actions⌋:
-⦃-print⦄           ¬Default, print matching files names and dir names (dir names end with ⟦\\⟧)
+⦃-print⦄           ¬Default, print matching files names and dir names
 ⦃-dir⦄             ¬Variant of ⦃-print⦄, with last modification date and size
 ⦃-delete⦄          ¬Delete matching files
 ⦃-rmdir⦄           ¬Delete matching directories, whether empty or not";
@@ -91,11 +92,22 @@ impl Options {
             ..Default::default()
         };
 
+        // Works with Windows and Linux
+        fn is_option(arg: &str) -> bool {
+            #[cfg(windows)]
+            {
+                if arg.starts_with('/') {
+                    return true;
+                }
+            }
+            arg.starts_with('-')
+        }
+
         // Since we have non-standard long options, don't use getopt for options processing but a manual loop
         let mut args_iter = args.iter();
         args_iter.next(); // Skip application executable
         while let Some(arg) = args_iter.next() {
-            if arg.starts_with('-') || arg.starts_with('/') {
+            if is_option(arg) {
                 // Options are case insensitive
                 let arglc = arg[1..].to_lowercase();
 

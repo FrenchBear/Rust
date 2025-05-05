@@ -104,16 +104,16 @@ impl MyGlobSearch {
         "⌊Glob pattern rules⌋:
 • ¬⟦?⟧ matches any single character.
 • ¬⟦*⟧ matches any (possibly empty) sequence of characters.
-• ¬⟦**⟧ matches the current directory and arbitrary subdirectories. To match files in arbitrary subdirectories, use ⟦**\\*⟧. This sequence must form a single path component, so both **a and b** are invalid and will result in an error.
-• ¬⟦[...]⟧ matches any character inside the brackets. Character sequences can also specify ranges of characters, as ordered by Unicode, so e.g. ⟦[0-9]⟧ specifies any character between 0 and 9 inclusive. Special cases: ⟦[[]⟧ represents an opening bracket, ⟦[]]⟧ represents a closing bracket. 
-• ¬⟦[!...]⟧ is the negation of ⟦[...]⟧, i.e. it matches any characters not in the brackets.
+• ¬⟦**⟧ matches the current directory and arbitrary subdirectories. To match files in arbitrary subdirectories, use ⟦**/*⟧. This sequence must form a single path component, so both ⟦**a⟧ and ⟦b**⟧ are invalid and will result in an error.
+• ¬⟦[...]⟧ matches any character inside the brackets. Character sequences can also specify ranges of characters (Unicode order), so ⟦[0-9]⟧ specifies any character between 0 and 9 inclusive. Special cases: ⟦[[]⟧ represents an opening bracket, ⟦[]]⟧ represents a closing bracket. 
+• ¬⟦[!...]⟧ is the negation of ⟦[...]⟧, it matches any characters not in the brackets.
 • ¬The metacharacters ⟦?⟧, ⟦*⟧, ⟦[⟧, ⟦]⟧ can be matched by escaping them between brackets such as ⟦[\\?]⟧ or ⟦[\\[]⟧. When a ⟦]⟧ occurs immediately following ⟦[⟧ or ⟦[!⟧ then it is interpreted as being part of, rather then ending, the character set, so ⟦]⟧ and NOT ⟦]⟧ can be matched by ⟦[]]⟧ and ⟦[!]]⟧ respectively. The ⟦-⟧ character can be specified inside a character sequence pattern by placing it at the start or the end, e.g. ⟦[abc-]⟧.
 • ¬⟦{choice1,choice2...}⟧  match any of the comma-separated choices between braces. Can be nested, and include ⟦?⟧, ⟦*⟧ and character classes.
 • ¬Character classes ⟦[ ]⟧ accept regex syntax such as ⟦[\\d]⟧ to match a single digit, see https://docs.rs/regex/latest/regex/#character-classes for character classes and escape sequences supported.
 
 ⌊Autorecurse glob pattern transformation⌋:
-• ¬⟪Constant pattern (no filter, no ⟦**⟧) pointing to a directory: ⟦\\**\\*⟧ is appended at the end to search all files of all subdirectories.
-• ¬⟪Patterns without ⟦**⟧ and ending with a filter⟫: ⟦\\**⟧ is inserted before final filter to find all matching files of all subdirectories.
+• ¬⟪Constant pattern (no filter, no ⟦**⟧) pointing to a directory: ⟦/**/*⟧ is appended at the end to search all files of all subdirectories.
+• ¬⟪Patterns without ⟦**⟧ and ending with a filter⟫: ⟦/**⟧ is inserted before final filter to find all matching files of all subdirectories.
 "
     }
 
@@ -190,7 +190,9 @@ impl MyGlobBuilder {
             return Err(MyGlobError::GlobError("Glob pattern can't end with \\ or /".to_string()));
         }
         // Trick: add a final \ so that we don't have duplicate code to process last segment
-        let glob = self.glob_pattern.clone() + "\\";
+        let dir_sep = if cfg!(windows) { '\\' } else { '/' };
+        let mut glob = self.glob_pattern.clone();
+        glob.push(dir_sep);
 
         // First get root part, the constant segments at the beginning
         let mut cut = 0;
@@ -274,13 +276,13 @@ impl MyGlobBuilder {
                 }
                 '\\' | '/' => {
                     if brace_depth > 0 {
-                        return Err(MyGlobError::GlobError("Invalid \\ between { }".to_string()));
+                        return Err(MyGlobError::GlobError(format!("Invalid {c} between {{ }}")));
                     }
 
                     if constant_buffer == "**" {
                         segments.push(Segment::Recurse);
                     } else if constant_buffer.contains("**") {
-                        return Err(MyGlobError::GlobError("Glob pattern ** must be alone between \\".to_string()));
+                        return Err(MyGlobError::GlobError(format!("Glob pattern ** must be alone between {c}")));
                     } else if constant_buffer.chars().any(|c| "*?[{".contains(c)) {
                         if brace_depth > 0 {
                             return Err(MyGlobError::GlobError("Unclosed {".to_string()));

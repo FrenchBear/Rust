@@ -16,7 +16,8 @@ enum ConvResult {
 }
 
 fn glob_one_segment_test(glob_pattern: &str, cr: ConvResult, test_string: &str, is_match: bool) {
-    let res = MyGlobBuilder::glob_to_segments((glob_pattern.to_string() + "\\").as_str());
+    let dir_sep = if cfg!(windows) { '\\' } else { '/' };
+    let res = MyGlobBuilder::glob_to_segments((format!("{glob_pattern}{dir_sep}")).as_str());
     match res {
         Err(e) => {
             assert!(

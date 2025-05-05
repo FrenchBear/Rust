@@ -11,6 +11,7 @@
 // 2025-05-03	PV      1.6.0 Option -name
 // 2025-05-03	PV      1.6.0 Option -name
 // 2025-05-04   PV      1.6.1 Use MyMarkup for extended help formatting.
+// 2025-05-05	PV      1.6.2 Linux compatibility
 
 //#![allow(unused)]
 
@@ -38,7 +39,7 @@ use options::*;
 // Global constants
 
 const APP_NAME: &str = "rfind";
-const APP_VERSION: &str = "1.6.1";
+const APP_VERSION: &str = "1.6.2";
 
 // -----------------------------------
 // Traits
@@ -81,11 +82,16 @@ fn main() {
             match p.metadata() {
                 Ok(m) => {
                     if m.is_dir() {
+                        let dir_sep = if cfg!(windows) { '\\' } else { '/' };
+
                         if !(source.ends_with('/') || source.ends_with('\\')) {
-                            (*source) += "\\";
+                            (*source).push(dir_sep);
+                            (*source).push(dir_sep);
                         }
-                        *source += "**\\";
-                        *source += name.as_str();
+                        (*source).push_str("**");
+                        (*source).push(dir_sep);
+                        (*source).push(dir_sep);
+                    *source += name.as_str();
                     }
                 }
                 Err(_) => {}

@@ -3,6 +3,7 @@
 // 2025-03-29	PV      First version
 // 2025-03-31	PV      Action Print with option detail
 // 2025-04-06	PV      Use fs::remove_dir_all instead of fs::remove_dir to delete non-empty directories
+// 2025-05-05	PV      Linux compatibility
 
 use super::*;
 
@@ -51,23 +52,32 @@ impl Action for ActionPrint {
             } else {
                 logln(lw, path.display().to_string().as_str());
             }
-        } else if self.detailed_output {
-            match path.metadata() {
-                Ok(meta) => {
-                    // Last modified time formatting
-                    let modified_time = meta.modified().unwrap(); // Get last modified time
-                    let datetime_utc: DateTime<Utc> = DateTime::<Utc>::from(modified_time);
-                    let datetime_local = datetime_utc.with_timezone(&Local);
-                    let formatted_time = datetime_local.format("%d/%m/%Y %H:%M:%S");
-
-                    logln(lw, format!("{:>19}   {:<15} {}\\", formatted_time, "<DIR>", path.display()).as_str());
-                }
-                Err(e) => {
-                    logln(lw, format!("*** Error retrieving metadata for dir {}: {e}", path.display()).as_str());
-                }
-            }
         } else {
-            logln(lw, (path.display().to_string() + "\\").as_str());
+            let dir_sep = if cfg!(windows) { '\\' } else { '/' };
+
+            if self.detailed_output {
+                match path.metadata() {
+                    Ok(meta) => {
+                        // Last modified time formatting
+                        let modified_time = meta.modified().unwrap(); // Get last modified time
+                        let datetime_utc: DateTime<Utc> = DateTime::<Utc>::from(modified_time);
+                        let datetime_local = datetime_utc.with_timezone(&Local);
+                        let formatted_time = datetime_local.format("%d/%m/%Y %H:%M:%S");
+
+                        logln(
+                            lw,
+                            format!("{:>19}   {:<15} {}{dir_sep}", formatted_time, "<DIR>", path.display()).as_str(),
+                        );
+                    }
+                    Err(e) => {
+                        logln(lw, format!("*** Error retrieving metadata for dir {}: {e}", path.display()).as_str());
+                    }
+                }
+            } else {
+                let mut msg = path.display().to_string();
+                msg.push(dir_sep);
+                logln(lw, msg.as_str());
+            }
         }
     }
 
