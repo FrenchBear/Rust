@@ -44,7 +44,7 @@ impl Options {
         println!();
         let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄] [⦃-v⦄] [⦃-n⦄] [⦃-f⦄|⦃-type f⦄|⦃-d⦄|⦃-type d⦄] [⦃-e⦄|⦃-empty⦄] [⦃-r+⦄|⦃-r-⦄] [⦃-a+⦄|⦃-a-⦄] [⟨action⟩...] [⦃-name⦄ ⟨name⟩] ⟨source⟩...
 
-⟪Options:⟫
+⌊Options⌋:
 ⦃?⦄|⦃-?⦄|⦃-h⦄          ¬Show this message
 ⦃??⦄               ¬Show advanced usage notes
 ⦃-v⦄               ¬Verbose output
@@ -57,7 +57,7 @@ impl Options {
 ⦃-name⦄ ⟨name⟩       ¬Append ⟦**/⟧⟨name⟩ to each source directory (compatibility with XFind/Search)
 ⟨source⟩           ¬File or directory where to search
 
-⟪Actions⟫:
+⌊Actions⌋:
 ⦃-print⦄           ¬Default, print matching files names and dir names (dir names end with ⟦\\⟧)
 ⦃-dir⦄             ¬Variant of ⦃-print⦄, with last modification date and size
 ⦃-delete⦄          ¬Delete matching files
@@ -72,7 +72,7 @@ impl Options {
 
 ⟪⌊Advanced usage notes⌋⟫
 
-⌊Compatibility with XFind:⌋
+⌊Compatibility with XFind⌋:
 - ¬Option ⦃-norecycle⦄ can be used instead of ⦃-r-⦄ to indicate to delete forever.
 - ¬Option -name can be used to indicate a specific file name to search";
 

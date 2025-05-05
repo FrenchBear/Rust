@@ -36,7 +36,7 @@ impl Options {
         println!();
         let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄] [⦃-i⦄] [⦃-w⦄] [⦃-F⦄] [⦃-a+⦄|⦃-a-⦄] [⦃-v⦄] [⦃-c⦄] [⦃-l⦄] ⟨pattern⟩ [⟨source⟩...]
 
-⌊Options:⌋
+⌊Options⌋:
 ⦃?⦄|⦃-?⦄|⦃-h⦄  ¬Show this message
 ⦃??⦄       ¬Show advanced usage notes
 ⦃-v⦄       ¬Verbose output

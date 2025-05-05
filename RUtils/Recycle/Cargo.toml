@@ -1,14 +1,15 @@
 [package]
 name = "recycle"
 description = "Delete files and folders to trash"
-version = "1.1.1"
+version = "1.1.2"
 authors = ["Pierre Violent"]
 edition = "2024"
 
 [dependencies]
+myglob = { path = "../../Crates/MyGlob" }
+mymarkup = { path = "../../Crates/MyMarkup" }
 getopt = "1.1.7"
 colored = "3.0.0"
 chrono = "0.4.40"
 trash = "5.2.2"
-myglob = { path = "../../Crates/MyGlob" }
 windows = {version= "0.61.1", features = ["Win32_Foundation", "Win32_Storage_FileSystem", "Win32_System_IO"]}

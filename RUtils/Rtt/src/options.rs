@@ -34,9 +34,9 @@ impl Options {
     fn usage() {
         Options::header();
         println!();
-        let text = "⌊Usage:⌋ {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄] [⦃-a+⦄|⦃-a-⦄] [⦃-w⦄] [⦃-v⦄] [⟨source⟩...]
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄] [⦃-a+⦄|⦃-a-⦄] [⦃-w⦄] [⦃-v⦄] [⟨source⟩...]
 
-⌊Options:⌋
+⌊Options⌋:
 ⦃?⦄|⦃-?⦄|⦃-h⦄  ¬Show this message
 ⦃??⦄       ¬Show advanced usage notes
 ⦃-a+⦄|⦃-a-⦄  ¬Enable (default) or disable glob autorecurse mode (see extended usage)

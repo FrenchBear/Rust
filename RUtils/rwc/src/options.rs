@@ -34,15 +34,15 @@ impl Options {
     fn usage() {
         Options::header();
         println!();
-        let text = "⌊Usage:⌋ {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄] [⦃-a+⦄|⦃-a-⦄] [-⦃t⦄] [-⦃v⦄] [⟨source⟩...]
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄] [⦃-a+⦄|⦃-a-⦄] [-⦃t⦄] [-⦃v⦄] [⟨source⟩...]
 
-⌊Options:⌋
-⦃?⦄|⦃-?⦄|⦃-h⦄  ¬¬Show this message
-⦃??⦄       ¬¬Show advanced usage notes
-⦃-a+|-a-⦄  ¬¬Enable (default) or disable glob autorecurse mode (see extended usage)
-⦃-t⦄       ¬¬Only show total line
-⦃-v⦄       ¬¬Verbose output
-⟨source⟩   ¬¬File or folder where to search, glob syntax supported. Without source, search stdin.";
+⌊Options⌋:
+⦃?⦄|⦃-?⦄|⦃-h⦄  ¬Show this message
+⦃??⦄       ¬Show advanced usage notes
+⦃-a+|-a-⦄  ¬Enable (default) or disable glob autorecurse mode (see extended usage)
+⦃-t⦄       ¬Only show total line
+⦃-v⦄       ¬Verbose output
+⟨source⟩   ¬File or folder where to search, glob syntax supported. Without source, search stdin.";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }
@@ -60,9 +60,9 @@ Words are series of character(s) separated by space(s), spaces are either ASCII 
 
 Lines end with ⟦\\r⟧, ⟦\\n⟧ or ⟦\\r\\n⟧. If the last line of the file ends with such termination character, an extra empty line is counted.";
 
-MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
-MyMarkup::render_markup(MyGlobSearch::glob_syntax());
-}
+        MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
+        MyMarkup::render_markup(MyGlobSearch::glob_syntax());
+    }
 
     /// Build a new struct Options analyzing command line parameters.<br/>
     /// Some invalid/inconsistent options or missing arguments return an error.

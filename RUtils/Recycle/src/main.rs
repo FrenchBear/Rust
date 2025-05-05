@@ -1,19 +1,21 @@
 // recycle: Delete files and folders to trash
 //
 // 2025-04-03	PV      First version
-// 2025-04-17	PV      1.1 Fixed logic errors (return statement misplaced in embedded is blocks)
+// 2025-04-17	PV      1.1.0 Fixed logic errors (return statement misplaced in embedded is blocks)
+// 2025-05-05   PV      1.1.2 Use MyMarkup crate to format usage and extended help
 
-#![allow(unused)]
+//#![allow(unused)]
 
-// standard library imports
+// Standard library imports
 use std::error::Error;
 use std::path::Path;
 use std::process;
 use std::time::Instant;
 
-// external crates imports
+// External crates imports
 use getopt::Opt;
 use myglob::{MyGlobMatch, MyGlobSearch};
+use mymarkup::MyMarkup;
 
 // -----------------------------------
 // Submodules
@@ -31,7 +33,7 @@ use reparse::*;
 // Globals
 
 const APP_NAME: &str = "recycle";
-const APP_VERSION: &str = "1.1.1";
+const APP_VERSION: &str = "1.1.2";
 
 // ==============================================================================================
 // Options processing
@@ -47,7 +49,7 @@ pub struct Options {
 
 impl Options {
     fn header() {
-        eprintln!(
+        println!(
             "{APP_NAME} {APP_VERSION}\n\
             Delete files and folders to trash"
         );
@@ -55,14 +57,32 @@ impl Options {
 
     fn usage() {
         Options::header();
-        eprintln!(
-            "\nUsage: {APP_NAME} [?|-?|-h] [-v] [-s] [-n] source...\n\
-            ?|-?|-h  Show this message\n\
-            -v       Verbose output\n\
-            -s       Silent mode, silently ignore files/folders not found\n\
-            -n       No action (nothing deleted)\n\
-            source   File or folder to delete, or file glob pattern"
-        );
+        println!();
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄] [⦃-v⦄] [⦃-s⦄] [⦃-n⦄] ⟨source⟩...
+
+⌊Options⌋:
+⦃?⦄|⦃-?⦄|⦃-h⦄  ¬Show this message
+⦃??⦄       ¬Show advanced usage notes
+⦃-v⦄       ¬Verbose output
+⦃-s⦄       ¬Silent mode, silently ignore files/folders not found
+⦃-n⦄       ¬No action (nothing deleted)
+⟨source⟩   ¬File or folder to delete, or file glob pattern";
+
+        MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
+    }
+
+    fn extended_usage() {
+        Options::header();
+        let text =
+"Copyright ©2025 Pierre Violent
+
+⟪⌊Advanced usage notes⌋⟫
+
+Only local files (local drive or attached USB drive) support trash.
+Network files can't be deleted to recycle bin, so they can't be removed with this command (contrary to PDEL that will remove remote files permanently).";
+
+        MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
+        MyMarkup::render_markup(MyGlobSearch::glob_syntax());
     }
 
     /// Build a new struct Options analyzing command line parameters.<br/>
@@ -71,6 +91,11 @@ impl Options {
         let mut args: Vec<String> = std::env::args().collect();
         if args.len() > 1 && args[1].to_lowercase() == "help" {
             Self::usage();
+            return Err("".into());
+        }
+
+        if args[1] == "??" || args[1] == "-??" {
+            Self::extended_usage();
             return Err("".into());
         }
 

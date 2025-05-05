@@ -33,9 +33,9 @@ impl Options {
     fn usage() {
         Options::header();
         println!();
-        let text = "⌊Usage:⌋ {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄] [⦃-n⦄] [⦃-p⦄] [⦃-v⦄] [⦃-s #⦄] ⟨source⟩...
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄] [⦃-n⦄] [⦃-p⦄] [⦃-v⦄] [⦃-s #⦄] ⟨source⟩...
 
-⌊Options:⌋
+⌊Options⌋:
 ⦃?⦄|⦃-?⦄|⦃-h⦄  ¬Show this message
 ⦃??⦄       ¬Show advanced usage notes
 ⦃-n⦄       ¬Do not actually rename (no action)

@@ -12,7 +12,7 @@ use windows::core::PCWSTR;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[repr(u32)]
-#[allow(non_camel_case_types)]
+#[allow(non_camel_case_types, unused)]
 pub enum DriveType {
     DRIVE_UNKNOWN = 0,
     DRIVE_NO_ROOT_DIR = 1, // Also returned for inexistent drives

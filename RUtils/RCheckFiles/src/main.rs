@@ -7,8 +7,9 @@
 // 2025-03-29	PV      1.2.2 Renamed rcheckfiles
 // 2025-04-03	PV      1.3.0 Code reorganization, module logging
 // 2025-04-08	PV      1.4.0 Check brackets (incl. unit tests)
+// 2025-05-05   PV      1.4.2 Use MyMarkup crate to format usage
 
-// standard library imports
+// Standard library imports
 use std::collections::HashSet;
 use std::error::Error;
 use std::fs;
@@ -17,9 +18,10 @@ use std::path::Path;
 use std::process;
 use std::time::Instant;
 
-// external crates imports
+// External crates imports
 use getopt::Opt;
 use logging::*;
+use mymarkup::MyMarkup;
 use unicode_normalization::{UnicodeNormalization, is_nfc};
 
 // -----------------------------------
@@ -32,7 +34,7 @@ pub mod tests;
 // Globals
 
 const APP_NAME: &str = "rcheckfiles";
-const APP_VERSION: &str = "1.4.1";
+const APP_VERSION: &str = "1.4.2";
 
 const SPECIAL_CHARS: &str = "€®™©–—…×·•∶⧹⧸／⚹†‽¿🎜🎝♫♪“”⚡♥";
 
@@ -102,7 +104,7 @@ pub struct Options {
 
 impl Options {
     fn header() {
-        eprintln!(
+        println!(
             "{APP_NAME} {APP_VERSION}\n\
             Detect and fix incorrect filenames"
         );
@@ -110,12 +112,13 @@ impl Options {
 
     fn usage() {
         Options::header();
-        eprintln!(
-            "\nUsage: {APP_NAME} [?|-?|-h] [-f] source...\n\
-            ?|-?|-h  Show this message\n\
-            -f       Automatic problems fixing\n\
-            source   File or folder to analyze"
-        );
+        println!();
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄] [⦃-f⦄] ⟨source⟩...
+⦃?⦄|⦃-?⦄|⦃-h⦄  ¬Show this message
+⦃-f⦄       ¬Automatic problems fixing
+⟨source⟩   ¬File or folder to analyze";
+
+        MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }
 
     /// Build a new struct Options analyzing command line parameters.<br/>
@@ -341,7 +344,7 @@ fn process_file(p: &Path, files_stats: &mut Statistics, fixit: bool, writer: &mu
 fn check_basename(p: &Path, pt: &str, stats: &mut Statistics, writer: &mut LogWriter, pconfusables: &Confusables) -> Option<String> {
     let fp = p.display();
     let file = p.file_name();
-    file?;  // file is None with network paths such as \\teraz\photo, that's normal, return None
+    file?; // file is None with network paths such as \\teraz\photo, that's normal, return None
 
     let file = file.unwrap().to_str();
     if file.is_none() {
@@ -453,7 +456,6 @@ fn check_basename(p: &Path, pt: &str, stats: &mut Statistics, writer: &mut LogWr
     if file == original_file { None } else { Some(file) }
 }
 
-
 /// Checks that () [] {} «» ‹› pairs are correctly embedded and closed in a string
 pub fn is_balanced(s: &str) -> bool {
     let mut stack = Vec::<char>::new();
@@ -488,5 +490,5 @@ pub fn is_balanced(s: &str) -> bool {
         }
     }
 
-    current_state==' '
+    current_state == ' '
 }
