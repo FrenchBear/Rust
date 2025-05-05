@@ -3,6 +3,7 @@
 //
 // 2025-05-02   PV      First version, deep rewrite of decode_encoding module, with bugs fixed and tests
 // 2025-05-03   PV      1.0.1 Detection of UTF-16 without BOM is only for files with more than 20 bytes (10 characters)
+// 2025-05-06   PV      1.1.0 is_75percent_ascii is only for 8-bit files, use no_binary for other encodings
 
 #![allow(unused_variables, dead_code, unused_imports)]
 
@@ -23,7 +24,7 @@ mod tests;
 // -----------------------------------
 // Globals
 
-const LIB_VERSION: &str = "1.0.1";
+const LIB_VERSION: &str = "1.1.0";
 
 // -----------------------------------
 // Structures
@@ -105,7 +106,7 @@ impl TextAutoDecode {
 
         // UTF-16 LE BOM? (Windows)
         if n >= 2 && buffer_1000[0] == 0xFF && buffer_1000[1] == 0xFE {
-            if let Some(s) = Self::check_utf16(&buffer_1000, n, UTF_16LE) {
+            if let Some(s) = Self::check_utf16(&buffer_1000, n, UTF_16LE, false) {
                 if n < 1000 {
                     return Ok(TextAutoDecode {
                         text: Some(s),
@@ -130,7 +131,7 @@ impl TextAutoDecode {
 
         // UTF-16 BE BOM?
         if n >= 2 && buffer_1000[0] == 0xFE && buffer_1000[1] == 0xFF {
-            if let Some(s) = Self::check_utf16(&buffer_1000, n, UTF_16BE) {
+            if let Some(s) = Self::check_utf16(&buffer_1000, n, UTF_16BE, false) {
                 if n < 1000 {
                     return Ok(TextAutoDecode {
                         text: Some(s),
@@ -154,13 +155,13 @@ impl TextAutoDecode {
         }
 
         // Then check encodings without BOM
-        
+
         // UTF-8 without BOM?
         // Note that if string is only ASCII text, then type is assumed ASCII instead of UTF-8
         if let Some(cow) = Self::check_utf8(&buffer_1000, n) {
             if n < 1000 {
                 let s = cow.into_owned();
-                let e = if is_ascii_text(s.as_bytes()) {
+                let e = if Self::is_ascii_text(s.as_bytes()) {
                     TextFileEncoding::ASCII
                 } else {
                     TextFileEncoding::UTF8
@@ -174,7 +175,7 @@ impl TextAutoDecode {
         // UTF-16 LE? (Windows)
         // Only files with more than 10 characters (20 bytes) are tested and checked for 75% ASCII, or many small binary non text-files will match
         if n > 20 {
-            if let Some(s) = Self::check_utf16(&buffer_1000, n, UTF_16LE) {
+            if let Some(s) = Self::check_utf16(&buffer_1000, n, UTF_16LE, true) {
                 if n < 1000 {
                     return Ok(TextAutoDecode {
                         text: Some(s),
@@ -192,7 +193,7 @@ impl TextAutoDecode {
             }
 
             // UTF-16 BE?
-            if let Some(s) = Self::check_utf16(&buffer_1000, n, UTF_16BE) {
+            if let Some(s) = Self::check_utf16(&buffer_1000, n, UTF_16BE, true) {
                 if n < 1000 {
                     return Ok(TextAutoDecode {
                         text: Some(s),
@@ -235,6 +236,25 @@ impl TextAutoDecode {
         });
     }
 
+    // The 75% ASCII test is too restrictive, some valud UTF-8 files are rejected (ex: output of tree command)
+    // So we only detect control characters that should not be present in a text file
+    // Old text files may contain FF (Form Feed, 12) or VT (Vertical Tab, 11), but it's unlikely for common files
+    fn no_binary_chars(chars: std::str::Chars<'_>, also_check_block_c1: bool) -> bool {
+        for c in chars {
+            let b = c as i32;
+            // In C0 block, only three usual characters are accepted
+            if b < 32 && (b != 9 && b != 10 && b != 13) {
+                return false;
+            }
+            // If requested, no characters of C1 is accepted (for all encodings but 8-bit)
+            if also_check_block_c1 && b >= 128 && b < 160 {
+                return false;
+            }
+        }
+
+        true
+    }
+
     // Check that string s doesn't contain a null char and contains at least 75% of ASCII 32..127, CR, LF, TAB
     // Type std::str::Chars<'_> is just an iterable on chars
     fn is_75percent_ascii(chars: std::str::Chars<'_>) -> bool {
@@ -243,7 +263,9 @@ impl TextAutoDecode {
         for c in chars {
             len += 1;
             let b = c as i32;
-            if b == 0 {
+            // For 8-bit files, we only exclude non-comon elements of C0 block, and DEL (127) char
+            // Anything in [128..255] is accepted
+            if b == 128 || b < 32 && (b != 9 && b != 10 && b != 13) {
                 return false;
             }
             if (32..128).contains(&b) || b == 9 || b == 10 || b == 13 {
@@ -271,9 +293,15 @@ impl TextAutoDecode {
 
         let (decoded_string, used_encoding, had_errors) = encoding.decode(&buffer_full[..]);
 
-        let mut check_ascii = false;
+        // No need to continue if decoding failed
+        if had_errors {
+            return Ok(TextAutoDecode {
+                text: None,
+                encoding: TextFileEncoding::NotText,
+            });
+        }
+
         let my_encoding = if let Some(e) = my_encoding_opt {
-            check_ascii = e == TextFileEncoding::UTF8;
             e
         } else if used_encoding == UTF_8 {
             TextFileEncoding::UTF8
@@ -287,25 +315,37 @@ impl TextAutoDecode {
             unreachable!();
         };
 
-        if !had_errors && Self::is_75percent_ascii(decoded_string.chars()) {
-            let s = decoded_string.into_owned();
-            let e = if check_ascii {
-                if is_ascii_text(s.as_bytes()) {
-                    TextFileEncoding::ASCII
-                } else {
-                    TextFileEncoding::UTF8
-                }
-            } else {
-                my_encoding
-            };
+        let check_ascii = my_encoding == TextFileEncoding::UTF8;
+        let check_75percent_text =
+            my_encoding == TextFileEncoding::EightBit || my_encoding == TextFileEncoding::UTF16BE || my_encoding == TextFileEncoding::UTF16BE;
 
-            return Ok(TextAutoDecode { text: Some(s), encoding: e });
-        } else {
+        // Special heuristics to be sure it's a valid text files
+        if check_75percent_text && !Self::is_75percent_ascii(decoded_string.chars()) {
             return Ok(TextAutoDecode {
                 text: None,
                 encoding: TextFileEncoding::NotText,
             });
         }
+
+        if my_encoding != TextFileEncoding::EightBit && !Self::no_binary_chars(decoded_string.chars(), my_encoding == TextFileEncoding::EightBit) {
+            return Ok(TextAutoDecode {
+                text: None,
+                encoding: TextFileEncoding::NotText,
+            });
+        };
+
+        let s = decoded_string.into_owned();
+        let e = if check_ascii {
+            if Self::is_ascii_text(s.as_bytes()) {
+                TextFileEncoding::ASCII
+            } else {
+                TextFileEncoding::UTF8
+            }
+        } else {
+            my_encoding
+        };
+
+        return Ok(TextAutoDecode { text: Some(s), encoding: e });
     }
 
     fn check_utf8(buffer_1000: &[u8], n: usize) -> Option<Cow<str>> {
@@ -331,14 +371,14 @@ impl TextAutoDecode {
         let (decoded_string, used_encoding, had_errors) = UTF_8.decode(test_buffer);
 
         // Return decoding succeeded without errors and content is text
-        if !had_errors && Self::is_75percent_ascii(decoded_string.chars()) {
+        if !had_errors && Self::no_binary_chars(decoded_string.chars(), true) {
             Some(decoded_string)
         } else {
             None
         }
     }
 
-    fn check_utf16(buffer_1000: &[u8], n: usize, encoding: &'static Encoding) -> Option<String> {
+    fn check_utf16(buffer_1000: &[u8], n: usize, encoding: &'static Encoding, no_bom: bool) -> Option<String> {
         let test_buffer=
             // We have to check whether we truncated reading in the middle of a surrogate sequence when reading 1000 bytes max.
             // Lead surrogate is 0xD800-0xDBFF (and tail surrogate is 0xDC00-0xDFFF), if the byte at index 998 is 0xD8, then
@@ -360,8 +400,18 @@ impl TextAutoDecode {
             };
         let (decoded_string, used_encoding, had_errors) = encoding.decode(test_buffer);
 
-        // Return decoding succeeded without errors and content is text
-        if !had_errors && Self::is_75percent_ascii(decoded_string.chars()) {
+        if had_errors {
+            return None;
+        }
+
+        // If there is no BOM, actually UTF-16 BE can be decoded as UTF-16 LE and also the reverse in most of cases.
+        // To be sure there is no confusion, add an extra heuristics to check that content is 75% ASCII
+        if no_bom && !Self::is_75percent_ascii(decoded_string.chars()) {
+            return None;
+        }
+
+        // Return decoding succeeded without if there are no binary chars in text (C0 and C1)
+        if Self::no_binary_chars(decoded_string.chars(), true) {
             Some(decoded_string.into_owned())
         } else {
             None
@@ -379,14 +429,14 @@ impl TextAutoDecode {
             None
         }
     }
-}
 
-// Stricter version of encoding_rs::mem::is_ascii, presence of chars <32  other than \r, \n or \t are not considered ASCII here
-fn is_ascii_text(bytes: &[u8]) -> bool {
-    for &b in bytes.iter() {
-        if b > 126 || (b < 32 && b != b'\r' && b != b'\n' && b != b'\t') {
-            return false;
+    // Stricter version of encoding_rs::mem::is_ascii, presence of chars <32  other than \r, \n or \t are not considered ASCII here
+    fn is_ascii_text(bytes: &[u8]) -> bool {
+        for &b in bytes.iter() {
+            if b > 126 || (b < 32 && b != b'\r' && b != b'\n' && b != b'\t') {
+                return false;
+            }
         }
+        true
     }
-    true
 }

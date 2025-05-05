@@ -13,11 +13,16 @@ pub use textautodecode::*;
 fn main() {
     println!("TextAutoDecode lib version: {}\n", TextAutoDecode::version());
 
-    let file = Path::new(r"C:\DocumentsOD\Doc tech\Encodings\prenoms-utf8.txt");
+    // let file = Path::new(r"C:\DocumentsOD\Doc tech\Encodings\prenoms-utf8.txt");
+    let file = Path::new(r"C:\Temp\f1.txt");
+    let file = Path::new(r"C:\DocumentsOD\Doc tech\Encodings\prenoms-utf16be.txt");
+
     let tad = TextAutoDecode::read_text_file(file)
         .expect("Error decoding file");
 
     println!("File: {}", file.display());
     println!("Encoding: {:?}", tad.encoding);
-    println!("Content:\n{}", tad.text.unwrap());
+    if let Some(txt) = tad.text {
+        // println!("{}", txt);
+    }
 }
