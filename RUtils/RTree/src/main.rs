@@ -133,7 +133,7 @@ fn is_well_hidden(path: &Path) -> bool {
         let attributes = metadata.file_attributes();
         let is_system = (attributes & 0x00000004) != 0;
         let is_hidden = (attributes & 0x00000002) != 0;
-        return is_system | is_hidden;
+        return is_system & is_hidden;
     }
 
     false
