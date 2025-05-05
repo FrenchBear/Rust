@@ -39,7 +39,7 @@ pub fn test_myglob(pattern: &str, autorecurse: bool, ignore_dirs: &[&str], loops
                             nf += 1;
                         }
                         MyGlobMatch::Dir(pb) => {
-                            let dir_sep = if cfg!(windows) { '\\' } else { '/' };
+                            let dir_sep = if cfg!(target_os = "windows") { '\\' } else { '/' };
                             println!("{}{dir_sep}", pb.display());
                             nd += 1;
                         }

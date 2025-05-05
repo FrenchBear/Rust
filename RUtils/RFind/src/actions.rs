@@ -53,7 +53,7 @@ impl Action for ActionPrint {
                 logln(lw, path.display().to_string().as_str());
             }
         } else {
-            let dir_sep = if cfg!(windows) { '\\' } else { '/' };
+            let dir_sep = if cfg!(target_os = "windows") { '\\' } else { '/' };
 
             if self.detailed_output {
                 match path.metadata() {

@@ -79,22 +79,19 @@ fn main() {
 
         for source in &mut options.sources {
             let p = Path::new(&source);
-            match p.metadata() {
-                Ok(m) => {
-                    if m.is_dir() {
-                        let dir_sep = if cfg!(windows) { '\\' } else { '/' };
+            if let Ok(m) = p.metadata() {
+                if m.is_dir() {
+                    let dir_sep = if cfg!(target_os = "windows") { '\\' } else { '/' };
 
-                        if !(source.ends_with('/') || source.ends_with('\\')) {
-                            (*source).push(dir_sep);
-                            (*source).push(dir_sep);
-                        }
-                        (*source).push_str("**");
+                    if !(source.ends_with('/') || source.ends_with('\\')) {
                         (*source).push(dir_sep);
                         (*source).push(dir_sep);
-                    *source += name.as_str();
                     }
+                    (*source).push_str("**");
+                    (*source).push(dir_sep);
+                    (*source).push(dir_sep);
+                    *source += name.as_str();
                 }
-                Err(_) => {}
             }
         }
     }

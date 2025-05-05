@@ -94,7 +94,7 @@ impl Options {
 
         // Works with Windows and Linux
         fn is_option(arg: &str) -> bool {
-            #[cfg(windows)]
+            #[cfg(target_os = "windows")]
             {
                 if arg.starts_with('/') {
                     return true;

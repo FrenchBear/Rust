@@ -190,7 +190,7 @@ impl MyGlobBuilder {
             return Err(MyGlobError::GlobError("Glob pattern can't end with \\ or /".to_string()));
         }
         // Trick: add a final \ so that we don't have duplicate code to process last segment
-        let dir_sep = if cfg!(windows) { '\\' } else { '/' };
+        let dir_sep = if cfg!(target_os = "windows") { '\\' } else { '/' };
         let mut glob = self.glob_pattern.clone();
         glob.push(dir_sep);
 

@@ -8,7 +8,7 @@
 // Standard library imports
 use std::fs;
 use std::io;
-#[cfg(windows)]
+#[cfg(target_os = "windows")]
 use std::os::windows::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use std::process;
@@ -128,7 +128,7 @@ fn is_well_hidden(path: &Path) -> bool {
         Err(_) => return false,
     };
 
-    #[cfg(windows)]
+    #[cfg(target_os = "windows")]
     {
         let attributes = metadata.file_attributes();
         let is_system = (attributes & 0x00000004) != 0;
