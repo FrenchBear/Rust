@@ -15,6 +15,7 @@ use std::path::Path;
 
 // external crates imports
 use encoding_rs::{Encoding, UTF_8, UTF_16BE, UTF_16LE, WINDOWS_1252};
+use tempfile as _;
 
 // -----------------------------------
 // Submodules

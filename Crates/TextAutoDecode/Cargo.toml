@@ -7,3 +7,4 @@ authors = ["Pierre Violent"]
 
 [dependencies]
 encoding_rs = "0.8"
+tempfile = "3.19.1"

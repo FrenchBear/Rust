@@ -122,8 +122,6 @@ pub fn get_bytevector_from_byterange<R>(s: &str, byte_range: R) -> Vec<u8>
 where
     R: RangeBounds<usize>,
 {
-    // ToDo: Check which version is the most efficient
-    //Vec::from(&s.as_bytes()[validate_byterange(s.len(), byte_range)])
     s[validate_byterange(s.len(), byte_range)].bytes().collect()
 }
 

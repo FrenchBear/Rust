@@ -7,7 +7,9 @@
 
 use std::path::Path;
 
+use tempfile as _;
 use encoding_rs as _;
+
 pub use textautodecode::*;
 
 fn main() {

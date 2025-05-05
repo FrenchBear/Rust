@@ -1,10 +1,13 @@
 // tests.rs - textautodecode tests
 //
 // 2025-05-02   PV
-
-// ToDo: add invalid files and make sure they're correctly detected as non-text
+// 2025-05-06   PV      Tests with non-text content
 
 #![cfg(test)]
+
+use std::io::Write;
+use std::io::Error;
+use tempfile::Builder;
 
 use crate::*;
 
@@ -85,4 +88,36 @@ fn test_1252() {
     let t = get_fmt(Path::new(r"C:\DocumentsOD\Doc tech\Encodings\prenoms-1252.txt"));
     assert_eq!(t.encoding, TextFileEncoding::EightBit);
     assert!(t.text.unwrap().starts_with("juliette sophie brigitte géraldine"));
+}
+
+#[test]
+fn test_utf16_too_short() -> Result<(), io::Error> {
+    let model: [u8; 8] = [
+        // <= 20 bytes, won't be recognized as a valid UTF-16 file
+        0x41, 0x00, // A
+        b'\n', 0x00, // Unix EOL
+        0x61, 0x00, // a
+        b'\n', 0x00, // Unix EOL
+    ];
+
+    let mut temp_file = Builder::new().tempfile()?;
+    temp_file.write_all(&model)?;
+    let t = get_fmt(temp_file.path());
+    assert_eq!(t.encoding, TextFileEncoding::NotText);
+    Ok(())
+}
+
+#[test]
+fn test_utf8_with_binary_char() -> Result<(), io::Error> {
+    let model: [u8; 9] = [
+        0xEF, 0xBB, 0xBF,  // UTF-8 BOM
+        0x41, 0x42, 0x43,  // ABC
+        0x07,              // BEL: Not a valid text char!
+        0x0D, 0x0A,        // CR, LF
+    ];
+    let mut temp_file = Builder::new().tempfile()?;
+    temp_file.write_all(&model)?;
+    let t = get_fmt(temp_file.path());
+    assert_eq!(t.encoding, TextFileEncoding::NotText);
+    Ok(())
 }

@@ -20,14 +20,6 @@ const DRIVE_RAMDISK: u32 = 6;
 fn is_local_or_remote(path: &Path) -> Result<String, String> {
     let root_path = match path.components().next() {
         Some(std::path::Component::Prefix(prefix)) => {
-            // match prefix.kind() {
-            //     std::path::Prefix::Verbatim(os_str) => todo!(),
-            //     std::path::Prefix::VerbatimUNC(os_str, os_str1) => todo!(),
-            //     std::path::Prefix::VerbatimDisk(_) => todo!(),
-            //     std::path::Prefix::DeviceNS(os_str) => todo!(),
-            //     std::path::Prefix::UNC(os_str, os_str1) => todo!(),
-            //     std::path::Prefix::Disk(_) => todo!(),
-            // }
             match prefix.kind() {
                 std::path::Prefix::Disk(disk) => {
                     // let drive_str: Vec<u16> = OsStr::new(&format!("{}:\\", disk as char)).encode_wide().chain(std::iter::once(0)).collect();
@@ -48,7 +40,14 @@ fn is_local_or_remote(path: &Path) -> Result<String, String> {
                     )
                 }
                 _ => {
-                    return Err("Path is not a drive or UNC path".to_string());
+                    // Other cases: 
+                    // Prefix::Verbatim(os_str)
+                    // Prefix::VerbatimUNC(os_str, os_str1)
+                    // Prefix::VerbatimDisk(_)
+                    // Prefix::DeviceNS(os_str)
+                    // Prefix::UNC(os_str, os_str1)
+                    // Prefix::Disk(_)
+            return Err("Path is not a drive or UNC path".to_string());
                 }
             }
         }

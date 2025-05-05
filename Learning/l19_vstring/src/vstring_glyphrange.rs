@@ -115,8 +115,6 @@ pub fn get_bytevector_from_glyphrange<R>(s: &str, glyph_range: R) -> Vec<u8>
 where
     R: RangeBounds<usize>,
 {
-    // ToDo: Check which version is the most efficient
-    //Vec::from_iter((&s[validate_glyphrange(s, glyph_range)]).bytes())
     (s[validate_glyphrange(s, glyph_range).byte_range])
         .bytes()
         .collect()
