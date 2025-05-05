@@ -8,6 +8,8 @@
 // Standard library imports
 use std::fs;
 use std::io;
+#[cfg(windows)]
+use std::os::windows::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use std::process;
 use std::time::Instant;
@@ -81,7 +83,9 @@ fn do_print(b: &mut DataBag, source: &str) -> Result<(), io::Error> {
 
     let num_subdirs = result.len();
     for (i, subdir) in result.iter().enumerate() {
-        print_tree(b, subdir, "", i == num_subdirs - 1)?;
+        if !is_well_hidden(subdir) {
+            print_tree(b, subdir, "", i == num_subdirs - 1)?;
+        }
     }
 
     Ok(())
@@ -102,6 +106,7 @@ fn print_tree(b: &mut DataBag, dir: &Path, prefix: &str, is_last: bool) -> io::R
         .filter_map(Result::ok)
         .map(|entry| entry.path())
         .filter(|path| path.is_dir())
+        .filter(|path| !is_well_hidden(path))
         .collect();
 
     entries.sort(); // Sort alphabetically for consistent output
@@ -112,4 +117,24 @@ fn print_tree(b: &mut DataBag, dir: &Path, prefix: &str, is_last: bool) -> io::R
     }
 
     Ok(())
+}
+
+// We don't include HIDDEN+SYSTEM directories such as $RECYCLE.BIN or System Volume Information
+// But just hidden dirs such as .git are included
+// But just hidden dirs such as .git are included
+fn is_well_hidden(path: &Path) -> bool {
+    let metadata = match fs::metadata(path) {
+        Ok(m) => m,
+        Err(_) => return false,
+    };
+
+    #[cfg(windows)]
+    {
+        let attributes = metadata.file_attributes();
+        let is_system = (attributes & 0x00000004) != 0;
+        let is_hidden = (attributes & 0x00000002) != 0;
+        return is_system | is_hidden;
+    }
+
+    false
 }
