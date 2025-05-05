@@ -81,11 +81,12 @@ fn do_print(b: &mut DataBag, source: &str) -> Result<(), io::Error> {
     }
 
     println!("{}", start_dir.to_string_lossy());
-    let result = fs::read_dir(start_dir)?
+    let mut result = fs::read_dir(start_dir)?
         .filter_map(Result::ok)
         .map(|entry| entry.path())
         .filter(|path| path.is_dir())
         .collect::<Vec<PathBuf>>();
+    result.sort();
 
     let num_subdirs = result.len();
     for (i, subdir) in result.iter().enumerate() {
