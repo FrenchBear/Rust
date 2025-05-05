@@ -189,7 +189,7 @@ impl MyMarkup {
                                 }
                                 print!("|");
                             }
-                            println!("");
+                            println!();
                             for _ in 0..tab {
                                 print!(" ");
                             }
@@ -200,7 +200,7 @@ impl MyMarkup {
                             print!("{}", word);
                             col = tab + len;
                             if SHOW_LIMITS {
-                                while col <= width - 1 {
+                                while col < width {
                                     col += 1;
                                     print!(" ");
                                 }
@@ -251,7 +251,7 @@ impl MyMarkup {
                                 }
                                 print!("|");
                             }
-                            println!("");
+                            println!();
                             for _ in 0..tab {
                                 print!(" ");
                             }

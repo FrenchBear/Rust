@@ -1,0 +1,10 @@
+[package]
+name = "rtree"
+description = "Visual directory structure in Rust"
+version = "1.0.0"
+authors = ["Pierre Violent"]
+edition = "2024"
+
+[dependencies]
+mymarkup = { path = "../../Crates/MyMarkup" }
+getopt = "1.1.7"
