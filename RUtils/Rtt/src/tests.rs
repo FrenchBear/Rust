@@ -3,16 +3,14 @@
 // 2025-04-21   PV
 
 #[cfg(test)]
-
 use crate::*;
 
 #[test]
 fn test_empty() -> Result<(), io::Error> {
     let mut temp_file = Builder::new().tempfile()?;
     temp_file.write_all(&[])?;
-    let o = Options {..Default::default()};
-    let mut b = DataBag {..Default::default()};
-    let res = process_file(&mut b, temp_file.path(), Path::new("(test empty)"), &o);
+    let mut b = DataBag { ..Default::default() };
+    let res = process_file(&mut b, temp_file.path(), Path::new("(test empty)"));
 
     assert_eq!(res.as_str(), "(test empty): «Empty file»");
 
@@ -37,12 +35,11 @@ fn test_empty() -> Result<(), io::Error> {
 fn test_ascii() -> Result<(), io::Error> {
     let mut temp_file = Builder::new().tempfile()?;
     temp_file.write_all(&[b'H', b'e', b'l', b'l', b'o', b'\r', b'\n'])?;
-    let o = Options {..Default::default()};
-    let mut b = DataBag {..Default::default()};
-    let res = process_file(&mut b, temp_file.path(), Path::new("(test ascii)"), &o);
-    
+    let mut b = DataBag { ..Default::default() };
+    let res = process_file(&mut b, temp_file.path(), Path::new("(test ascii)"));
+
     assert_eq!(res.as_str(), "(test ascii): ASCII, Windows");
-    
+
     assert_eq!(b.files_types.total, 1);
     assert_eq!(b.files_types.empty, 0);
     assert_eq!(b.files_types.ascii, 1);
@@ -64,12 +61,11 @@ fn test_ascii() -> Result<(), io::Error> {
 fn test_nontext1() -> Result<(), io::Error> {
     let mut temp_file = Builder::new().tempfile()?;
     temp_file.write_all(&[0xCA, 0xFE, 0xDE, 0xAD, 0xBE, 0xEF])?;
-    let o = Options {..Default::default()};
-    let mut b = DataBag {..Default::default()};
-    let res = process_file(&mut b, temp_file.path(), Path::new("(test non-text)"), &o);
-    
+    let mut b = DataBag { ..Default::default() };
+    let res = process_file(&mut b, temp_file.path(), Path::new("(test non-text)"));
+
     assert_eq!(res.as_str(), "");
-    
+
     assert_eq!(b.files_types.total, 1);
     assert_eq!(b.files_types.empty, 0);
     assert_eq!(b.files_types.ascii, 0);
@@ -91,12 +87,14 @@ fn test_nontext1() -> Result<(), io::Error> {
 fn test_nontext2() -> Result<(), io::Error> {
     let mut temp_file = Builder::new().tempfile()?;
     temp_file.write_all(&[0xCA, 0xFE, 0xDE, 0xAD, 0xBE, 0xEF])?;
-    let o = Options {..Default::default()};
-    let mut b = DataBag {..Default::default()};
-    let res = process_file(&mut b, temp_file.path(), Path::new("non-text.rs"), &o);
-    
-    assert_eq!(res.as_str(), "non-text.rs: «Non-text file detected, but extension rs is usually a text file»");
-    
+    let mut b = DataBag { ..Default::default() };
+    let res = process_file(&mut b, temp_file.path(), Path::new("non-text.rs"));
+
+    assert_eq!(
+        res.as_str(),
+        "non-text.rs: «Non-text file detected, but extension rs is usually a text file»"
+    );
+
     assert_eq!(b.files_types.total, 1);
     assert_eq!(b.files_types.empty, 0);
     assert_eq!(b.files_types.ascii, 0);
@@ -127,9 +125,8 @@ fn test_utf8() -> Result<(), io::Error> {
 
     let mut temp_file = Builder::new().tempfile()?;
     temp_file.write_all(&model)?;
-    let o = Options {..Default::default()};
-    let mut b = DataBag {..Default::default()};
-    let res = process_file(&mut b, temp_file.path(), Path::new("(test utf8)"), &o);
+    let mut b = DataBag { ..Default::default() };
+    let res = process_file(&mut b, temp_file.path(), Path::new("(test utf8)"));
 
     assert_eq!(res.as_str(), "(test utf8): UTF-8, No EOL detected");
 
@@ -153,16 +150,15 @@ fn test_utf8() -> Result<(), io::Error> {
 #[test]
 fn test_utf8bom() -> Result<(), io::Error> {
     let model: [u8; 5] = [
-        0xEF, 0xBB, 0xBF,   // UTF-8 BOM
-        0x41, // A
+        0xEF, 0xBB, 0xBF,  // UTF-8 BOM
+        0x41,  // A
         b'\r', // Mac EOL
     ];
 
     let mut temp_file = Builder::new().tempfile()?;
     temp_file.write_all(&model)?;
-    let o = Options {..Default::default()};
-    let mut b = DataBag {..Default::default()};
-    let res = process_file(&mut b, temp_file.path(), Path::new("(test utf8bom)"), &o);
+    let mut b = DataBag { ..Default::default() };
+    let res = process_file(&mut b, temp_file.path(), Path::new("(test utf8bom)"));
 
     assert_eq!(res.as_str(), "(test utf8bom): UTF-8 «with BOM», Mac");
 
@@ -186,20 +182,19 @@ fn test_utf8bom() -> Result<(), io::Error> {
 #[test]
 fn test_utf16lebom() -> Result<(), io::Error> {
     let model: [u8; 16] = [
-        0xFF, 0xFE,   // UTF-16 LE BOM
+        0xFF, 0xFE, // UTF-16 LE BOM
         0x41, 0x00, // A
         0x42, 0x00, // B
         b'\n', 0x00, // Unix EOL
         0x43, 0x00, // C
         0x44, 0x00, // D
-        b'\r', 0x00, b'\n', 0x00 // Windows EOL
+        b'\r', 0x00, b'\n', 0x00, // Windows EOL
     ];
 
     let mut temp_file = Builder::new().tempfile()?;
     temp_file.write_all(&model)?;
-    let o = Options {..Default::default()};
-    let mut b = DataBag {..Default::default()};
-    let res = process_file(&mut b, temp_file.path(), Path::new("(test utf16lebom)"), &o);
+    let mut b = DataBag { ..Default::default() };
+    let res = process_file(&mut b, temp_file.path(), Path::new("(test utf16lebom)"));
 
     assert_eq!(res.as_str(), "(test utf16lebom): UTF-16 LE, «Mixed EOL styles»");
 
@@ -222,7 +217,8 @@ fn test_utf16lebom() -> Result<(), io::Error> {
 
 #[test]
 fn test_utf16le1() -> Result<(), io::Error> {
-    let model: [u8; 24] = [ // Nooed more than 20 bytes
+    let model: [u8; 24] = [
+        // Nooed more than 20 bytes
         0x41, 0x00, // A
         0x42, 0x00, // B
         0x43, 0x00, // C
@@ -234,14 +230,13 @@ fn test_utf16le1() -> Result<(), io::Error> {
         0x63, 0x00, // c
         0x64, 0x00, // d
         0x65, 0x00, // e
-        b'\n', 0x00 // Unix EOL
+        b'\n', 0x00, // Unix EOL
     ];
 
     let mut temp_file = Builder::new().tempfile()?;
     temp_file.write_all(&model)?;
-    let o = Options {..Default::default()};
-    let mut b = DataBag {..Default::default()};
-    let res = process_file(&mut b, temp_file.path(), Path::new("(test utf16le1)"), &o);
+    let mut b = DataBag { ..Default::default() };
+    let res = process_file(&mut b, temp_file.path(), Path::new("(test utf16le1)"));
 
     assert_eq!(res.as_str(), "(test utf16le1): UTF-16 LE «without BOM», Unix");
 
@@ -264,18 +259,18 @@ fn test_utf16le1() -> Result<(), io::Error> {
 
 #[test]
 fn test_utf16le2() -> Result<(), io::Error> {
-    let model: [u8; 8] = [ // <= 20 bytes, won't be recognized as a valid UTF-16 file
+    let model: [u8; 8] = [
+        // <= 20 bytes, won't be recognized as a valid UTF-16 file
         0x41, 0x00, // A
         b'\n', 0x00, // Unix EOL
         0x61, 0x00, // a
-        b'\n', 0x00 // Unix EOL
+        b'\n', 0x00, // Unix EOL
     ];
 
     let mut temp_file = Builder::new().tempfile()?;
     temp_file.write_all(&model)?;
-    let o = Options {..Default::default()};
-    let mut b = DataBag {..Default::default()};
-    let res = process_file(&mut b, temp_file.path(), Path::new("(test utf16le1)"), &o);
+    let mut b = DataBag { ..Default::default() };
+    let res = process_file(&mut b, temp_file.path(), Path::new("(test utf16le1)"));
 
     assert_eq!(res.as_str(), "");
 

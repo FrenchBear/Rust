@@ -197,7 +197,7 @@ fn main() {
                 for ma in gs.explore_iter() {
                     match ma {
                         MyGlobMatch::File(pb) => {
-                            print_result(process_file(&mut b, &pb, &pb, &options).as_str(), &options);
+                            print_result(process_file(&mut b, &pb, &pb).as_str(), &options);
                         }
 
                         // We ignore matching directories in rgrep, we only look for files
@@ -299,8 +299,7 @@ fn process_stdin(b: &mut DataBag, options: &Options) -> Result<(), io::Error> {
     std::io::Write::write_all(&mut temp_file, &buffer)?;
     temp_file.flush()?; // Ensure all bytes are written to the file.
 
-    process_file(b, temp_file.path(), Path::new("(stdin)"), options);
-
+    print_result(process_file(b, temp_file.path(), Path::new("(stdin)")).as_str(), &options);
     Ok(())
 }
 
@@ -386,7 +385,7 @@ fn find_from_position(s: &str, pattern: char, start_position: usize) -> Option<u
 }
 
 /// First step processing a file, read text content from path and call process_text.
-fn process_file(b: &mut DataBag, path_for_read: &Path, path_for_name: &Path, _options: &Options) -> String {
+fn process_file(b: &mut DataBag, path_for_read: &Path, path_for_name: &Path) -> String {
     let mut res = String::new();
     let tad_res = TextAutoDecode::read_text_file(path_for_read);
 
@@ -489,6 +488,7 @@ fn process_file(b: &mut DataBag, path_for_read: &Path, path_for_name: &Path, _op
             } else if eol.mac > 0 {
                 res.push_str("Mac");
             }
+
         }
         Err(e) => {
             eprintln!("*** Error reading file {}: {}", path_for_name.display(), e);
