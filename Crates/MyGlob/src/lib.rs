@@ -112,8 +112,8 @@ impl MyGlobSearch {
 • ¬Character classes ⟦[ ]⟧ accept regex syntax such as ⟦[\\d]⟧ to match a single digit, see https://docs.rs/regex/latest/regex/#character-classes for character classes and escape sequences supported.
 
 ⌊Autorecurse glob pattern transformation⌋:
-• ¬⟪Constant pattern (no filter, no ⟦**⟧) pointing to a folder⟫: ⟦\\**\\*⟧ is appended at the end to search all files of all subfolders.
-• ¬⟪Patterns without ⟦**⟧ and ending with a filter⟫: ⟦\\**⟧ is inserted before final filter to find all matching files of all subfolders.
+• ¬⟪Constant pattern (no filter, no ⟦**⟧) pointing to a directory: ⟦\\**\\*⟧ is appended at the end to search all files of all subdirectories.
+• ¬⟪Patterns without ⟦**⟧ and ending with a filter⟫: ⟦\\**⟧ is inserted before final filter to find all matching files of all subdirectories.
 "
     }
 
@@ -185,7 +185,7 @@ impl MyGlobBuilder {
         if self.glob_pattern.is_empty() {
             return Err(MyGlobError::GlobError("Glob pattern can't be empty".to_string()));
         }
-        // For now, reject a pattern ending with / or \, although it could also be understood as a search for folder only...
+        // For now, reject a pattern ending with / or \, although it could also be understood as a search for directory only...
         if self.glob_pattern.ends_with('\\') || self.glob_pattern.ends_with('/') {
             return Err(MyGlobError::GlobError("Glob pattern can't end with \\ or /".to_string()));
         }
@@ -219,7 +219,7 @@ impl MyGlobBuilder {
 
         // Process autorecurse transformation if required
         if self.autorecurse {
-            // Case of constant pattern that is a valid folder, add  **/*
+            // Case of constant pattern that is a valid directory, add  **/*
             if segments.is_empty() {
                 let rootp = PathBuf::from(&root);
                 if rootp.is_dir() {
@@ -411,14 +411,14 @@ impl Iterator for MyGlobIteratorState<'_> {
                                     self.stack.push(SearchPendingData::Dir(pb.clone()));
                                 }
                             } else {
-                                // non-final segment, can only match a folder
+                                // non-final segment, can only match a directory
                                 if pb.is_dir() {
                                     // Found a matching directory, we continue exploration in next loop
                                     self.stack.push(SearchPendingData::DirToExplore(pb, depth + 1, false));
                                 }
                             }
 
-                            // Then if recurse mode, we also search in all subfolders
+                            // Then if recurse mode, we also search in all subdirectories
                             if recurse {
                                 match fs::read_dir(&root) {
                                     Ok(contents) => {
@@ -502,7 +502,7 @@ impl Iterator for MyGlobIteratorState<'_> {
                                 }
                             }
 
-                            // Then if recurse mode, we also search in all subfolders (already collected in dirs in previous loop to avoid enumerating directory twice)
+                            // Then if recurse mode, we also search in all subdirectories (already collected in dirs in previous loop to avoid enumerating directory twice)
                             if recurse {
                                 for dir in dirs {
                                     self.stack.push(SearchPendingData::DirToExplore(dir, depth, true));

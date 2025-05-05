@@ -42,7 +42,7 @@ impl Options {
 ⦃-a+⦄|⦃-a-⦄  ¬Enable (default) or disable glob autorecurse mode (see extended usage)
 ⦃-w⦄       ¬Only show warnings
 ⦃-v⦄       ¬Verbose output
-⟨source⟩   ¬File or folder where to search, glob syntax supported. Without source, search stdin.";
+⟨source⟩   ¬File or directory to search, glob syntax supported. Without source, search stdin.";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }
@@ -66,9 +66,9 @@ Counts include with and without BOM variants.
 - ¬Source text files (based on extension) that should contain text, but with unrecognized content
 - ¬UTF-8 files with BOM
 - ¬UTF-16 files without BOM
-- ¬Different encodings for a given file type (extension) in a folder
+- ¬Different encodings for a given file type (extension) in a directory
 - ¬Mixed EOL styles in a file
-- ¬Different EOL styles for a given file type (extension) in a folder";
+- ¬Different EOL styles for a given file type (extension) in a directory";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
         MyMarkup::render_markup(MyGlobSearch::glob_syntax());

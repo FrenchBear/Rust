@@ -47,7 +47,7 @@ impl Options {
 ⦃-c⦄       ¬Suppress normal output, show count of matching lines for each file
 ⦃-l⦄       ¬Suppress normal output, show matching file names only
 ⟨pattern⟩  ¬Regular expression to search
-⟨source⟩   ¬File or folder where to search, glob syntax supported. Without source, search stdin";
+⟨source⟩   ¬File or directory to search, glob syntax supported. Without source, search stdin";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }

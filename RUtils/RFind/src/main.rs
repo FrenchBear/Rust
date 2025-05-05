@@ -68,7 +68,7 @@ fn main() {
     let start = Instant::now();
 
     // Adjust sources if option -name is used (for compatibility with XFind/Search)
-    // In this case, appends \**\name to each source that is a valid folder
+    // In this case, appends \**\name to each source that is a valid directory
     if !options.names.is_empty() {
         let name = if options.names.len() == 1 {
             options.names.first().unwrap().clone()
@@ -152,7 +152,7 @@ fn main() {
         }
         logln(&mut writer, "");
         if options.isempty {
-            logln(&mut writer, "Only search for empty files or folders");
+            logln(&mut writer, "Only search for empty files or directories");
         }
     }
 

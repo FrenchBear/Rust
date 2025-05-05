@@ -42,7 +42,7 @@ impl Options {
 ⦃-a+|-a-⦄  ¬Enable (default) or disable glob autorecurse mode (see extended usage)
 ⦃-t⦄       ¬Only show total line
 ⦃-v⦄       ¬Verbose output
-⟨source⟩   ¬File or folder where to search, glob syntax supported. Without source, search stdin.";
+⟨source⟩   ¬File or directory search, glob syntax supported. Without source, search stdin.";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }

@@ -103,11 +103,11 @@ const TEXT_EXT: [&str; 53] = [
 struct DataBag {
     files_types: FileTypeCounts,
     eol_styles: EOLStyleCounts,
-    counters: HashMap<String, HashMap<String, FolderExtCounts>>,
+    counters: HashMap<String, HashMap<String, DirectoryExtCounts>>,
 }
 
 #[derive(Debug, Default)]
-struct FolderExtCounts {
+struct DirectoryExtCounts {
     files_types: FileTypeCounts,
     eol_styles: EOLStyleCounts,
 }
@@ -218,7 +218,7 @@ fn main() {
         }
     }
 
-    // Warnings per folder+extension
+    // Warnings per directory+extension
     if !options.sources.is_empty() {
         let mut header_printed = false;
         let mut fk: Vec<&String> = b.counters.keys().collect();
@@ -232,7 +232,7 @@ fn main() {
                 let ft = &b.counters[f][e].files_types;
                 if ft.utf8 > 0 && ft.utf16 > 0 || ft.utf8 > 0 && ft.eightbit > 0 || ft.utf16 > 0 && ft.ascii > 0 || ft.utf16 > 0 && ft.eightbit > 0 {
                     if !header_printed {
-                        println!("\nMixed folder contents:");
+                        println!("\nMixed directory contents:");
                         header_printed = true;
                     }
                     print!("{}, ext .{}: ", f, e);
@@ -245,7 +245,7 @@ fn main() {
                 if eol.total > 1 {
                     if eol.windows > 0 && eol.unix > 0 || eol.windows > 0 && eol.mac > 0 || eol.unix > 0 && eol.mac > 0 {
                         if !header_printed {
-                            println!("\nMixed folder contents:");
+                            println!("\nMixed directory contents:");
                             header_printed = true;
                         }
 
@@ -421,7 +421,7 @@ fn process_file(b: &mut DataBag, path_for_read: &Path, path_for_name: &Path, _op
                 }
                 TextFileEncoding::Empty => {
                     b.files_types.empty += 1;
-                    // Don't collect infos per folder+ext for empty files
+                    // Don't collect infos per directory+ext for empty files
                     // No need to continue if it's empty
                     return format!("{}: «Empty file»", path_for_name.display());
                 }

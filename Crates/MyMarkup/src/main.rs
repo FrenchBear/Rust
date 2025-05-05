@@ -24,7 +24,7 @@ fn main() {
 ⦃-l⦄       ¬Suppress normal output, show matching file names only
 ⦃-v⦄       ¬Verbose output
 pattern  ¬Regular expression to search
-source   ¬File or folder where to search, glob syntax supported. Without source, search stdin
+source   ¬File or directory search, glob syntax supported. Without source, search stdin
 
 ⟪⌊Advanced usage notes⌋⟫
 
@@ -42,9 +42,9 @@ Files without BOM must be more than 10 characters for auto-detection of UTF-8 or
 • ¬Source text files (based on extension) that should contain text, but with unrecognized content.
 • ¬UTF-8 files with BOM.
 • ¬UTF-16 files without BOM.
-• ¬Different encodings for a given file type (extension) in a folder.
+• ¬Different encodings for a given file type (extension) in a directory.
 • ¬Mixed EOL styles in a file.
-• ¬Different EOL styles for a given file type (extension) in a folder.
+• ¬Different EOL styles for a given file type (extension) in a directory.
 
 ⌊Glob pattern rules⌋
 • ¬⟦?⟧ matches any single character.
@@ -57,8 +57,8 @@ Files without BOM must be more than 10 characters for auto-detection of UTF-8 or
 • ¬Character classes ⟦[ ]⟧ accept regex syntax such as ⟦[\\d]⟧ to match a single digit, see https://docs.rs/regex/latest/regex/#character-classes for character classes and escape sequences supported.
 
 ⌊Autorecurse glob pattern transformation⌋
-• ¬⟪Constant pattern (no filter, no **⟧) pointing to a folder⟫: ⟦\\**\\*⟧ is appended at the end to search all files of all subfolders.
-• ¬⟪Patterns without ⟦**⟧ and ending with a filter⟫: ⟦\\**⟧ is inserted before final filter to find all matching files of all subfolders.
+• ¬⟪Constant pattern (no filter, no **⟧) pointing to a directory⟫: ⟦\\**\\*⟧ is appended at the end to search all files of all subdirectories.
+• ¬⟪Patterns without ⟦**⟧ and ending with a filter⟫: ⟦\\**⟧ is inserted before final filter to find all matching files of all subdirectories.
 ";
 
     //let text = "to match a single digit, see https://docs.rs/regex/latest/regex/#character-classes for character classes and escape sequences supported.";

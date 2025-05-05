@@ -55,7 +55,7 @@ impl Options {
 ⦃-r+⦄|⦃-r-⦄          ¬Delete to recycle bin (default) or delete forever; Recycle bin is not allowed on network sources
 ⦃-a+⦄|⦃-a-⦄          ¬Enable (default) or disable glob autorecurse mode (see extended usage)
 ⦃-name⦄ ⟨name⟩       ¬Append ⟦**/⟧⟨name⟩ to each source directory (compatibility with XFind/Search)
-⟨source⟩           ¬File or directory where to search
+⟨source⟩           ¬File or directory to search
 
 ⌊Actions⌋:
 ⦃-print⦄           ¬Default, print matching files names and dir names (dir names end with ⟦\\⟧)

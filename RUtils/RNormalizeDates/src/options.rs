@@ -42,7 +42,7 @@ impl Options {
 ⦃-p⦄       ¬Final pause
 ⦃-v⦄       ¬Verbose output
 ⦃-s #⦄     ¬Only process segment # (starting at 1) delimited by ' - '
-⟨source⟩   ¬folder containing PDF files (and recurse) or simple file, default: ⟦C:\\Downloads\\A_Trier\\!A_Trier_Revues\\*.pdf⟧";
+⟨source⟩   ¬Directory containing PDF files (and recurse) or simple file, default: ⟦C:\\Downloads\\A_Trier\\!A_Trier_Revues\\*.pdf⟧";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }
@@ -53,7 +53,7 @@ impl Options {
 
 ⟪⌊Advanced usage notes⌋⟫
 
-Without argument, default folder is C:\\Downloads\\A_Trier\\!A_Trier_Revues\\**\\*.pdf";
+Without argument, default directory is C:\\Downloads\\A_Trier\\!A_Trier_Revues\\**\\*.pdf";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
         MyMarkup::render_markup(MyGlobSearch::glob_syntax());

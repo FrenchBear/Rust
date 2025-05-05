@@ -12,13 +12,13 @@ pub fn add(left: u64, right: u64) -> u64 {
     left + right
 }
 
-// Tested from external tests folder
+// Tested from external tests directory
 pub fn add_two(n: u64) -> u64 {
     n + 2
 }
 
 // Because these tests are in the same files as the code, [cfg(test)]  specify that they shouldn’t be included in the compiled result
-// Not needed if tests are located in a serarate tests folder (at the same level as src)
+// Not needed if tests are located in a serarate tests directory (at the same level as src)
 #[cfg(test)]
 mod adder_tests {
     use super::*; // Need to bring in outer scope

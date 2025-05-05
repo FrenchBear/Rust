@@ -1,6 +1,6 @@
 // r16_adder
 // Learning rust 2024, The Book §11, Automated tests
-// Example of tests located in tests folder
+// Example of tests located in tests directory
 //
 // 2024-11-24   PV
 

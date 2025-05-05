@@ -1,4 +1,4 @@
-// recycle: Delete files and folders to trash
+// recycle: Delete files and directories to trash
 //
 // 2025-04-03	PV      First version
 // 2025-04-17	PV      1.1.0 Fixed logic errors (return statement misplaced in embedded is blocks)
@@ -51,7 +51,7 @@ impl Options {
     fn header() {
         println!(
             "{APP_NAME} {APP_VERSION}\n\
-            Delete files and folders to trash"
+            Delete files and directories to trash"
         );
     }
 
@@ -64,9 +64,9 @@ impl Options {
 ⦃?⦄|⦃-?⦄|⦃-h⦄  ¬Show this message
 ⦃??⦄       ¬Show advanced usage notes
 ⦃-v⦄       ¬Verbose output
-⦃-s⦄       ¬Silent mode, silently ignore files/folders not found
+⦃-s⦄       ¬Silent mode, silently ignore files/dirs not found
 ⦃-n⦄       ¬No action (nothing deleted)
-⟨source⟩   ¬File or folder to delete, or file glob pattern";
+⟨source⟩   ¬File or directory to delete, or file glob pattern";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }

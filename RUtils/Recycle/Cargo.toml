@@ -1,6 +1,6 @@
 [package]
 name = "recycle"
-description = "Delete files and folders to trash"
+description = "Delete files and directories to trash"
 version = "1.1.2"
 authors = ["Pierre Violent"]
 edition = "2024"

@@ -3,7 +3,7 @@
 // 2025-03-23	PV      First version
 // 2025-03-25	PV      1.1 Simplified code, less calls to meta(), about twice faster
 // 2025-03-25	PV      1.2 Use DirEntry::file_type() to check whether entry is a dir or a file 3 times faster than path.is_file()/is_dir() !!!
-// 2025-03-28	PV      1.2.1 Handle gracefully errors about inexistent folders such as \\teraz\videos rather than panicking. No error for network root (no basename)
+// 2025-03-28	PV      1.2.1 Handle gracefully errors about inexistent dirs such as \\teraz\videos rather than panicking. No error for network root (no basename)
 // 2025-03-29	PV      1.2.2 Renamed rcheckfiles
 // 2025-04-03	PV      1.3.0 Code reorganization, module logging
 // 2025-04-08	PV      1.4.0 Check brackets (incl. unit tests)
@@ -116,7 +116,7 @@ impl Options {
         let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄] [⦃-f⦄] ⟨source⟩...
 ⦃?⦄|⦃-?⦄|⦃-h⦄  ¬Show this message
 ⦃-f⦄       ¬Automatic problems fixing
-⟨source⟩   ¬File or folder to analyze";
+⟨source⟩   ¬File or directory to analyze";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }
@@ -174,7 +174,7 @@ impl Options {
 
 #[derive(Default)]
 struct Statistics {
-    total: i32, // Total files/folders processed
+    total: i32, // Total files/dirs processed
     nnn: i32,   // Non-normalized names
     bra: i32,   // Bracket issue
     apo: i32,   // Incorrect apostrophe
@@ -210,7 +210,7 @@ fn main() {
     let mut writer = logging::new(true);
 
     let mut files_stats = Statistics { ..Default::default() };
-    let mut folders_stats = Statistics { ..Default::default() };
+    let mut dirs_stats = Statistics { ..Default::default() };
     let start = Instant::now();
 
     for source in options.sources {
@@ -219,7 +219,7 @@ fn main() {
         if p.is_file() {
             process_file(p, &mut files_stats, options.fixit, &mut writer, &confusables);
         } else {
-            process_folder(p, &mut folders_stats, &mut files_stats, options.fixit, &mut writer, &confusables);
+            process_directory(p, &mut dirs_stats, &mut files_stats, options.fixit, &mut writer, &confusables);
         }
     }
 
@@ -259,14 +259,14 @@ fn main() {
     }
 
     logln(&mut writer, "");
-    final_status(&mut writer, &folders_stats, "folder");
+    final_status(&mut writer, &dirs_stats, "dir");
     final_status(&mut writer, &files_stats, "file");
     logln(&mut writer, &format!("Total duration: {:.3}s", duration.as_secs_f64()));
 }
 
-fn process_folder(
+fn process_directory(
     pa: &Path,
-    folders_stats: &mut Statistics,
+    dirs_stats: &mut Statistics,
     files_stats: &mut Statistics,
     fixit: bool,
     writer: &mut LogWriter,
@@ -274,7 +274,7 @@ fn process_folder(
 ) {
     let mut pb = pa.to_path_buf();
 
-    // Silently ignore hidden or system folders
+    // Silently ignore hidden or system directories
     let resattributes = pa.metadata();
     match resattributes {
         Ok(md) => {
@@ -289,15 +289,15 @@ fn process_folder(
         }
     }
 
-    // First check folder basename
-    folders_stats.total += 1;
-    if let Some(new_name) = check_basename(pa, "folder", folders_stats, writer, pconfusables) {
+    // First check directoru basename
+    dirs_stats.total += 1;
+    if let Some(new_name) = check_basename(pa, "dir", dirs_stats, writer, pconfusables) {
         if fixit {
-            logln(writer, &format!("  --> rename folder \"{new_name}\""));
+            logln(writer, &format!("  --> rename directory \"{new_name}\""));
             let newpath = pb.parent().unwrap().join(Path::new(&new_name));
             match fs::rename(&pb, &newpath) {
                 Ok(_) => {
-                    folders_stats.fix += 1;
+                    dirs_stats.fix += 1;
                     pb = newpath;
                 }
                 Err(e) => logln(writer, &format!("*** Error {e}")), // Rename failed, but we continue anyway, don't really know if it's Ok or not...
@@ -305,15 +305,15 @@ fn process_folder(
         }
     }
 
-    // Then process folder content
+    // Then process directory content
     let contents = fs::read_dir(&pb);
     if contents.is_err() {
-        logln(writer, &format!("*** Error enumerating folder {}: {:?}", pb.display(), contents.err()));
+        logln(writer, &format!("*** Error enumerating directory {}: {:?}", pb.display(), contents.err()));
         return;
     }
     for entry in contents.unwrap() {
         if entry.is_err() {
-            logln(writer, &format!("*** Error accessing entry: {:?}", entry.err()));
+            logln(writer, &format!("*** Error accessing directory entry: {:?}", entry.err()));
             continue;
         }
         let entry = entry.unwrap();
@@ -322,7 +322,7 @@ fn process_folder(
         if ft.is_file() {
             process_file(&pb, files_stats, fixit, writer, pconfusables);
         } else if ft.is_dir() {
-            process_folder(&pb, folders_stats, files_stats, fixit, writer, pconfusables);
+            process_directory(&pb, dirs_stats, files_stats, fixit, writer, pconfusables);
         }
     }
 }
