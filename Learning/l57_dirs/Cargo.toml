@@ -1,7 +1,8 @@
 [package]
-name = "l56_markdown"
+name = "l57_dirs"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-termimad = "0.31.3"
+dirs = "6.0.0"
+

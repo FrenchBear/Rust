@@ -11,7 +11,7 @@
 // 2025-05-03	PV      1.6.0 Option -name
 // 2025-05-03	PV      1.6.0 Option -name
 // 2025-05-04   PV      1.6.1 Use MyMarkup for extended help formatting.
-// 2025-05-05	PV      1.6.2 Linux compatibility
+// 2025-05-05	PV      1.7.0 Logging crate and Linux compatibility
 
 //#![allow(unused)]
 
@@ -24,22 +24,21 @@ use std::time::Instant;
 
 // External crates imports
 use myglob::{MyGlobMatch, MyGlobSearch};
+use logging::*;
 
 // -----------------------------------
 // Submodules
 
 mod actions;
-mod logging;
 mod options;
 
-use logging::*;
 use options::*;
 
 // -----------------------------------
 // Global constants
 
 const APP_NAME: &str = "rfind";
-const APP_VERSION: &str = "1.6.2";
+const APP_VERSION: &str = "1.7.0";
 
 // -----------------------------------
 // Traits
@@ -64,7 +63,7 @@ fn main() {
     });
 
     // Prepare log writer
-    let mut writer = logging::new(options.verbose);
+    let mut writer = logging::new(APP_NAME, APP_VERSION, options.verbose);
 
     let start = Instant::now();
 

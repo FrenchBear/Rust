@@ -1,0 +1,11 @@
+[package]
+name = "logging"
+description = "My own logging support"
+version = "1.0.0"
+edition = "2024"
+authors = ["Pierre Violent"]
+
+[dependencies]
+chrono = "0.4.41"
+colored = "3.0.0"
+dirs = "6.0.0"
