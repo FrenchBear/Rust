@@ -1,20 +1,20 @@
 // l58_del_pics_dups
 // Remove pics dups
 //
-// 2025-05-06   PV      Initial code from Gemini, works well on 1st try (which is new!)
+// 2025-05-06   PV      Initial code from Gemini
 
-// I would like to use this hashing function to find and delete duplicate files in folder and all its subfolders. 
+// I would like to use this hashing function to find and delete duplicate files in folder and all its subfolders.
 // Here is the process:
 // First find duplicates of size and file extension, that is, build a list of lists of files with the same size, same
 // extension. SInce there is no need to read file content to get size, this should go fast.
 // Second step, we're only interested in lists containing at least two files with the same size, same extension. We want
 // to detect "real" duplicates by hashing content for each files of the list, and only keep 1 copy of a file with a
-// specific hash. Any second, third... file with the same hash should be deleted. 
+// specific hash. Any second, third... file with the same hash should be deleted.
 
-#![allow(unused)]
+//#![allow(unused)]
 
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     fs,
     io::{self, Read},
     path::{Path, PathBuf},
@@ -40,7 +40,7 @@ fn hash_file(file_path: &PathBuf) -> io::Result<u64> {
 }
 
 // First step, create a HashMap of list of files indexed by (size, extension)
-fn find_duplicate_groups(root_dir: &Path) -> io::Result<HashMap<(u64, Option<String>), Vec<PathBuf>>> {
+fn find_duplicate_groups(sources: &[&Path]) -> io::Result<HashMap<(u64, Option<String>), Vec<PathBuf>>> {
     let mut groups: HashMap<(u64, Option<String>), Vec<PathBuf>> = HashMap::new();
 
     fn traverse(dir: &Path, groups: &mut HashMap<(u64, Option<String>), Vec<PathBuf>>) -> io::Result<()> {
@@ -60,26 +60,30 @@ fn find_duplicate_groups(root_dir: &Path) -> io::Result<HashMap<(u64, Option<Str
         Ok(())
     }
 
-    traverse(root_dir, &mut groups)?;
+    for root_dir in sources {
+        traverse(root_dir, &mut groups)?;
+    }
     Ok(groups)
 }
 
-fn find_and_delete_duplicates(root_dir: &Path) -> io::Result<()> {
-    let size_extension_groups = find_duplicate_groups(root_dir)?;
-
-    // Second step, we actually don't care about size and extension of the group, the only thing we care about are
-    // groups of more than 1 file
-    for (_, files) in size_extension_groups {
+// Second step, we actually don't care about size and extension of the group, the only thing we care about are
+// groups of more than 1 file
+fn find_and_delete_duplicates(size_extension_groups: &HashMap<(u64, Option<String>), Vec<PathBuf>>) -> io::Result<()> {
+    for files in size_extension_groups.values() {
         if files.len() > 1 {
-            println!("Checking for real duplicates within: {:?}", files);
+            //println!("Checking for real duplicates within: {:?}", files);
             let mut content_hashes: HashMap<u64, PathBuf> = HashMap::new();
             let mut files_to_delete: Vec<PathBuf> = Vec::new();
 
-            for file_path in &files {
+            for file_path in files {
                 match hash_file(file_path) {
                     Ok(hash) => {
                         if content_hashes.contains_key(&hash) {
-                            println!("Duplicate found: {:?} (same content as {:?})", file_path, content_hashes.get(&hash).unwrap());
+                            println!(
+                                "Duplicate found: {} (same content as {})",
+                                file_path.display(),
+                                content_hashes.get(&hash).unwrap().display()
+                            );
                             files_to_delete.push(file_path.clone());
                         } else {
                             content_hashes.insert(hash, file_path.clone());
@@ -91,8 +95,12 @@ fn find_and_delete_duplicates(root_dir: &Path) -> io::Result<()> {
 
             for file_to_delete in &files_to_delete {
                 println!("Deleting: {:?}", file_to_delete);
-                match fs::remove_file(file_to_delete) {
-                    Ok(_) => println!("Successfully deleted: {:?}", file_to_delete),
+
+                //match fs::remove_file(file_to_delete) {
+                match trash::delete(file_to_delete) {
+                    Ok(_) => {
+                        // println!("Successfully deleted: {:?}", file_to_delete);
+                    }
                     Err(e) => eprintln!("Error deleting {:?}: {}", file_to_delete, e),
                 }
             }
@@ -103,6 +111,7 @@ fn find_and_delete_duplicates(root_dir: &Path) -> io::Result<()> {
 }
 
 fn main() -> io::Result<()> {
+    /*
     let target_dir = Path::new("./duplicate_test_dir");
 
     // Create a dummy directory structure with some duplicate files
@@ -123,6 +132,38 @@ fn main() -> io::Result<()> {
 
     // Clean up the dummy directory (optional)
     fs::remove_dir_all(target_dir)?;
+
+    */
+    let sources = vec![
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\Armpits"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\Art"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\BDSM Leather"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\Bear tats"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\Bears and bears"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\Bears"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\Best Of"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\Breeding"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\Cages"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\Crade"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\Dogs"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\Drawings"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\FF"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\Gif"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\IA"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\Jus"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\Monsters"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\Mp4"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\Other"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\Red Heads"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\Sex"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\Skins Cops Milit"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\Tools"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\Uro"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\ZM"),
+    ];
+
+    let size_extension_groups = find_duplicate_groups(&sources)?;
+    find_and_delete_duplicates(&size_extension_groups)?;
 
     Ok(())
 }
