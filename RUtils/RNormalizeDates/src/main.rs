@@ -6,6 +6,7 @@
 // 2025-04-18   PV      1.1.1 Better normalization of Ça m'intéresse
 // 2025-05-04   PV      1.1.3 Use MyMarkup crate to format usage and extended help
 // 2025-05-05	PV      1.1.4 Logging crate
+// 2025-05-07	PV      1.1.5 "Hors-Serie" -> "HS"
 
 //#![allow(unused)]
 
@@ -36,7 +37,7 @@ use re::*;
 // Global constants
 
 const APP_NAME: &str = "rnormalizedates";
-const APP_VERSION: &str = "1.1.4";
+const APP_VERSION: &str = "1.1.5";
 
 // -----------------------------------
 // Main
@@ -494,6 +495,7 @@ fn apply_final_transformations(stem_original: &str) -> String {
 
     stem = ireplace(&stem, " - n°", " n°");
     stem = ireplace(&stem, "Hors-Série", "HS");
+    stem = ireplace(&stem, "Hors-Serie", "HS");
     stem = ireplace(&stem, "Hors-S rie", "HS");
     stem = ireplace(&stem, " - HS", " HS");
     stem = ireplace(&stem, " HS n°", " HS ");
