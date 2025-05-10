@@ -40,14 +40,34 @@
 use std::collections::{BinaryHeap, HashMap};
 use std::fmt::{Debug, Display};
 use std::hash::Hash;
+use std::io;
+use std::path::Path;
 
 fn main() {
-    process_string("A_DEAD_DAD_CEDED_A_BAD_BABE_A_BEADED_ABACA_BED");
+    //process_string("A_DEAD_DAD_CEDED_A_BAD_BABE_A_BEADED_ABACA_BED");
+    let _ = process_file(r"C:\Development\TestFiles\Text\Les secrets d'Hermione.txt");
+}
+
+fn process_file(file: &str) -> io::Result<()> {
+    let s = std::fs::read_to_string(Path::new(file))?; 
+    process_string(&s);
+
+    Ok(())
 }
 
 fn process_string(s: &str) {
     let v: Vec<char> = s.chars().collect();
     let encodings = build_encodings_dictionary(&v);
+
+    // Print encodings table
+    println!("Huffman encodings:");
+    let mut sorted_keys:Vec<_> = encodings.keys().collect();
+    sorted_keys.sort_by_key(|&c| encodings[&c].clone());
+    sorted_keys.sort_by_key(|&c| encodings[&c].len());
+    for k in sorted_keys {
+        println!("{}: {}", k, encodings[k]);
+    }
+    println!();
 
     let mut original_length = 0;
     let mut encoded_length = 0;
@@ -62,7 +82,6 @@ fn process_string(s: &str) {
         }
     }
 
-    println!("{:?}", encodings);
     println!("{} characters to encode", v.len());
     println!("Original length: {} bits (UTF-8)", original_length);
     println!(
