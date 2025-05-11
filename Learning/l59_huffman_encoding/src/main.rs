@@ -48,20 +48,21 @@ mod huff;
 use huff::*;
 
 fn main() {
-    //process_string("A_DEAD_DAD_CEDED_A_BAD_BABE_A_BEADED_ABACA_BED");
-    //let _ = process_file(r"C:\Development\TestFiles\Text\Les secrets d'Hermione.txt");
-    let _ = decode_encoded_file(r"c:\temp\outr.txh").unwrap(); // expect("Error recoding file");
+    process_string("A_DEAD_DAD_CEDED_A_BAD_BABE_A_BEADED_ABACA_BED", r"c:\temp\outr.txh").expect("err");
+    //process_file(r"C:\Development\TestFiles\Text\Les secrets d'Hermione.txt", r"c:\temp\outr.txh").expect("err");
+    let s = decode_encoded_file(r"c:\temp\outr.txh").unwrap(); // expect("Error recoding file");
+    println!("{}", s);
 }
 
 #[allow(unused)]
-fn process_file(file: &str) -> io::Result<()> {
-    let s = std::fs::read_to_string(Path::new(file))?;
-    let _ = process_string(&s);
+fn process_file(in_file: &str, out_file: &str) -> io::Result<()> {
+    let s = std::fs::read_to_string(Path::new(in_file))?;
+    let _ = process_string(&s, out_file);
 
     Ok(())
 }
 
-fn process_string(s: &str) -> io::Result<()> {
+fn process_string(s: &str, out_file: &str) -> io::Result<()> {
     let tc: Vec<char> = s.chars().collect();
     let start = Instant::now();
     let encodings = build_encodings_dictionary(&tc);
@@ -90,12 +91,15 @@ fn process_string(s: &str) -> io::Result<()> {
         }
     }
 
-    println!("{} characters to encode", tc.len());
+    let source_char_len = s.chars().count();
+    let source_byte_len = s.len();
+
+    println!("{} characters to encode, {} bytes", source_char_len, source_byte_len);
     println!("Original length: {} bits (UTF-8)", original_length);
     println!(
         "Encoded length: {} bits, {:.3} bits per character, {:.1}% of original length",
         encoded_length,
-        encoded_length as f64 / tc.len() as f64,
+        encoded_length as f64 / source_char_len as f64,
         100.0 * encoded_length as f64 / original_length as f64
     );
     println!("Max encoded bits per symbol: {}", max_encoded_symbol_length);
@@ -103,8 +107,7 @@ fn process_string(s: &str) -> io::Result<()> {
 
     let encoded_bit_string = get_encoded_bit_string(&tc, &encodings);
 
-    let out_path = r"c:\temp\outr.txh";
-    let mut file = File::create(out_path)?;
+    let mut file = File::create(out_file)?;
 
     writeln!(file, "HE 1")?;
     writeln!(file, "SymbolsCount {}", encodings.len())?;
@@ -215,8 +218,32 @@ fn decode_encoded_file(file: &str) -> Result<String, io::Error> {
     assert_eq!(data_length, encoded_bit_string.len());
 
     // ToDo: Decode
+    // At this point, we have an ASCII bitstring, and a hashset of bit_pattern -> char
+    // Simply checking if bitstring starts with some bit_ppatern from shortest to longest until we find a match a,d repeating for each char
+    // works, but performance would be really bad (O(chars_count*symbols_count*average_symbol_length))
+    // A better option is to build a state machine, each bit of bitstring would make progression to next state, or cause an error, or find a char,
+    // until bitstring is drained.
 
-    Ok(String::new())
+    // Quick_and_dirty
+    let mut sorted_keys: Vec<char> = encodings.keys().copied().collect(); // copied() = map(|k| *k)
+    sorted_keys.sort_by_key(|&c| encodings[&c].len());
+    let mut decoded_string = String::new();
+    let mut pos = 0;
+    // Since it's ASCII, we can work at bytes level, no need to care about chars
+    let bs = encoded_bit_string.as_bytes();
+    while pos<bs.len() {
+        for k in sorted_keys.iter() {
+            if bs[pos..].starts_with(encodings[k].as_bytes()) {
+                decoded_string.push(*k);
+                pos += encodings[k].len();
+            }
+        }
+    }
+
+    // Smarter version
+    // ToDo
+
+    Ok(decoded_string)
 }
 
 fn extract_token_and_value<'a>(line: &'a str) -> (&'a str, usize) {
