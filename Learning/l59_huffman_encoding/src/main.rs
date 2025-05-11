@@ -8,6 +8,7 @@
 // Using a trait common to LeafNode and InternalNode: overcomplicated, can't match a trait to instances of actual types,
 // you need to add your own discriminant function, and then do unsafe obscure conversions to convert trait -> actual
 // struct (see l60_downcast_trait_without_any).
+// Bottom line, a trait is not a good candidate to replace an abstract base class.
 //
 // Using a tree of references, where InternalNode left and right are references doesn't work, you need to create a temp
 // InternalNode, but then it doesn't survive to be able to add it to the tree. Solution could be a pseudo-static vector
@@ -26,53 +27,60 @@
 // overcomplicated in Rust (and even if my code did compile, it didn't work...). The good news is that the top-down
 // approach used here is simpler than C# code, and eliminates parent reference and all lifetimes.
 //
-// Conclusion: Don't even thing of translating code from a managed memory language to Rust, lifetimes and ownership
-// block many simple constructions allowed by managed memory, and it requires new algorithms a a deep rewrite from
-// scratch using different structures and different code.  Short version, porting code from C# to Rust is virtually
-// impossible besides trivial code using only static data.
+// Conclusion: Forget about translating code from a managed memory language to Rust. Lifetimes and ownership block many
+// simple constructions allowed by managed memory, so it requires new algorithms a a deep rewrite from scratch using
+// different structures and different code and algorithms. It's confusing, frustrating and a huge time waster.
+// Short version, porting code from C# to Rust is virtually impossible besides basic code using only static data and
+// simple algorithms.
 
-// ToDo: Write conversion result in a file
 // ToDo: Decode converted file
 // ToDo: Add test cases (beware that there is no guaranted/unique order for symbols of same encoded length)
 
 //#![allow(unused)]
 
-use std::collections::{BinaryHeap, HashMap};
-use std::fmt::{Debug, Display};
-use std::hash::Hash;
-use std::io;
+use std::collections::HashMap;
+use std::fs::File;
+use std::io::{self, BufRead, BufReader, Write};
 use std::path::Path;
+use std::time::Instant;
+
+mod huff;
+use huff::*;
 
 fn main() {
     //process_string("A_DEAD_DAD_CEDED_A_BAD_BABE_A_BEADED_ABACA_BED");
-    let _ = process_file(r"C:\Development\TestFiles\Text\Les secrets d'Hermione.txt");
+    //let _ = process_file(r"C:\Development\TestFiles\Text\Les secrets d'Hermione.txt");
+    let _ = decode_encoded_file(r"c:\temp\outr.txh").unwrap(); // expect("Error recoding file");
 }
 
+#[allow(unused)]
 fn process_file(file: &str) -> io::Result<()> {
-    let s = std::fs::read_to_string(Path::new(file))?; 
-    process_string(&s);
+    let s = std::fs::read_to_string(Path::new(file))?;
+    let _ = process_string(&s);
 
     Ok(())
 }
 
-fn process_string(s: &str) {
-    let v: Vec<char> = s.chars().collect();
-    let encodings = build_encodings_dictionary(&v);
+fn process_string(s: &str) -> io::Result<()> {
+    let tc: Vec<char> = s.chars().collect();
+    let start = Instant::now();
+    let encodings = build_encodings_dictionary(&tc);
+    let elasped = start.elapsed().as_secs_f64();
 
     // Print encodings table
     println!("Huffman encodings:");
-    let mut sorted_keys:Vec<_> = encodings.keys().collect();
+    let mut sorted_keys: Vec<char> = encodings.keys().copied().collect(); // copied() = map(|k| *k)
     sorted_keys.sort_by_key(|&c| encodings[&c].clone());
     sorted_keys.sort_by_key(|&c| encodings[&c].len());
-    for k in sorted_keys {
-        println!("{}: {}", k, encodings[k]);
+    for k in sorted_keys.iter() {
+        println!("{}: {}", char_to_string(*k), encodings[k]);
     }
     println!();
 
     let mut original_length = 0;
     let mut encoded_length = 0;
     let mut max_encoded_symbol_length = 0;
-    for c in &v {
+    for c in &tc {
         original_length += c.len_utf8() * 8;
         let e = encodings.get(c).unwrap();
         let le = e.len();
@@ -82,194 +90,137 @@ fn process_string(s: &str) {
         }
     }
 
-    println!("{} characters to encode", v.len());
+    println!("{} characters to encode", tc.len());
     println!("Original length: {} bits (UTF-8)", original_length);
     println!(
         "Encoded length: {} bits, {:.3} bits per character, {:.1}% of original length",
         encoded_length,
-        encoded_length as f64 / v.len() as f64,
+        encoded_length as f64 / tc.len() as f64,
         100.0 * encoded_length as f64 / original_length as f64
     );
     println!("Max encoded bits per symbol: {}", max_encoded_symbol_length);
+    println!("Duration: {:.3}s", elasped);
 
+    let encoded_bit_string = get_encoded_bit_string(&tc, &encodings);
 
+    let out_path = r"c:\temp\outr.txh";
+    let mut file = File::create(out_path)?;
+
+    writeln!(file, "HE 1")?;
+    writeln!(file, "SymbolsCount {}", encodings.len())?;
+    writeln!(file, "DataLength {}", encoded_length)?;
+    writeln!(file, "Begin Encodings")?;
+    for k in sorted_keys.iter() {
+        writeln!(file, "{}\t{}", char_to_string(*k), encodings[k])?;
+    }
+    writeln!(file, "End Encodings")?;
+    writeln!(file, "Begin Data")?;
+    let mut pos = 0;
+    while pos < encoded_length {
+        let l = if pos + 64 <= encoded_length { 64 } else { encoded_length - pos };
+        writeln!(file, "{}", &encoded_bit_string[pos..pos + l])?;
+        pos += 64;
+    }
+    writeln!(file, "End Data")?;
+
+    Ok(())
 }
 
-fn build_encodings_dictionary<T>(arr: &[T]) -> HashMap<T, String>
-where
-    T: Eq + Hash + Copy + PartialOrd + Display + Debug,
-{
-    // Count occurrences
-    let mut counter: HashMap<T, usize> = HashMap::new();
-    for &t in arr {
-        (*counter.entry(t).or_default()) += 1;
+fn char_to_string(c: char) -> String {
+    match c {
+        '\r' => "<CR>".into(),
+        '\n' => "<LF>".into(),
+        '\t' => "<Tab>".into(),
+        '\0' => "<Nul>".into(),
+        x if x < ' ' => format!("<Ctrl+{}>", (64 + c as u8) as char),
+        ' ' => "<Space>".into(),
+        x if x < '\x7F' => format!("{}", c),
+        '\x7F' => "<Del>".into(),
+        _ => format!("U+{:04X}", c as i32),
     }
+}
 
-    // Build priority queue
-    let mut pq: BinaryHeap<MyNode<T>> = BinaryHeap::new();
-    for item in counter {
-        let ln = MyNode::MyLeafNode(LeafNode::new(item.0, item.1));
-        pq.push(ln);
-    }
-
-    // Aggregate and build tree
-    while pq.len() > 1 {
-        let n1 = pq.pop().unwrap();
-        let n2 = pq.pop().unwrap();
-        let n = MyNode::MyInternalNode(InternalNode::new(n1, n2));
-        pq.push(n);
-    }
-
-    // Build list of encodings
-    fn visit<T>(n: &MyNode<T>, ed: &mut HashMap<T, String>, sb: String)
-    where
-        T: PartialEq + Eq + Hash + Copy + Display + Debug,
-    {
-        match n {
-            MyNode::MyLeafNode(leaf_node) => {
-                let sym = leaf_node.symbol;
-                ed.insert(sym, sb);
+fn string_to_char(part: &str) -> char {
+    match part {
+        "<CR>" => '\r',
+        "<LF>" => '\n',
+        "<Tab>" => '\t',
+        "<Nul>" => '\x00',
+        "<Space>" => ' ',
+        "<Del>" => '\x7F',
+        _ => {
+            if part.starts_with("U+") {
+                let val = u32::from_str_radix(&part[2..], 16).unwrap();
+                char::from_u32(val).unwrap()
+            } else {
+                assert_eq!(part.len(), 1);
+                part.as_bytes()[0] as char
             }
-            MyNode::MyInternalNode(internal_node) => {
-                visit(&internal_node.left, ed, sb.clone() + "0");
-                visit(&internal_node.right, ed, sb.clone() + "1");
-            }
-        }
-    }
-
-    let root = pq.pop().unwrap();
-    let mut ed = HashMap::<T, String>::new();
-    visit(&root, &mut ed, String::new());
-
-    ed
-}
-
-// -----------------
-
-trait Node<T> {
-    fn weight(&self) -> usize;
-}
-
-#[derive(Debug)]
-struct LeafNode<T> {
-    pub weight: usize,
-    pub symbol: T,
-}
-
-impl<T> LeafNode<T>
-where
-    T: Display,
-{
-    fn new(symbol: T, weight: usize) -> Self {
-        Self { weight, symbol }
-    }
-
-    fn node_to_string(&self) -> String {
-        format!("LeafNode({}, {}", self.symbol, self.weight)
-    }
-}
-
-impl<T> Node<T> for LeafNode<T>
-where
-    T: Display,
-{
-    fn weight(&self) -> usize {
-        self.weight
-    }
-}
-
-#[derive(Debug)]
-struct InternalNode<T> {
-    pub weight: usize,
-    left: Box<MyNode<T>>,
-    right: Box<MyNode<T>>,
-}
-
-impl<T> InternalNode<T> {
-    pub fn new(left: MyNode<T>, right: MyNode<T>) -> Self {
-        Self {
-            weight: left.weight() + right.weight(),
-            left: Box::new(left),
-            right: Box::new(right),
-        }
-    }
-
-    fn node_to_string(&self) -> String {
-        String::from("InternalNode")
-    }
-}
-
-impl<T> Display for InternalNode<T>
-where
-    T: Display,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let msg = format!(
-            "InternalNode Left={}, Right={}, Weight={}",
-            self.left.node_to_string(),
-            self.right.node_to_string(),
-            self.weight()
-        );
-        write!(f, "{}", msg)
-    }
-}
-
-impl<T> Node<T> for InternalNode<T> {
-    fn weight(&self) -> usize {
-        self.weight
-    }
-}
-
-#[derive(Debug)]
-enum MyNode<T> {
-    MyLeafNode(LeafNode<T>),
-    MyInternalNode(InternalNode<T>),
-}
-
-impl<T> MyNode<T>
-where
-    T: Display,
-{
-    fn node_to_string(&self) -> String {
-        match self {
-            MyNode::MyLeafNode(leaf_node) => leaf_node.node_to_string(),
-            MyNode::MyInternalNode(internal_node) => internal_node.node_to_string(),
         }
     }
 }
 
-impl<T> MyNode<T> {
-    fn weight(&self) -> usize {
-        match self {
-            MyNode::MyLeafNode(leaf_node) => leaf_node.weight,
-            MyNode::MyInternalNode(internal_node) => internal_node.weight,
+macro_rules! get_line {
+    ($reader:expr, $line:expr) => {
+        $line.clear();
+        $reader.read_line(&mut $line)?;
+        $line.truncate($line.trim_end().len());
+    };
+}
+
+#[allow(unused)]
+fn decode_encoded_file(file: &str) -> Result<String, io::Error> {
+    let mut f = File::open(file)?;
+    // Create a BufReader for efficient reading
+    let mut reader = BufReader::new(f);
+
+    let mut line = String::new();
+    get_line!(reader, line);
+    assert_eq!(line, "HE 1");
+    get_line!(reader, line);
+    let (token, symbols_count) = extract_token_and_value(&line);
+    assert_eq!(token, "SymbolsCount");
+    get_line!(reader, line);
+    let (token, data_length) = extract_token_and_value(&line);
+    assert_eq!(token, "DataLength");
+    get_line!(reader, line);
+    assert_eq!(line, "Begin Encodings");
+
+    let mut encodings: HashMap<char, String> = HashMap::new();
+    loop {
+        get_line!(reader, line);
+        if line == "End Encodings" {
+            break;
         }
+        let parts: Vec<&str> = line.split_ascii_whitespace().collect();
+        assert_eq!(parts.len(), 2);
+        let k = string_to_char(parts[0]);
+        let v = String::from(parts[1]);
+        encodings.insert(k, v);
     }
+    get_line!(reader, line);
+    assert_eq!(line, "Begin Data");
+
+    let mut encoded_bit_string = String::new();
+    loop {
+        get_line!(reader, line);
+        if line == "End Data" {
+            break;
+        }
+        encoded_bit_string += line.as_str();
+    }
+
+    println!("Symbols count: {}", symbols_count);
+    println!("Data length: {}", data_length);
+    assert_eq!(data_length, encoded_bit_string.len());
+
+    // ToDo: Decode
+
+    Ok(String::new())
 }
 
-// PartialEq, PartialOrd: required for an element of BinaryHeap
-impl<T> PartialEq for MyNode<T> {
-    fn eq(&self, other: &Self) -> bool {
-        self.weight() == other.weight()
-    }
-}
-
-impl<T> Eq for MyNode<T> {}
-
-impl<T> PartialOrd for MyNode<T>
-where
-    T: PartialEq,
-{
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        other.weight().partial_cmp(&self.weight())
-    }
-}
-
-impl<T> Ord for MyNode<T>
-where
-    T: PartialEq + PartialOrd,
-{
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        other.weight().cmp(&self.weight())
-    }
+fn extract_token_and_value<'a>(line: &'a str) -> (&'a str, usize) {
+    let parts: Vec<&'a str> = line.split_ascii_whitespace().collect();
+    assert_eq!(parts.len(), 2);
+    (parts[0], parts[1].parse::<usize>().unwrap())
 }
