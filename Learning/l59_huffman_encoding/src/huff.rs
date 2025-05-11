@@ -51,9 +51,11 @@ where
         }
     }
 
-    let root = pq.pop().unwrap();
     let mut ed = HashMap::<T, String>::new();
-    visit(&root, &mut ed, String::new());
+    if !pq.is_empty() {
+        let root = pq.pop().unwrap();
+        visit(&root, &mut ed, String::new());
+    }
 
     ed
 }
@@ -66,6 +68,99 @@ pub fn get_encoded_bit_string(tc: &[char], encodings: &HashMap<char, String>) ->
     }
 
     sb
+}
+
+// -----------------
+
+pub fn get_decoded_bit_string(encoded_bit_string: &str, encodings: &HashMap<char, String>) -> String {
+    // At this point, we have an ASCII bitstring, and a hashset of bit_pattern -> char
+    // Simply checking if bitstring starts with some bit_ppatern from shortest to longest until we find a match a,d repeating for each char
+    // works, but performance would be really bad (O(chars_count*symbols_count*average_symbol_length))
+    // A better option is to build a state machine, each bit of bitstring would make progression to next state, or cause an error, or find a char,
+    // until bitstring is drained.
+
+    // Quick_and_dirty
+    // let mut sorted_keys: Vec<char> = encodings.keys().copied().collect(); // copied() = map(|k| *k)
+    // sorted_keys.sort_by_key(|&c| encodings[&c].len());
+    // let mut decoded_string = String::new();
+    // let mut pos = 0;
+    // // Since it's ASCII, we can work at bytes level, no need to care about chars
+    // let bs = encoded_bit_string.as_bytes();
+    // while pos < bs.len() {
+    //     for k in sorted_keys.iter() {
+    //         if bs[pos..].starts_with(encodings[k].as_bytes()) {
+    //             decoded_string.push(*k);
+    //             pos += encodings[k].len();
+    //         }
+    //     }
+    // }
+
+    // Private struct
+    #[derive(Debug, Default)]
+    struct ZeroOne {
+        zero: Option<usize>,
+        one: Option<usize>,
+        char: Option<char>,
+    }
+
+    // Smarter version, build state machine
+    let mut states: Vec<ZeroOne> = Vec::new();
+    let mut next_state = 1;
+    states.push(ZeroOne { ..Default::default() });
+    for (ch, e) in encodings {
+        // println!("Processing {ch} -> {e}");
+
+        let mut state = 0;
+        for &b in e.as_bytes() {
+            // println!("  state {state}, bit {}", b as char);
+            let ent = states.get_mut(state).unwrap();
+            assert!(ent.char.is_none());
+            match b {
+                b'0' => match ent.zero {
+                    Some(next_state) => state = next_state,
+                    None => {
+                        ent.zero = Some(next_state);
+                        state = next_state;
+                        next_state += 1;
+                        states.push(ZeroOne { ..Default::default() });
+                    }
+                },
+                b'1' => match ent.one {
+                    Some(next_state) => state = next_state,
+                    None => {
+                        ent.one = Some(next_state);
+                        state = next_state;
+                        next_state += 1;
+                        states.push(ZeroOne { ..Default::default() });
+                    }
+                },
+                _ => unreachable!(),
+            }
+        }
+        let ent = states.get_mut(state).unwrap();
+        assert!(ent.char.is_none());
+        assert!(ent.zero.is_none());
+        assert!(ent.one.is_none());
+        ent.char = Some(*ch);
+    }
+
+    // Fast decoding using state machine
+    let mut decoded_string = String::new();
+    let bs = encoded_bit_string.as_bytes();
+    let mut state = 0;
+    for &b in bs {
+        state = if b == b'0' {
+            states[state].zero.unwrap()
+        } else {
+            states[state].one.unwrap()
+        };
+        if let Some(ch) = states[state].char {
+            decoded_string.push(ch);
+            state = 0;
+        }
+    }
+
+    decoded_string
 }
 
 // -----------------

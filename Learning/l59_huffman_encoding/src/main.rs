@@ -33,10 +33,7 @@
 // Short version, porting code from C# to Rust is virtually impossible besides basic code using only static data and
 // simple algorithms.
 
-// ToDo: Decode converted file
-// ToDo: Add test cases (beware that there is no guaranted/unique order for symbols of same encoded length)
-
-//#![allow(unused)]
+#![allow(unused)]
 
 use std::collections::HashMap;
 use std::fs::File;
@@ -44,14 +41,18 @@ use std::io::{self, BufRead, BufReader, Write};
 use std::path::Path;
 use std::time::Instant;
 
+mod tests;
+
 mod huff;
 use huff::*;
 
 fn main() {
-    process_string("A_DEAD_DAD_CEDED_A_BAD_BABE_A_BEADED_ABACA_BED", r"c:\temp\outr.txh").expect("err");
     //process_file(r"C:\Development\TestFiles\Text\Les secrets d'Hermione.txt", r"c:\temp\outr.txh").expect("err");
-    let s = decode_encoded_file(r"c:\temp\outr.txh").unwrap(); // expect("Error recoding file");
-    println!("{}", s);
+    let s1 = "A_DEAD_DAD_CEDED_A_BAD_BABE_A_BEADED_ABACA_BED";
+    process_string(s1, r"c:\temp\outr.txh").expect("err");
+    let s2 = decode_encoded_file(r"c:\temp\outr.txh").unwrap(); // expect("Error recoding file");
+    println!("\n{s1}\n{s2}");
+    assert_eq!(s1, s2);
 }
 
 #[allow(unused)]
@@ -163,6 +164,7 @@ fn string_to_char(part: &str) -> char {
     }
 }
 
+// Helper
 macro_rules! get_line {
     ($reader:expr, $line:expr) => {
         $line.clear();
@@ -217,33 +219,7 @@ fn decode_encoded_file(file: &str) -> Result<String, io::Error> {
     println!("Data length: {}", data_length);
     assert_eq!(data_length, encoded_bit_string.len());
 
-    // ToDo: Decode
-    // At this point, we have an ASCII bitstring, and a hashset of bit_pattern -> char
-    // Simply checking if bitstring starts with some bit_ppatern from shortest to longest until we find a match a,d repeating for each char
-    // works, but performance would be really bad (O(chars_count*symbols_count*average_symbol_length))
-    // A better option is to build a state machine, each bit of bitstring would make progression to next state, or cause an error, or find a char,
-    // until bitstring is drained.
-
-    // Quick_and_dirty
-    let mut sorted_keys: Vec<char> = encodings.keys().copied().collect(); // copied() = map(|k| *k)
-    sorted_keys.sort_by_key(|&c| encodings[&c].len());
-    let mut decoded_string = String::new();
-    let mut pos = 0;
-    // Since it's ASCII, we can work at bytes level, no need to care about chars
-    let bs = encoded_bit_string.as_bytes();
-    while pos<bs.len() {
-        for k in sorted_keys.iter() {
-            if bs[pos..].starts_with(encodings[k].as_bytes()) {
-                decoded_string.push(*k);
-                pos += encodings[k].len();
-            }
-        }
-    }
-
-    // Smarter version
-    // ToDo
-
-    Ok(decoded_string)
+    Ok(get_decoded_bit_string(&encoded_bit_string, &encodings))
 }
 
 fn extract_token_and_value<'a>(line: &'a str) -> (&'a str, usize) {
