@@ -33,7 +33,7 @@
 // Short version, porting code from C# to Rust is virtually impossible besides basic code using only static data and
 // simple algorithms.
 
-#![allow(unused)]
+//#![allow(unused)]
 
 use std::collections::HashMap;
 use std::fs::File;
@@ -48,11 +48,48 @@ use huff::*;
 
 fn main() {
     //process_file(r"C:\Development\TestFiles\Text\Les secrets d'Hermione.txt", r"c:\temp\outr.txh").expect("err");
+    measure_performance().expect("err");
+}
+
+#[allow(unused)]
+fn basic_test() {
     let s1 = "A_DEAD_DAD_CEDED_A_BAD_BABE_A_BEADED_ABACA_BED";
     process_string(s1, r"c:\temp\outr.txh").expect("err");
     let s2 = decode_encoded_file(r"c:\temp\outr.txh").unwrap(); // expect("Error recoding file");
     println!("\n{s1}\n{s2}");
     assert_eq!(s1, s2);
+}
+
+fn measure_performance() -> io::Result<()> {
+    let in_file = r"C:\Development\TestFiles\Text\Les secrets d'Hermione.txt";
+    //let in_file = r"C:\Development\TestFiles\Text\Harry Potter and the Prisoner of Azkaban.txt";
+
+    println!("Performance measurement");
+
+    let start = Instant::now();
+    let s = std::fs::read_to_string(Path::new(in_file))?;
+    let tc: Vec<char> = s.chars().collect();
+    let elapsed = start.elapsed().as_secs_f64();
+    println!("Read {} bytes, {} characters: {:.3}s", s.len(), tc.len(), elapsed);
+
+    let start2 = Instant::now();
+    let encodings = build_encodings_dictionary(&tc);
+    let elapsed = start2.elapsed().as_secs_f64();
+    println!("Build dictionary of {} symbols: {:.3}s", encodings.len(), elapsed);
+
+    let start = Instant::now();
+    let encoded_bit_string = get_encoded_bit_string(&tc, &encodings);
+    let elapsed = start.elapsed().as_secs_f64();
+    println!("Get encoded bit string {} bits: {:.3}s", encoded_bit_string.len(), elapsed);
+
+    let start = Instant::now();
+    let res = get_decoded_bit_string(&encoded_bit_string, &encodings);
+    let elapsed = start.elapsed().as_secs_f64();
+    println!("Decode encoded bit string: {:.3}s", elapsed);
+
+    assert!(s==res);
+
+    Ok(())
 }
 
 #[allow(unused)]
@@ -69,6 +106,8 @@ fn process_string(s: &str, out_file: &str) -> io::Result<()> {
     let encodings = build_encodings_dictionary(&tc);
     let elasped = start.elapsed().as_secs_f64();
 
+    let encoded_bit_string = get_encoded_bit_string(&tc, &encodings);
+
     // Print encodings table
     println!("Huffman encodings:");
     let mut sorted_keys: Vec<char> = encodings.keys().copied().collect(); // copied() = map(|k| *k)
@@ -79,49 +118,41 @@ fn process_string(s: &str, out_file: &str) -> io::Result<()> {
     }
     println!();
 
-    let mut original_length = 0;
-    let mut encoded_length = 0;
-    let mut max_encoded_symbol_length = 0;
-    for c in &tc {
-        original_length += c.len_utf8() * 8;
-        let e = encodings.get(c).unwrap();
-        let le = e.len();
-        encoded_length += le;
-        if le > max_encoded_symbol_length {
-            max_encoded_symbol_length = le;
-        }
-    }
+    // Compute some stats
+    let source_char_length = s.chars().count();
+    let source_byte_length = s.len();
+    let max_encoded_symbol_bit_length = encodings.values().map(|e| e.len()).max().unwrap();
+    let encoded_bit_length = tc.iter().map(|c| encodings[c].len()).sum();
 
-    let source_char_len = s.chars().count();
-    let source_byte_len = s.len();
-
-    println!("{} characters to encode, {} bytes", source_char_len, source_byte_len);
-    println!("Original length: {} bits (UTF-8)", original_length);
+    println!("{} characters to encode, {} bytes", source_char_length, source_byte_length);
+    println!("Original length: {} bits (UTF-8)", source_byte_length * 8);
     println!(
         "Encoded length: {} bits, {:.3} bits per character, {:.1}% of original length",
-        encoded_length,
-        encoded_length as f64 / source_char_len as f64,
-        100.0 * encoded_length as f64 / original_length as f64
+        encoded_bit_length,
+        encoded_bit_length as f64 / source_char_length as f64,
+        100.0 * encoded_bit_length as f64 / source_byte_length as f64 / 8.0
     );
-    println!("Max encoded bits per symbol: {}", max_encoded_symbol_length);
+    println!("Max encoded bits per symbol: {}", max_encoded_symbol_bit_length);
     println!("Duration: {:.3}s", elasped);
 
-    let encoded_bit_string = get_encoded_bit_string(&tc, &encodings);
-
+    // Write output file
     let mut file = File::create(out_file)?;
 
     writeln!(file, "HE 1")?;
     writeln!(file, "SymbolsCount {}", encodings.len())?;
-    writeln!(file, "DataLength {}", encoded_length)?;
+    writeln!(file, "DataLength {}", encoded_bit_length)?;
     writeln!(file, "Begin Encodings")?;
+    let mut sorted_keys: Vec<char> = encodings.keys().copied().collect(); // copied() = map(|k| *k)
+    sorted_keys.sort_by_key(|&c| encodings[&c].clone());
+    sorted_keys.sort_by_key(|&c| encodings[&c].len());
     for k in sorted_keys.iter() {
         writeln!(file, "{}\t{}", char_to_string(*k), encodings[k])?;
     }
     writeln!(file, "End Encodings")?;
     writeln!(file, "Begin Data")?;
     let mut pos = 0;
-    while pos < encoded_length {
-        let l = if pos + 64 <= encoded_length { 64 } else { encoded_length - pos };
+    while pos < encoded_bit_length {
+        let l = if pos + 64 <= encoded_bit_length { 64 } else { encoded_bit_length - pos };
         writeln!(file, "{}", &encoded_bit_string[pos..pos + l])?;
         pos += 64;
     }
