@@ -1,5 +1,5 @@
-// huffman.cs
-// Huffman class: build encoding dictionary
+// huffman.rs (renamed huff.rs since with original name, all text is dimmed, don't know how to clear the cache)
+// Huffman class: build encoding dictionary, encoding and decoding
 //
 // 2025-05-10   PV      First version
 

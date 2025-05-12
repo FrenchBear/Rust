@@ -153,8 +153,8 @@ fn string_to_char(part: &str) -> char {
         "<Space>" => ' ',
         "<Del>" => '\x7F',
         _ => {
-            if part.starts_with("U+") {
-                let val = u32::from_str_radix(&part[2..], 16).unwrap();
+            if let Some(code_hexa) = part.strip_prefix("U+") {
+                let val = u32::from_str_radix(code_hexa, 16).unwrap();
                 char::from_u32(val).unwrap()
             } else {
                 assert_eq!(part.len(), 1);

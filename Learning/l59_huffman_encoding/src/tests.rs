@@ -26,6 +26,20 @@ fn test_empty() {
     assert_eq!(s1, decoded_bit_string);
 }
 
+#[test]
+fn test_all_chars() {
+    let mut s1=String::new();
+    for i in 0..256 {
+        s1.push(char::from_u32(i).unwrap());
+    }
+    let tc: Vec<char> = s1.chars().collect();
+    let encodings = build_encodings_dictionary(&tc);
+    let encoded_bit_string = get_encoded_bit_string(&tc, &encodings);
+    let decoded_bit_string = get_decoded_bit_string(&encoded_bit_string, &encodings);
+    assert_eq!(s1, decoded_bit_string);
+}
+
+
 // Note that shource file is large, this test takes about 6s
 #[test]
 fn test_file() -> io::Result<()> {
