@@ -1,0 +1,12 @@
+[package]
+name = "l62_check_solutions"
+description = "Check Visual Studio .sln files"
+version = "1.0.0"
+authors = ["Pierre Violent"]
+edition = "2024"
+
+[dependencies]
+myglob = { path = "../../Crates/MyGlob" }
+textautodecode = { path = "../../Crates/TextAutoDecode" }
+logging = { path = "../../Crates/Logging" }
+colored = "3.0.0"

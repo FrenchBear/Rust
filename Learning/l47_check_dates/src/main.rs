@@ -1,35 +1,29 @@
-// l47_checkdates: Check dates in source files headers
+// l47_check_dates: Check dates in source files headers
 //
 // 2025-04-21	PV      First version
-// 2025-05-02   PV      Use crate textautodecode instead of decode_encoding module
+// 2025-05-02   PV      Use textautodecode crate instead of decode_encoding module
+// 2025-05-14   PV      1.2 Use logging crate instead of logging module
 
-#![allow(unused)]
+//#![allow(unused)]
 
 // standard library imports
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process;
 use std::sync::LazyLock;
 use std::time::Instant;
 use std::{collections::HashMap, fmt::Debug};
 
 // external crates imports
-use chrono::NaiveDate;
 use myglob::{MyGlobMatch, MyGlobSearch};
 use regex::Regex;
 use textautodecode::{TextAutoDecode, TextFileEncoding};
-use unicode_normalization::UnicodeNormalization;
-
-// -----------------------------------
-// Submodules
-
-mod logging;
 use logging::*;
 
 // -----------------------------------
 // Global constants
 
 const APP_NAME: &str = "check_dates";
-const APP_VERSION: &str = "1.1.0";
+const APP_VERSION: &str = "1.2.0";
 
 // -----------------------------------
 // Main
@@ -46,7 +40,8 @@ fn main() {
     let globstrsources: Vec<String> = vec![r"C:\Development\**\*.{awk,c,cpp,cs,fs,go,h,java,jl,js,lua,py,rs,sql,ts,vb}".to_string()];
 
     // Prepare log writer
-    let mut writer = logging::new(false);
+    let mut writer = logging::new(APP_NAME, APP_VERSION, true);
+
     let mut b = DataBag { ..Default::default() };
 
     let start = Instant::now();
@@ -105,7 +100,7 @@ fn main() {
 
         println!();
         let mut kvp = b.ext_counter.into_iter().collect::<Vec<_>>();
-        kvp.sort_by_key(|(k, v)| -(*v as i32));
+        kvp.sort_by_key(|(_k, v)| -(*v as i32));
         for (ext, cnt) in kvp {
             println!("{:5} {:5}", ext, cnt);
         }
@@ -155,8 +150,6 @@ fn process_file(writer: &mut LogWriter, b: &mut DataBag, p: &Path) {
 
 fn process_text(writer: &mut LogWriter, p: &Path, source: &str, comment: &str, b: &mut DataBag) {
     static DATE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\s+(\d+)-(\d+)-(\d+)\s").unwrap());
-
-    let mut last_date: Option<NaiveDate> = None;
 
     b.files_count += 1;
     let mut clc = 0;
