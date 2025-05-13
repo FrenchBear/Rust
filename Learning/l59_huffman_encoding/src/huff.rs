@@ -61,7 +61,7 @@ where
 }
 
 // Return original list of characters as a long ASCII string containing only '0' and '1'
-pub fn get_encoded_bit_string(tc: &[char], encodings: &HashMap<char, String>) -> String {
+pub fn get_encoded_bit_string(encodings: &HashMap<char, String>, tc: &[char]) -> String {
     let mut sb = String::new();
     for c in tc {
         sb += encodings[c].as_str();
@@ -72,7 +72,7 @@ pub fn get_encoded_bit_string(tc: &[char], encodings: &HashMap<char, String>) ->
 
 // -----------------
 
-pub fn get_decoded_bit_string(encoded_bit_string: &str, encodings: &HashMap<char, String>) -> String {
+pub fn get_decoded_bit_string(encodings: &HashMap<char, String>, encoded_bit_string: &str) -> String {
     // At this point, we have an ASCII bitstring, and a hashset of bit_pattern -> char
     // Simply checking if bitstring starts with some bit_ppatern from shortest to longest until we find a match a,d repeating for each char
     // works, but performance would be really bad (O(chars_count*symbols_count*average_symbol_length))
@@ -143,6 +143,12 @@ pub fn get_decoded_bit_string(encoded_bit_string: &str, encodings: &HashMap<char
         assert!(ent.one.is_none());
         ent.char = Some(*ch);
     }
+
+    // println!("States count: {}", states.len());
+    // for st in &states {
+    //     println!("{:?}", st);
+    // }
+    // println!();
 
     // Fast decoding using state machine
     let mut decoded_string = String::new();

@@ -11,8 +11,8 @@ fn test_string() {
     let s1 = "Il était un petit navire\r\nQui n'avait jamais navigué\r\nOhé, ohé, matelot\r\n";
     let tc: Vec<char> = s1.chars().collect();
     let encodings = build_encodings_dictionary(&tc);
-    let encoded_bit_string = get_encoded_bit_string(&tc, &encodings);
-    let decoded_bit_string = get_decoded_bit_string(&encoded_bit_string, &encodings);
+    let encoded_bit_string = get_encoded_bit_string(&encodings, &tc);
+    let decoded_bit_string = get_decoded_bit_string(&encodings, &encoded_bit_string);
     assert_eq!(s1, decoded_bit_string);
 }
 
@@ -21,24 +21,23 @@ fn test_empty() {
     let s1 = "";
     let tc: Vec<char> = s1.chars().collect();
     let encodings = build_encodings_dictionary(&tc);
-    let encoded_bit_string = get_encoded_bit_string(&tc, &encodings);
-    let decoded_bit_string = get_decoded_bit_string(&encoded_bit_string, &encodings);
+    let encoded_bit_string = get_encoded_bit_string(&encodings, &tc);
+    let decoded_bit_string = get_decoded_bit_string(&encodings, &encoded_bit_string);
     assert_eq!(s1, decoded_bit_string);
 }
 
 #[test]
 fn test_all_chars() {
-    let mut s1=String::new();
+    let mut s1 = String::new();
     for i in 0..256 {
         s1.push(char::from_u32(i).unwrap());
     }
     let tc: Vec<char> = s1.chars().collect();
     let encodings = build_encodings_dictionary(&tc);
-    let encoded_bit_string = get_encoded_bit_string(&tc, &encodings);
-    let decoded_bit_string = get_decoded_bit_string(&encoded_bit_string, &encodings);
+    let encoded_bit_string = get_encoded_bit_string(&encodings, &tc);
+    let decoded_bit_string = get_decoded_bit_string(&encodings, &encoded_bit_string);
     assert_eq!(s1, decoded_bit_string);
 }
-
 
 // Note that shource file is large, this test takes about 6s
 #[test]

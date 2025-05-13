@@ -47,24 +47,40 @@ mod huff;
 use huff::*;
 
 fn main() {
-    //process_file(r"C:\Development\TestFiles\Text\Les secrets d'Hermione.txt", r"c:\temp\outr.txh").expect("err");
-    measure_performance().expect("err");
+    println!("Huffman encoding Rust");
+
+    //basic_test();
+    //basic_file_test();
+    performance_test().expect("err");
 }
 
 #[allow(unused)]
 fn basic_test() {
     let s1 = "A_DEAD_DAD_CEDED_A_BAD_BABE_A_BEADED_ABACA_BED";
-    process_string(s1, r"c:\temp\outr.txh").expect("err");
-    let s2 = decode_encoded_file(r"c:\temp\outr.txh").unwrap(); // expect("Error recoding file");
+    let (encodings, encoded_bit_string) =     process_string(s1);
+    print_stats(&encodings, s1);
+    println!("\n{}", encoded_bit_string);
+    let s2 = get_decoded_bit_string(&encodings, &encoded_bit_string);
     println!("\n{s1}\n{s2}");
     assert_eq!(s1, s2);
 }
 
-fn measure_performance() -> io::Result<()> {
+#[allow(unused)]
+fn basic_file_test() {
+    let s1 = "A_DEAD_DAD_CEDED_A_BAD_BABE_A_BEADED_ABACA_BED";
+    let (encodings, encoded_bit_string) = process_string(s1);
+    write_file(&encodings, &encoded_bit_string, r"c:\temp\outr.txh").expect("err");
+    let s2 = decode_encoded_file(r"c:\temp\outr.txh").unwrap(); // expect("Error recoding file");
+    assert_eq!(s1, s2);
+}
+
+#[allow(unused)]
+fn performance_test() -> io::Result<()> {
     let in_file = r"C:\Development\TestFiles\Text\Les secrets d'Hermione.txt";
     //let in_file = r"C:\Development\TestFiles\Text\Harry Potter and the Prisoner of Azkaban.txt";
 
     println!("Performance measurement");
+    let global_start = Instant::now();
 
     let start = Instant::now();
     let s = std::fs::read_to_string(Path::new(in_file))?;
@@ -78,16 +94,19 @@ fn measure_performance() -> io::Result<()> {
     println!("Build dictionary of {} symbols: {:.3}s", encodings.len(), elapsed);
 
     let start = Instant::now();
-    let encoded_bit_string = get_encoded_bit_string(&tc, &encodings);
+    let encoded_bit_string = get_encoded_bit_string(&encodings, &tc);
     let elapsed = start.elapsed().as_secs_f64();
     println!("Get encoded bit string {} bits: {:.3}s", encoded_bit_string.len(), elapsed);
 
     let start = Instant::now();
-    let res = get_decoded_bit_string(&encoded_bit_string, &encodings);
+    let res = get_decoded_bit_string(&encodings, &encoded_bit_string);
     let elapsed = start.elapsed().as_secs_f64();
     println!("Decode encoded bit string: {:.3}s", elapsed);
 
     assert!(s==res);
+
+    let global_elapsed = global_start.elapsed().as_secs_f64();
+    println!("Total duration: {:.3}s", global_elapsed);
 
     Ok(())
 }
@@ -95,21 +114,21 @@ fn measure_performance() -> io::Result<()> {
 #[allow(unused)]
 fn process_file(in_file: &str, out_file: &str) -> io::Result<()> {
     let s = std::fs::read_to_string(Path::new(in_file))?;
-    let _ = process_string(&s, out_file);
-
-    Ok(())
+    let (encodings, encoded_bit_string) = process_string(&s);
+    print_stats(&encodings, &s);
+    write_file(&encodings, &encoded_bit_string, out_file)
 }
 
-fn process_string(s: &str, out_file: &str) -> io::Result<()> {
+fn process_string(s: &str) -> (HashMap<char, String>, String) {
     let tc: Vec<char> = s.chars().collect();
-    let start = Instant::now();
     let encodings = build_encodings_dictionary(&tc);
-    let elasped = start.elapsed().as_secs_f64();
+    let encoded_bit_string = get_encoded_bit_string(&encodings, &tc);
 
-    let encoded_bit_string = get_encoded_bit_string(&tc, &encodings);
+    (encodings, encoded_bit_string)
+}
 
+fn print_stats(encodings: &HashMap<char, String>, s: &str) {
     // Print encodings table
-    println!("Huffman encodings:");
     let mut sorted_keys: Vec<char> = encodings.keys().copied().collect(); // copied() = map(|k| *k)
     sorted_keys.sort_by_key(|&c| encodings[&c].clone());
     sorted_keys.sort_by_key(|&c| encodings[&c].len());
@@ -122,7 +141,7 @@ fn process_string(s: &str, out_file: &str) -> io::Result<()> {
     let source_char_length = s.chars().count();
     let source_byte_length = s.len();
     let max_encoded_symbol_bit_length = encodings.values().map(|e| e.len()).max().unwrap();
-    let encoded_bit_length = tc.iter().map(|c| encodings[c].len()).sum();
+    let encoded_bit_length = s.chars().map(|c| encodings[&c].len()).sum::<usize>();
 
     println!("{} characters to encode, {} bytes", source_char_length, source_byte_length);
     println!("Original length: {} bits (UTF-8)", source_byte_length * 8);
@@ -133,11 +152,12 @@ fn process_string(s: &str, out_file: &str) -> io::Result<()> {
         100.0 * encoded_bit_length as f64 / source_byte_length as f64 / 8.0
     );
     println!("Max encoded bits per symbol: {}", max_encoded_symbol_bit_length);
-    println!("Duration: {:.3}s", elasped);
+}
 
-    // Write output file
+fn write_file(encodings: &HashMap<char, String>, encoded_bit_string: &str, out_file: &str) -> io::Result<()> {
+    let encoded_bit_length = encoded_bit_string.len();
+
     let mut file = File::create(out_file)?;
-
     writeln!(file, "HE 1")?;
     writeln!(file, "SymbolsCount {}", encodings.len())?;
     writeln!(file, "DataLength {}", encoded_bit_length)?;
@@ -246,11 +266,11 @@ fn decode_encoded_file(file: &str) -> Result<String, io::Error> {
         encoded_bit_string += line.as_str();
     }
 
-    println!("Symbols count: {}", symbols_count);
-    println!("Data length: {}", data_length);
+    // println!("Symbols count: {}", symbols_count);
+    // println!("Data length: {}", data_length);
     assert_eq!(data_length, encoded_bit_string.len());
 
-    Ok(get_decoded_bit_string(&encoded_bit_string, &encodings))
+    Ok(get_decoded_bit_string(&encodings, &encoded_bit_string))
 }
 
 fn extract_token_and_value<'a>(line: &'a str) -> (&'a str, usize) {
