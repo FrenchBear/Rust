@@ -6,9 +6,9 @@
 
 // standard library imports
 use std::fmt::Debug;
-use std::path::{Path,PathBuf};
-use std::{io, process};
+use std::path::{Path, PathBuf};
 use std::time::Instant;
+use std::{fs, io, process};
 
 // external crates imports
 use colored::*;
@@ -43,47 +43,31 @@ fn tmain() {
 
 fn main() {
     // Use autorecurse
-    //let globstrsources: Vec<String> = vec![r"C:\Development\Git*\*.sln".to_string()];
-    let globstrsources: Vec<String> = vec![r"C:\Development\GitVSTS\CSMisc\Net9\**\*.sln".to_string()];
+    //let globstrsource = r"C:\Development\Git*\*.sln";
+    let globstrsource = r"C:\Development\GitVSTS\CSMisc\**\*.sln";
 
-    // Prepare log writer
     let mut writer = logging::new(APP_NAME, APP_VERSION, true);
-
     let mut b = DataBag { ..Default::default() };
-
     let start = Instant::now();
 
     // Convert String sources into MyGlobSearch structs
-    let mut sources: Vec<(&String, MyGlobSearch)> = Vec::new();
-    for source in globstrsources.iter() {
-        let resgs = MyGlobSearch::new(source).autorecurse(true).compile();
-        match resgs {
-            Ok(gs) => sources.push((source, gs)),
-            Err(e) => {
-                logln(&mut writer, format!("*** Error building MyGlob: {:?}", e).as_str());
-            }
+    let resgs = MyGlobSearch::new(globstrsource).autorecurse(true).compile();
+    let gs = match resgs {
+        Ok(gs) => gs,
+        Err(e) => {
+            logln(&mut writer, format!("*** Error building MyGlob: {:?}", e).as_str());
+            return;
         }
-    }
-    if sources.is_empty() {
-        logln(&mut writer, "*** No source to process, aborting.");
-        process::exit(1);
-    }
+    };
 
-    log(&mut writer, "\nSources(s): ");
-    for source in sources.iter() {
-        logln(&mut writer, format!("- {}", source.0).as_str());
-    }
+    logln(&mut writer, format!("Source: {}", globstrsource).as_str());
 
-    for gs in sources.iter() {
-        for ma in gs.1.explore_iter() {
-            match ma {
-                MyGlobMatch::File(pb) => process_file(&mut writer, &mut b, &pb),
-
-                MyGlobMatch::Dir(_) => {}
-
-                MyGlobMatch::Error(err) => {
-                    logln(&mut writer, format!("{APP_NAME}: MyGlobMatch error {}", err).as_str());
-                }
+    for ma in gs.explore_iter() {
+        match ma {
+            MyGlobMatch::File(pb) => process_file(&mut writer, &mut b, &pb),
+            MyGlobMatch::Dir(_) => {}
+            MyGlobMatch::Error(err) => {
+                logln(&mut writer, format!("{APP_NAME}: MyGlobMatch error {}", err).as_str());
             }
         }
     }
@@ -109,7 +93,6 @@ fn process_file(writer: &mut LogWriter, b: &mut DataBag, p: &Path) {
             if tad.encoding == TextFileEncoding::NotText {
                 b.errors_count += 1;
                 logln(writer, format!("*** Non-text file: {}", p.display()).as_str());
-                return;
             } else {
                 process_solution(writer, p, tad.text.unwrap().as_str(), b);
             }
@@ -121,46 +104,72 @@ fn process_file(writer: &mut LogWriter, b: &mut DataBag, p: &Path) {
     }
 }
 
-fn process_solution(writer: &mut LogWriter, path: &Path, source: &str, b: &mut DataBag) {
+fn process_solution(writer: &mut LogWriter, sol_path: &Path, source: &str, b: &mut DataBag) {
+    logln(writer, &sol_path.to_string_lossy());
     b.solutions_count += 1;
 
     let mut nbproj = 0;
-    println!("{}", path.display());
+    let mut new_source = String::new();
+
     for line in source.lines() {
         if line.starts_with("Project") {
+            let mut new_line: Option<String> = None;
             let t1 = line.split(" = ").collect::<Vec<&str>>();
             assert_eq!(t1.len(), 2);
             let t2 = t1[1].split(", ").collect::<Vec<&str>>();
             assert!(t2.len() == 3);
             let proj_name = t2[0].trim_matches('"');
-            let proj_path = t2[1].trim_matches('"');
-            if !proj_path.ends_with(".csproj") {
+            let proj_rel_path = t2[1].trim_matches('"');
+            if !proj_rel_path.ends_with(".csproj") {
+                new_source.push_str(line);
+                new_source.push_str("\r\n");
                 continue;
             }
             b.projects_count += 1;
             nbproj += 1;
 
-            print!("  - {proj_name}");
+            log(writer, format!("  - {proj_name}").as_str());
 
-            let ps = path.parent().unwrap().to_path_buf();
-            let pp = ps.join(Path::new(proj_path));
-            if pp.exists() {
-                println!();
+            let sol_dir = sol_path.parent().unwrap().to_path_buf();
+            let proj_abs_path = sol_dir.join(Path::new(proj_rel_path));
+            if proj_abs_path.exists() {
+                logln(writer, "");
             } else {
-                print!(": ");
-                println!("{}", proj_path.red());
+                log(writer, ": ");
+                logln(writer, format!("{}", proj_rel_path.red()).as_str());
                 b.errors_count += 1;
 
-                let pd = pp.parent().unwrap();
+                let pd = proj_abs_path.parent().unwrap(); // Project directory
                 let pat = pd.to_string_lossy().to_string() + "\\*.??proj";
                 let matches = get_files(&pat).unwrap();
-                if matches.len()==1 {
-                    println!("{} {}", "Only one matching project: ".green(), matches.first().unwrap().to_string_lossy().to_string().bright_green());
+                if matches.len() == 1 {
+                    let new_proj_rel_path = matches.first().unwrap().strip_prefix(sol_dir).unwrap();
+                    let new_prps = new_proj_rel_path.to_string_lossy().to_string();
+                    logln(
+                        writer,
+                        format!("{} {}", "Only one matching project: ".green(), new_prps.bright_green()).as_str(),
+                    );
+
+                    new_line = Some(format!("{} = {}, \"{}\", {}", t1[0], t2[0], new_prps, t2[2]));
                 } else {
-                    println!("{}", "No single project found".bright_red());
+                    logln(writer, format!("{}", "No single project found".bright_red()).as_str());
                 }
             }
+            if let Some(nl) = new_line {
+                new_source.push_str(&nl);
+            } else {
+                new_source.push_str(line)
+            };
+        } else {
+            new_source.push_str(line);
         }
+        new_source.push_str("\r\n");
+    }
+    if source != new_source {
+        //let sps = sol_path.to_string_lossy().to_string().replace(".sln", "_new.sln");
+        let sps = sol_path.to_string_lossy().to_string();
+        logln(writer, format!("Updated solution: {}", sps).as_str());
+        fs::write(&sps, new_source);
     }
     assert!(nbproj > 0);
 }
@@ -168,12 +177,12 @@ fn process_solution(writer: &mut LogWriter, path: &Path, source: &str, b: &mut D
 /// Returns a vector matching files PathBuf (full paths), autorecurse is not used but supports ** in pattern
 fn get_files(pattern: &str) -> Result<Vec<PathBuf>, MyGlobError> {
     let resgs = MyGlobSearch::build(pattern)?;
-    let mut res:Vec<PathBuf>=Vec::new();
-    for ma in resgs.explore_iter() {
-        match ma {
-            MyGlobMatch::File(path_buf) => res.push(path_buf),
-            _ => {},
-        }
-    }
-    Ok(res)
+
+    Ok(resgs
+        .explore_iter()
+        .filter_map(|r| match r {
+            MyGlobMatch::File(path_buf) => Some(path_buf),
+            _ => None,
+        })
+        .collect::<Vec<_>>())
 }
