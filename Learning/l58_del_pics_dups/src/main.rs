@@ -12,6 +12,7 @@
 // specific hash. Any second, third... file with the same hash should be deleted.
 
 //#![allow(unused)]
+#![allow(clippy::complexity)]
 
 use std::{
     collections::HashMap,
@@ -78,15 +79,17 @@ fn find_and_delete_duplicates(size_extension_groups: &HashMap<(u64, Option<Strin
             for file_path in files {
                 match hash_file(file_path) {
                     Ok(hash) => {
-                        if content_hashes.contains_key(&hash) {
+                        // Clippy suggested this convoluted variant that I find rather obscure, and I'm not convinced
+                        // there is a gain justifying it
+                        if let std::collections::hash_map::Entry::Vacant(e) = content_hashes.entry(hash) {
+                            e.insert(file_path.clone());
+                        } else {
                             println!(
                                 "Duplicate found: {} (same content as {})",
                                 file_path.display(),
                                 content_hashes.get(&hash).unwrap().display()
                             );
                             files_to_delete.push(file_path.clone());
-                        } else {
-                            content_hashes.insert(hash, file_path.clone());
                         }
                     }
                     Err(e) => eprintln!("Error hashing file {:?}: {}", file_path, e),
@@ -96,7 +99,6 @@ fn find_and_delete_duplicates(size_extension_groups: &HashMap<(u64, Option<Strin
             for file_to_delete in &files_to_delete {
                 println!("Deleting: {:?}", file_to_delete);
 
-                //match fs::remove_file(file_to_delete) {
                 match trash::delete(file_to_delete) {
                     Ok(_) => {
                         // println!("Successfully deleted: {:?}", file_to_delete);
@@ -160,6 +162,8 @@ fn main() -> io::Result<()> {
         Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\Tools"),
         Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\Uro"),
         Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\ZM"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\Temp"),
+        Path::new(r"D:\Kaforas\OneDrive\PicturesODKB\Downloads"),
     ];
 
     let size_extension_groups = find_duplicate_groups(&sources)?;
