@@ -43,8 +43,8 @@ fn tmain() {
 
 fn main() {
     // Use autorecurse
-    //let globstrsource = r"C:\Development\Git*\*.sln";
-    let globstrsource = r"C:\Development\GitVSTS\CSMisc\**\*.sln";
+    let globstrsource = r"C:\Development\Git*\*.sln";
+    //let globstrsource = r"C:\Development\GitVSTS\CSMisc\**\*.sln";
 
     let mut writer = logging::new(APP_NAME, APP_VERSION, true);
     let mut b = DataBag { ..Default::default() };
@@ -116,7 +116,11 @@ fn process_solution(writer: &mut LogWriter, sol_path: &Path, source: &str, b: &m
             let mut new_line: Option<String> = None;
             let t1 = line.split(" = ").collect::<Vec<&str>>();
             assert_eq!(t1.len(), 2);
-            let t2 = t1[1].split(", ").collect::<Vec<&str>>();
+            //let t2 = t1[1].split(", ").collect::<Vec<&str>>();
+            let t2 = split_on_comma(t1[1]);
+            if t2.len() != 3 {
+                println!("{:?}", t2);
+            }
             assert!(t2.len() == 3);
             let proj_name = t2[0].trim_matches('"');
             let proj_rel_path = t2[1].trim_matches('"');
@@ -165,14 +169,49 @@ fn process_solution(writer: &mut LogWriter, sol_path: &Path, source: &str, b: &m
         }
         new_source.push_str("\r\n");
     }
-    if source != new_source {
+
+    if nbproj > 0 && source != new_source {
         //let sps = sol_path.to_string_lossy().to_string().replace(".sln", "_new.sln");
         let sps = sol_path.to_string_lossy().to_string();
         logln(writer, format!("Updated solution: {}", sps).as_str());
         fs::write(&sps, new_source);
     }
-    assert!(nbproj > 0);
 }
+
+fn split_on_comma(t1: &str) -> Vec<&str> {
+    let mut res = Vec::<&str>::new();
+
+    let mut p0 = 0;
+    let mut p1 = 0;
+    let mut in_string = false;
+    while p1 < t1.len() {
+        let ch = t1[p1..].chars().next().unwrap();
+        p1 += ch.len_utf8();
+
+        if ch == '"' {
+            in_string = !in_string;
+        } else if ch == ',' && !in_string {
+            res.push(&t1[p0..p1]);
+            p0 = p1;
+        } else if ch == ' ' && !in_string {
+            p0 += 1;
+        }
+    }
+    if p1 > p0 {
+        res.push(&t1[p0..p1]);
+    }
+
+    res
+}
+
+// fn test_split_on_comma() {
+//     let s =
+//         "\"097 VB Sort Comics\", \"080-099\\097 VB Sort Comics, Rename dir\\097 VB Sort Comics.vbproj\", \"{2A3C68B6-ECA9-4FD6-A10B-9BD2E13CB006}";
+//     let v = split_on_comma(s);
+//     for seg in v {
+//         println!("{}", seg);
+//     }
+// }
 
 /// Returns a vector matching files PathBuf (full paths), autorecurse is not used but supports ** in pattern
 fn get_files(pattern: &str) -> Result<Vec<PathBuf>, MyGlobError> {
