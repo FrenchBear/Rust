@@ -3,13 +3,13 @@
 // 2025-05-14	PV      First version
 // 2025-05-15	PV      1.1 AUTOFIX, support for vbproj/vcxproj, tests
 
-#![allow(unused)]
+//#![allow(unused)]
 
 // standard library imports
 use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
-use std::{fs, io, process};
+use std::fs;
 
 // external crates imports
 use colored::*;
@@ -39,6 +39,7 @@ struct DataBag {
 }
 
 // Simple test
+#[allow(unused)]
 fn tmain() {
     let mut b = DataBag { ..Default::default() };
     process_file(
@@ -183,7 +184,7 @@ fn process_solution(writer: &mut LogWriter, sol_path: &Path, source: &str, b: &m
         //let sps = sol_path.to_string_lossy().to_string().replace(".sln", "_new.sln");
         let sps = sol_path.to_string_lossy().to_string();
         logln(writer, format!("Updated solution: {}", sps).as_str());
-        fs::write(&sps, new_source);
+        fs::write(&sps, new_source).unwrap();
     }
 }
 
