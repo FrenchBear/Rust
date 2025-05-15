@@ -19,6 +19,8 @@ fn main() {
     let file = Path::new(r"C:\Temp\f1.txt");
     let file = Path::new(r"C:\DocumentsOD\Doc tech\Encodings\prenoms-utf16be.txt");
     let file = Path::new(r"C:\Development\GitVSTS\WPF\FW4.8\Learning\WPF24 TaskDialog\TaskDialog\TaskDialogInterop.cs");
+    let file = Path::new(r"c:\Development\GitHub\Visual-Studio-Projects\Net8\020-039\033 CS ILDASM\Interface.cs");
+    let file = Path::new(r"c:\Development\GitHub\RPiExtra\bc-1.06\lib\getopt1.c");
 
     let tad = TextAutoDecode::read_text_file(file)
         .expect("Error decoding file");

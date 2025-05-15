@@ -4,6 +4,7 @@
 // 2025-05-02   PV      First version, deep rewrite of decode_encoding module, with bugs fixed and tests
 // 2025-05-03   PV      1.0.1 Detection of UTF-16 without BOM is only for files with more than 20 bytes (10 characters)
 // 2025-05-06   PV      1.1.0 is_75percent_ascii is only for 8-bit files, use no_binary for other encodings
+// 2025-05-06   PV      1.2.0 check_eightbit fixed (was converting the whole nuffer_1000 regardless of actual length)
 
 #![allow(unused_variables, dead_code, unused_imports)]
 
@@ -25,7 +26,7 @@ mod tests;
 // -----------------------------------
 // Globals
 
-const LIB_VERSION: &str = "1.1.0";
+const LIB_VERSION: &str = "1.2.0";
 
 // -----------------------------------
 // Structures
@@ -156,7 +157,7 @@ impl TextAutoDecode {
         }
 
         // Then check encodings without BOM
-
+        
         // UTF-8 without BOM?
         // Note that if string is only ASCII text, then type is assumed ASCII instead of UTF-8
         if let Some(cow) = Self::check_utf8(&buffer_1000, n) {
@@ -439,7 +440,7 @@ impl TextAutoDecode {
 
     fn check_eightbit(buffer_1000: &[u8], n: usize) -> Option<String> {
         // 8-bit encodings don't have buffer trucation in the middle of an encoding issue
-        let (decoded_string, used_encoding, had_errors) = WINDOWS_1252.decode(buffer_1000);
+        let (decoded_string, used_encoding, had_errors) = WINDOWS_1252.decode(&buffer_1000[..n]);
 
         // Return decoding succeeded without errors and content is text
         if !had_errors && Self::is_75percent_ascii(decoded_string.chars()) {
