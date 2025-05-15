@@ -68,7 +68,7 @@ impl TextAutoDecode {
     pub fn read_text_file(path: &Path) -> Result<TextAutoDecode, io::Error> {
         let mut file = File::open(path)?;
         let mut buffer_1000 = [0; 1000];
-        // read up to 1000 bytes
+        // Read up to 1000 bytes
         let n = file.read(&mut buffer_1000[..])?;
 
         // Empty file?
@@ -169,7 +169,25 @@ impl TextAutoDecode {
                 };
                 return Ok(TextAutoDecode { text: Some(s), encoding: e });
             } else {
-                return Self::final_read(&mut buffer_full_read, &mut buffer_full, &mut file, UTF_8, Some(TextFileEncoding::UTF8));
+                // Special case, first 1000 bytes are ASCII so we got there, but after 1000 bytes, we get 8-bit
+                // characters so we can't return if we didn't recognize the whole file as UTF-8
+                let res = Self::final_read(&mut buffer_full_read, &mut buffer_full, &mut file, UTF_8, Some(TextFileEncoding::UTF8));
+                match &res {
+                    Ok(e) => {
+                        if e.encoding != TextFileEncoding::NotText {
+                            return res;
+                        }
+                    }
+                    _ => return res,
+                }
+                // We skip checking UTF-16, since it's a match for UTF-8/ASCII on the furst 1000 chars
+                return Self::final_read(
+                    &mut buffer_full_read,
+                    &mut buffer_full,
+                    &mut file,
+                    WINDOWS_1252,
+                    Some(TextFileEncoding::EightBit),
+                );
             }
         }
 
