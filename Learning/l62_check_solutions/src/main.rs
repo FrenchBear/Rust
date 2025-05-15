@@ -1,7 +1,7 @@
 // l62_check_solutions: Check Visual Studio .sln files
 //
 // 2025-05-14	PV      First version
-// 2025-05-15	PV      1.1 AUTOFIX, support for vbproj, tests
+// 2025-05-15	PV      1.1 AUTOFIX, support for vbproj/vcxproj, tests
 
 #![allow(unused)]
 
@@ -132,7 +132,7 @@ fn process_solution(writer: &mut LogWriter, sol_path: &Path, source: &str, b: &m
             assert!(t2.len() == 3);
             let proj_name = t2[0].trim_matches('"');
             let proj_rel_path = t2[1].trim_matches('"');
-            if !proj_rel_path.ends_with(".csproj") && !proj_rel_path.ends_with(".vbproj") {
+            if !proj_rel_path.ends_with(".csproj") && !proj_rel_path.ends_with(".vbproj") && !proj_rel_path.ends_with(".vcxproj")  {
                 new_source.push_str(line);
                 new_source.push_str("\r\n");
                 continue;
