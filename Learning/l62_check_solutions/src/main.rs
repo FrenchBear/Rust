@@ -1,6 +1,7 @@
 // l62_check_solutions: Check Visual Studio .sln files
 //
 // 2025-05-14	PV      First version
+// 2025-05-15	PV      1.1 AUTOFIX, support for vbproj, tests
 
 #![allow(unused)]
 
@@ -16,11 +17,16 @@ use logging::*;
 use myglob::{MyGlobError, MyGlobMatch, MyGlobSearch};
 use textautodecode::{TextAutoDecode, TextFileEncoding};
 
+// Modules
+mod tests;
+
 // -----------------------------------
 // Global constants
 
 const APP_NAME: &str = "check_solutions";
-const APP_VERSION: &str = "1.0.0";
+const APP_VERSION: &str = "1.1.0";
+
+const AUTOFIX: bool = false;
 
 // -----------------------------------
 // Main
@@ -32,12 +38,14 @@ struct DataBag {
     errors_count: usize,
 }
 
+// Simple test
 fn tmain() {
     let mut b = DataBag { ..Default::default() };
     process_file(
         &mut None,
         &mut b,
-        Path::new(r"C:\Development\GitVSTS\CSMisc\Net9\CS25_Gnu.Getopt.Getopt\CS25_Gnu.Getopt.sln"),
+        //Path::new(r"C:\Development\GitVSTS\CSMisc\Net9\CS25_Gnu.Getopt.Getopt\CS25_Gnu.Getopt.sln"),
+        Path::new(r"C:\Development\GitHub\Visual-Studio-Projects\FW4.8\033 VB ILDASM\033 VB ILDASM.sln"),
     );
 }
 
@@ -51,7 +59,7 @@ fn main() {
     let start = Instant::now();
 
     // Convert String sources into MyGlobSearch structs
-    let resgs = MyGlobSearch::new(globstrsource).autorecurse(true).compile();
+    let resgs = MyGlobSearch::new(globstrsource).autorecurse(true).add_ignore_dir("Eurofins").compile();
     let gs = match resgs {
         Ok(gs) => gs,
         Err(e) => {
@@ -86,26 +94,26 @@ fn main() {
     }
 }
 
-fn process_file(writer: &mut LogWriter, b: &mut DataBag, p: &Path) {
-    let res = TextAutoDecode::read_text_file(p);
+fn process_file(writer: &mut LogWriter, b: &mut DataBag, path: &Path) {
+    let res = TextAutoDecode::read_text_file(path);
     match res {
         Ok(tad) => {
             if tad.encoding == TextFileEncoding::NotText {
                 b.errors_count += 1;
-                logln(writer, format!("*** Non-text file: {}", p.display()).as_str());
+                logln(writer, format!("*** Non-text file: {}", path.display()).as_str());
             } else {
-                process_solution(writer, p, tad.text.unwrap().as_str(), b);
+                process_solution(writer, path, tad.text.unwrap().as_str(), b);
             }
         }
         Err(e) => {
             b.errors_count += 1;
-            logln(writer, format!("*** Error reading file {}: {}", p.display(), e).as_str());
+            logln(writer, format!("*** Error reading file {}: {}", path.display(), e).as_str());
         }
     }
 }
 
 fn process_solution(writer: &mut LogWriter, sol_path: &Path, source: &str, b: &mut DataBag) {
-    logln(writer, &sol_path.to_string_lossy());
+    let mut sol_printed = false;
     b.solutions_count += 1;
 
     let mut nbproj = 0;
@@ -124,27 +132,28 @@ fn process_solution(writer: &mut LogWriter, sol_path: &Path, source: &str, b: &m
             assert!(t2.len() == 3);
             let proj_name = t2[0].trim_matches('"');
             let proj_rel_path = t2[1].trim_matches('"');
-            if !proj_rel_path.ends_with(".csproj") {
+            if !proj_rel_path.ends_with(".csproj") && !proj_rel_path.ends_with(".vbproj") {
                 new_source.push_str(line);
                 new_source.push_str("\r\n");
                 continue;
             }
+            let extension = Path::new(proj_rel_path).extension().unwrap().to_string_lossy().to_lowercase();
             b.projects_count += 1;
             nbproj += 1;
 
-            log(writer, format!("  - {proj_name}").as_str());
-
             let sol_dir = sol_path.parent().unwrap().to_path_buf();
             let proj_abs_path = sol_dir.join(Path::new(proj_rel_path));
-            if proj_abs_path.exists() {
-                logln(writer, "");
-            } else {
-                log(writer, ": ");
+            if !proj_abs_path.exists() {
+                if !sol_printed {
+                    logln(writer, &sol_path.to_string_lossy());
+                    sol_printed = true;
+                }
+                log(writer, format!("  - {proj_name}: ").as_str());
                 logln(writer, format!("{}", proj_rel_path.red()).as_str());
                 b.errors_count += 1;
 
                 let pd = proj_abs_path.parent().unwrap(); // Project directory
-                let pat = pd.to_string_lossy().to_string() + "\\*.??proj";
+                let pat = pd.to_string_lossy().to_string() + "\\*." + extension.as_str();
                 let matches = get_files(&pat).unwrap();
                 if matches.len() == 1 {
                     let new_proj_rel_path = matches.first().unwrap().strip_prefix(sol_dir).unwrap();
@@ -170,7 +179,7 @@ fn process_solution(writer: &mut LogWriter, sol_path: &Path, source: &str, b: &m
         new_source.push_str("\r\n");
     }
 
-    if nbproj > 0 && source != new_source {
+    if AUTOFIX && nbproj > 0 && source != new_source {
         //let sps = sol_path.to_string_lossy().to_string().replace(".sln", "_new.sln");
         let sps = sol_path.to_string_lossy().to_string();
         logln(writer, format!("Updated solution: {}", sps).as_str());
@@ -178,6 +187,7 @@ fn process_solution(writer: &mut LogWriter, sol_path: &Path, source: &str, b: &m
     }
 }
 
+/// A variant of t1.split(", ") that don't break inside quoted part
 fn split_on_comma(t1: &str) -> Vec<&str> {
     let mut res = Vec::<&str>::new();
 
@@ -191,7 +201,7 @@ fn split_on_comma(t1: &str) -> Vec<&str> {
         if ch == '"' {
             in_string = !in_string;
         } else if ch == ',' && !in_string {
-            res.push(&t1[p0..p1]);
+            res.push(&t1[p0..p1 - 1]);
             p0 = p1;
         } else if ch == ' ' && !in_string {
             p0 += 1;
@@ -203,15 +213,6 @@ fn split_on_comma(t1: &str) -> Vec<&str> {
 
     res
 }
-
-// fn test_split_on_comma() {
-//     let s =
-//         "\"097 VB Sort Comics\", \"080-099\\097 VB Sort Comics, Rename dir\\097 VB Sort Comics.vbproj\", \"{2A3C68B6-ECA9-4FD6-A10B-9BD2E13CB006}";
-//     let v = split_on_comma(s);
-//     for seg in v {
-//         println!("{}", seg);
-//     }
-// }
 
 /// Returns a vector matching files PathBuf (full paths), autorecurse is not used but supports ** in pattern
 fn get_files(pattern: &str) -> Result<Vec<PathBuf>, MyGlobError> {
