@@ -2,6 +2,7 @@
 //
 // 2025-05-02   PV
 // 2025-05-06   PV      Tests with non-text content
+// 2025-06-24   PV      Added check_utf8 checks for truncated UTF-8 sequence at the end of a 1000 bytes buffer
 
 #![cfg(test)]
 
@@ -120,4 +121,64 @@ fn test_utf8_with_binary_char() -> Result<(), io::Error> {
     let t = get_fmt(temp_file.path());
     assert_eq!(t.encoding, TextFileEncoding::NotText);
     Ok(())
+}
+
+#[test]
+fn test_utf8_truncate_1() {
+    let model: [u8; 1000] = [b'A'; 1000];
+    let res = TextAutoDecode::check_utf8(&model, 1000);
+    assert!(res.is_some());
+}
+
+#[test]
+fn test_utf8_truncate_2() {
+    let mut model: [u8; 1000] = [b'A'; 1000];
+    model[999] = 0b11000000;    // byte 1 of a sequence of 2 bytes
+    let res = TextAutoDecode::check_utf8(&model, 1000);
+    assert!(res.is_some());
+}
+
+#[test]
+fn test_utf8_truncate_3() {
+    let mut model: [u8; 1000] = [b'A'; 1000];
+    model[998] = 0b11100000;    // byte 1 of a sequence of 3 bytes
+    model[999] = 0b10000000;    // Folowing byte
+    let res = TextAutoDecode::check_utf8(&model, 1000);
+    assert!(res.is_some());
+}
+
+#[test]
+fn test_utf8_truncate_4() {
+    let mut model: [u8; 1000] = [b'A'; 1000];
+    model[998] = 0b11110000;    // byte 1 of a sequence of 4 bytes
+    model[999] = 0b10000000;    // Folowing byte
+    let res = TextAutoDecode::check_utf8(&model, 1000);
+    assert!(res.is_some());
+}
+
+#[test]
+fn test_utf8_truncate_5() {
+    let mut model: [u8; 1000] = [b'A'; 1000];
+    model[996] = 0b10000000;    // Folowing byte, 4 following bytes is not allowed
+    model[997] = 0b10000000;    // Folowing byte
+    model[998] = 0b10000000;    // Folowing byte
+    model[999] = 0b10000000;    // Folowing byte
+    let res = TextAutoDecode::check_utf8(&model, 1000);
+    assert!(!res.is_some());
+}
+
+#[test]
+fn test_utf8_truncate_6() {
+    let mut model: [u8; 1000] = [b'A'; 1000];
+    let mut i=0;
+    // Fill with BOAR U+1F417 = F0 9F 90 97
+    while i<1000 {
+        model[i] = 0xF0;
+        model[i+1] = 0x9F;
+        model[i+2] = 0x90;
+        model[i+3] = 0x97;
+        i+=4
+    }
+    let res = TextAutoDecode::check_utf8(&model, 1000);
+    assert!(res.is_some());
 }

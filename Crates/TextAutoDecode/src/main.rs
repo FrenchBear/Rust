@@ -15,7 +15,7 @@ pub use textautodecode::*;
 fn main() {
     println!("TextAutoDecode lib version: {}\n", TextAutoDecode::version());
 
-    // let file = Path::new(r"C:\DocumentsOD\Doc tech\Encodings\prenoms-utf8.txt");
+    let file = Path::new(r"C:\DocumentsOD\Doc tech\Encodings\prenoms-utf8.txt");
     let file = Path::new(r"C:\Temp\f1.txt");
     let file = Path::new(r"C:\DocumentsOD\Doc tech\Encodings\prenoms-utf16be.txt");
     let file = Path::new(r"C:\Development\GitVSTS\WPF\FW4.8\Learning\WPF24 TaskDialog\TaskDialog\TaskDialogInterop.cs");

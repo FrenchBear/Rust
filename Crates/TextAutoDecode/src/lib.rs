@@ -4,7 +4,8 @@
 // 2025-05-02   PV      First version, deep rewrite of decode_encoding module, with bugs fixed and tests
 // 2025-05-03   PV      1.0.1 Detection of UTF-16 without BOM is only for files with more than 20 bytes (10 characters)
 // 2025-05-06   PV      1.1.0 is_75percent_ascii is only for 8-bit files, use no_binary for other encodings
-// 2025-05-06   PV      1.2.0 check_eightbit fixed (was converting the whole nuffer_1000 regardless of actual length)
+// 2025-05-06   PV      1.2.0 check_eightbit fixed (was converting the whole buffer_1000 regardless of actual length)
+// 2025-06-24   PV      1.3.0 check_utf8 checks correctly for a possibly truncated UTF-8 sequence at the end of a 1000 bytes buffer
 
 #![allow(unused_variables, dead_code, unused_imports)]
 
@@ -26,7 +27,7 @@ mod tests;
 // -----------------------------------
 // Globals
 
-const LIB_VERSION: &str = "1.2.0";
+const LIB_VERSION: &str = "1.3.0";
 
 // -----------------------------------
 // Structures
@@ -368,7 +369,7 @@ impl TextAutoDecode {
         return Ok(TextAutoDecode { text: Some(s), encoding: e });
     }
 
-    fn check_utf8(buffer_1000: &[u8], n: usize) -> Option<Cow<str>> {
+    pub fn check_utf8(buffer_1000: &[u8], n: usize) -> Option<Cow<str>> {
         let test_buffer=
             // Since we potentially truncated a UTF-8 sequence at the end, we may have to reduce buffer size to avoid a
             // truncated sequence that would render buffer invalid for UTF-8.
@@ -376,14 +377,24 @@ impl TextAutoDecode {
             // of a 2-4 bytes sequence. We could check if the sequence is complete or truncated, but the quick way is good enough.
             if n == 1000 {
                 let mut pa = 999;
-                while pa > 0 && buffer_1000[pa] >= 128 {
-                    pa -= 1;
+                loop {
+                    // If buffer_1000[pa] is a valid beginning for UTF-8 encoding, we can stop here
+                    if buffer_1000[pa]<128 || (buffer_1000[pa] & 0b11100000)==0b11000000 || (buffer_1000[pa] & 0b11110000)==0b11100000 || (buffer_1000[pa] & 0b11111000)==0b11110000 {
+                        break
+                    }
+                    // If it's a continuation character, we can continue, but at most three continuation characters are valid
+			        if (buffer_1000[pa] & 0b11000000)==0b10000000 && pa>=997 {
+                        pa -= 1;
+                        continue
+                    }
+                    // Sorry, that's not valid UTF-8...
+                    return None
                 }
-                // No single byte<128 over 1000 bytes, don't bother decode that as UTF-16, not interesting
-                if pa == 0 {
-                    return None;
+                // If last character is <128, it's not truncated and can be kept
+                if buffer_1000[pa]<128 {
+                    pa+=1;
                 }
-                &buffer_1000[..=pa]
+                &buffer_1000[..pa]
             } else {
                 &buffer_1000[..n]
             };
