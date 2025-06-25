@@ -65,7 +65,7 @@ fn test_utf16le() {
 
 #[test]
 fn test_utf16bbeom() {
-    let t = get_fmt(Path::new(r"C:\DocumentsOD\Doc tech\Encodings\prenoms-utf16bbeom.txt"));
+    let t = get_fmt(Path::new(r"C:\DocumentsOD\Doc tech\Encodings\prenoms-utf16bebom.txt"));
     assert_eq!(t.encoding, TextFileEncoding::UTF16BEBOM);
     assert!(t.text.unwrap().starts_with("juliette sophie brigitte géraldine"));
 }

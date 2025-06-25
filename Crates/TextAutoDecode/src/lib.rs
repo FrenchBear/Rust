@@ -82,7 +82,7 @@ impl TextAutoDecode {
         }
 
         let mut buffer_full = Vec::new();
-        let mut buffer_full_read = false;
+        let mut is_buffer_full_read = false;
 
         // First, check for BOM that will directly indicate encoding. If BOM is present but detection fails, no need to
         // continue testing other possible formats.
@@ -97,7 +97,7 @@ impl TextAutoDecode {
                         encoding: TextFileEncoding::UTF8BOM,
                     });
                 } else {
-                    return Self::final_read(&mut buffer_full_read, &mut buffer_full, &mut file, UTF_8, Some(TextFileEncoding::UTF8BOM));
+                    return Self::final_read(&mut is_buffer_full_read, &mut buffer_full, &mut file, UTF_8, Some(TextFileEncoding::UTF8BOM));
                 }
             } else {
                 return Ok(TextAutoDecode {
@@ -117,7 +117,7 @@ impl TextAutoDecode {
                     });
                 } else {
                     return Self::final_read(
-                        &mut buffer_full_read,
+                        &mut is_buffer_full_read,
                         &mut buffer_full,
                         &mut file,
                         UTF_16LE,
@@ -142,7 +142,7 @@ impl TextAutoDecode {
                     });
                 } else {
                     return Self::final_read(
-                        &mut buffer_full_read,
+                        &mut is_buffer_full_read,
                         &mut buffer_full,
                         &mut file,
                         UTF_16LE,
@@ -173,7 +173,7 @@ impl TextAutoDecode {
             } else {
                 // Special case, first 1000 bytes are ASCII so we got there, but after 1000 bytes, we get 8-bit
                 // characters so we can't return if we didn't recognize the whole file as UTF-8
-                let res = Self::final_read(&mut buffer_full_read, &mut buffer_full, &mut file, UTF_8, Some(TextFileEncoding::UTF8));
+                let res = Self::final_read(&mut is_buffer_full_read, &mut buffer_full, &mut file, UTF_8, Some(TextFileEncoding::UTF8));
                 match &res {
                     Ok(e) => {
                         if e.encoding != TextFileEncoding::NotText {
@@ -184,7 +184,7 @@ impl TextAutoDecode {
                 }
                 // We skip checking UTF-16, since it's a match for UTF-8/ASCII on the furst 1000 chars
                 return Self::final_read(
-                    &mut buffer_full_read,
+                    &mut is_buffer_full_read,
                     &mut buffer_full,
                     &mut file,
                     WINDOWS_1252,
@@ -204,7 +204,7 @@ impl TextAutoDecode {
                     });
                 } else {
                     return Self::final_read(
-                        &mut buffer_full_read,
+                        &mut is_buffer_full_read,
                         &mut buffer_full,
                         &mut file,
                         UTF_16LE,
@@ -222,7 +222,7 @@ impl TextAutoDecode {
                     });
                 } else {
                     return Self::final_read(
-                        &mut buffer_full_read,
+                        &mut is_buffer_full_read,
                         &mut buffer_full,
                         &mut file,
                         UTF_16BE,
@@ -241,7 +241,7 @@ impl TextAutoDecode {
                 });
             } else {
                 return Self::final_read(
-                    &mut buffer_full_read,
+                    &mut is_buffer_full_read,
                     &mut buffer_full,
                     &mut file,
                     WINDOWS_1252,
@@ -257,23 +257,23 @@ impl TextAutoDecode {
         });
     }
 
-    // The 75% ASCII test is too restrictive, some valud UTF-8 files are rejected (ex: output of tree command)
+    // The 75% ASCII test is too restrictive, some valid UTF-8 files are rejected (ex: output of tree command)
     // So we only detect control characters that should not be present in a text file
     // Old text files may contain FF (Form Feed, 12) or VT (Vertical Tab, 11), but it's unlikely for common files
-    fn no_binary_chars(chars: std::str::Chars<'_>, also_check_block_c1: bool) -> bool {
+    fn contains_binary_chars(chars: std::str::Chars<'_>, also_check_block_c1: bool) -> bool {
         for c in chars {
             let b = c as i32;
             // In C0 block, only three usual characters are accepted
             if b < 32 && (b != 9 && b != 10 && b != 13) {
-                return false;
+                return true;
             }
             // If requested, no characters of C1 is accepted (for all encodings but 8-bit)
             if also_check_block_c1 && b >= 128 && b < 160 {
-                return false;
+                return true;
             }
         }
 
-        true
+        false
     }
 
     // Check that string s doesn't contain a null char and contains at least 75% of ASCII 32..127, CR, LF, TAB
@@ -286,10 +286,10 @@ impl TextAutoDecode {
             let b = c as i32;
             // For 8-bit files, we only exclude non-comon elements of C0 block, and DEL (127) char
             // Anything in [128..255] is accepted
-            if b == 128 || b < 32 && (b != 9 && b != 10 && b != 13) {
+            if b==127 || b < 32 && (b != 9 && b != 10 && b != 13) {
                 return false;
             }
-            if (32..128).contains(&b) || b == 9 || b == 10 || b == 13 {
+            if (32..127).contains(&b) || b == 9 || b == 10 || b == 13 {
                 acount += 1;
             }
         }
@@ -298,18 +298,19 @@ impl TextAutoDecode {
         if len < 10 { true } else { acount as f64 / len as f64 >= 0.75 }
     }
 
+    
     fn final_read(
-        buffer_full_read: &mut bool,
+        is_buffer_full_read: &mut bool,
         buffer_full: &mut Vec<u8>,
         file: &mut File,
         encoding: &'static Encoding,
         my_encoding_opt: Option<TextFileEncoding>,
     ) -> Result<TextAutoDecode, io::Error> {
-        if !*buffer_full_read {
+        if !*is_buffer_full_read {
             let _ = file.rewind();
             let mut reader = BufReader::new(file);
             reader.read_to_end(buffer_full)?;
-            *buffer_full_read = true;
+            *is_buffer_full_read = true;
         }
 
         let (decoded_string, used_encoding, had_errors) = encoding.decode(&buffer_full[..]);
@@ -348,7 +349,7 @@ impl TextAutoDecode {
             });
         }
 
-        if my_encoding != TextFileEncoding::EightBit && !Self::no_binary_chars(decoded_string.chars(), my_encoding == TextFileEncoding::EightBit) {
+        if my_encoding != TextFileEncoding::EightBit && Self::contains_binary_chars(decoded_string.chars(), my_encoding == TextFileEncoding::EightBit) {
             return Ok(TextAutoDecode {
                 text: None,
                 encoding: TextFileEncoding::NotText,
@@ -402,7 +403,7 @@ impl TextAutoDecode {
         let (decoded_string, used_encoding, had_errors) = UTF_8.decode(test_buffer);
 
         // Return decoding succeeded without errors and content is text
-        if !had_errors && Self::no_binary_chars(decoded_string.chars(), true) {
+        if !had_errors && !Self::contains_binary_chars(decoded_string.chars(), true) {
             Some(decoded_string)
         } else {
             None
@@ -419,11 +420,8 @@ impl TextAutoDecode {
                 let off = if encoding==UTF_16LE {0} else if encoding==UTF_16BE {1} else {unreachable!()};
 
                 let mut pa = 998;
-                while pa > 0 && buffer_1000[pa+off] >= 0xD8 && buffer_1000[pa+off] <= 0xDB {
+                if buffer_1000[pa+off] >= 0xD8 && buffer_1000[pa+off] <= 0xDB {
                     pa -= 2;
-                }
-                if pa == 0 {
-                    return None;
                 }
                 &buffer_1000[..pa+2]
             } else {
@@ -442,7 +440,7 @@ impl TextAutoDecode {
         }
 
         // Return decoding succeeded without if there are no binary chars in text (C0 and C1)
-        if Self::no_binary_chars(decoded_string.chars(), true) {
+        if !Self::contains_binary_chars(decoded_string.chars(), true) {
             Some(decoded_string.into_owned())
         } else {
             None
