@@ -2,6 +2,7 @@
 // Options processing
 //
 // 2025-04-05   PV      First version
+// 2025-06-25   PV      Option -h renamex -a, and ctually parsed...
 
 // Application imports
 use crate::*;
@@ -17,6 +18,7 @@ use mymarkup::MyMarkup;
 #[derive(Debug, Default)]
 pub struct Options {
     pub source: Option<String>,
+    pub showall: bool,
     pub verbose: bool,
 }
 
@@ -31,11 +33,11 @@ impl Options {
     fn usage() {
         Options::header();
         println!();
-        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄ [-⦃h⦄] [-⦃v⦄] [⟨dir⟩]
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄ [-⦃a⦄] [-⦃v⦄] [⟨dir⟩]
 
 ⌊Options⌋:
 ⦃?⦄|⦃-?⦄|⦃-h⦄  ¬Show this message
-⦃-h⦄       ¬Show hidden directories
+⦃-a⦄       ¬Show all directories including hidden directories
 ⦃-v⦄       ¬Verbose output
 ⟨dir⟩      ¬Starting directory";
 
@@ -52,7 +54,7 @@ impl Options {
             }
 
         let mut options = Options { ..Default::default() };
-        let mut opts = getopt::Parser::new(&args, "h?v");
+        let mut opts = getopt::Parser::new(&args, "h?av");
 
         loop {
             match opts.next().transpose()? {
@@ -61,6 +63,10 @@ impl Options {
                     Opt('h', None) | Opt('?', None) => {
                         Self::usage();
                         return Err("".into());
+                    }
+
+                    Opt('a', None) => {
+                        options.showall = true;
                     }
 
                     Opt('v', None) => {

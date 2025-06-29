@@ -2,6 +2,7 @@
 // Print visual directory structure in Rust
 //
 // 2025-05-05   PV      First version (from Gemini)
+// 2025-06-29   PV      Renames (from -h) and parsed correctly option -a, but still don't use it in code
 
 #![allow(unused)]
 
@@ -28,7 +29,7 @@ use options::*;
 // Global constants
 
 const APP_NAME: &str = "rtree";
-const APP_VERSION: &str = "1.0.1";
+const APP_VERSION: &str = "1.0.2";
 
 // ==============================================================================================
 // Main
