@@ -33,11 +33,11 @@ impl Options {
     fn usage() {
         Options::header();
         println!();
-        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄ [-⦃a⦄] [-⦃v⦄] [⟨dir⟩]
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄] [-⦃a⦄] [-⦃v⦄] [⟨dir⟩]
 
 ⌊Options⌋:
 ⦃?⦄|⦃-?⦄|⦃-h⦄  ¬Show this message
-⦃-a⦄       ¬Show all directories including hidden directories
+⦃-a⦄       ¬Show all directories, including hidden directories and directories starting with a dot
 ⦃-v⦄       ¬Verbose output
 ⟨dir⟩      ¬Starting directory";
 
