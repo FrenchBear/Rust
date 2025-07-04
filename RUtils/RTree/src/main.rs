@@ -3,7 +3,8 @@
 //
 // 2025-05-05   PV      First version (from Gemini)
 // 2025-06-29   PV      Renames (from -h) and parsed correctly option -a, but still don't use it in code
-// 2025-06-30   PV      1.1.0 Use StrCmpLogicalW to sort names; without option -a, do not show hidden directories or dir names starting with a .
+// 2025-06-29   PV      Renames (from -h) and parsed correctly option -a, but still don't use it in code
+// 2025-07-04   PV      1.2.0 Option -A, option -d. Process junctions metadata correctly
 
 #![allow(unused)]
 
@@ -40,7 +41,7 @@ use options::*;
 // Global constants
 
 const APP_NAME: &str = "rtree";
-const APP_VERSION: &str = "1.1.0";
+const APP_VERSION: &str = "1.2.0";
 
 // ==============================================================================================
 // Call StrCmpLogicalW
@@ -80,8 +81,15 @@ fn str_cmp_logical_w_rust(s1: &str, s2: &str) -> Ordering {
 struct DataBag {
     dirs_count: usize,
     links_count: usize,
-    showall: bool,
 }
+
+// fn main() {
+//     let (h, s) = is_hidden_or_system_dir(Path::new(r"C:\Users\Pierr\AppData"));
+//     println!("h:{h} s:{s}");
+
+//     let (h, s) = is_hidden_or_system_dir(Path::new(r"C:\Users\Pierr\SendTo"));
+//     println!("h:{h} s:{s}");
+// }
 
 fn main() {
     // Process options
@@ -94,24 +102,21 @@ fn main() {
         process::exit(1);
     });
 
-    let mut b = DataBag {
-        showall: options.showall,
-        ..Default::default()
-    };
+    let mut b = DataBag { ..Default::default() };
 
     let start = Instant::now();
-    match options.source {
+    match options.source.clone() {
         Some(start_dir) => {
-            do_print(&mut b, &start_dir);
+            do_print(&mut b, &start_dir, &options);
         }
         None => {
-            do_print(&mut b, ".");
+            do_print(&mut b, ".", &options);
         }
     }
     let duration = start.elapsed();
 
     if options.verbose {
-        print!("{} directorie(s)", b.dirs_count);
+        print!("{} subdirectorie(s)", b.dirs_count);
         if b.links_count > 0 {
             print!(", {} link(s)", b.links_count);
         }
@@ -120,7 +125,7 @@ fn main() {
 }
 
 // Moved to a separate function to use ? operator
-fn do_print(b: &mut DataBag, source: &str) -> Result<(), io::Error> {
+fn do_print(b: &mut DataBag, source: &str, options: &Options) -> Result<(), io::Error> {
     let start_dir = &Path::new(source);
     if !start_dir.is_dir() {
         eprintln!("{APP_NAME}: '{}' is not a valid directory.", start_dir.display());
@@ -146,43 +151,46 @@ fn do_print(b: &mut DataBag, source: &str) -> Result<(), io::Error> {
     let num_subdirs = result.len();
     for (i, subdir) in result.iter().enumerate() {
         let (h, s) = is_hidden_or_system_dir(subdir);
-        if h && s {
+        if s && !options.show_hidden_and_system || h && !options.show_hidden {
             continue;
         }
-        if (!h) || b.showall {
-            print_tree(b, subdir, "", i == num_subdirs - 1)?;
-        }
+        print_tree(b, subdir, "", i == num_subdirs - 1, options, (options.maxdepth as i32)-1)?;
     }
 
     Ok(())
 }
 
-fn print_tree(b: &mut DataBag, dir: &Path, prefix: &str, is_last: bool) -> io::Result<()> {
+fn print_tree(b: &mut DataBag, dir: &Path, prefix: &str, is_last: bool, options: &Options, depth: i32) -> io::Result<()> {
     let entry_prefix = if is_last { "└── " } else { "├── " };
-
-    if dir.is_symlink() {
-        let target_path = fs::read_link(dir)?;
-        println!(
-            "{}{}{} -> {}",
-            prefix,
-            entry_prefix,
-            dir.file_name().unwrap_or_default().to_string_lossy(),
-            target_path.display()
-        );
-        b.links_count += 1;
-        return Ok(());
-    }
-
-    b.dirs_count += 1;
-    println!("{}{}{}", prefix, entry_prefix, dir.file_name().unwrap_or_default().to_string_lossy());
-
     let new_prefix = if is_last {
         prefix.to_string() + "    "
     } else {
         prefix.to_string() + "│   "
     };
 
-    let mut entries: Vec<PathBuf> = fs::read_dir(dir)?
+    print!("{}{}{}", prefix, entry_prefix, dir.file_name().unwrap_or_default().to_string_lossy());
+
+    let s1 = "aaa";
+    let zz = s1.replace("a", "b");
+
+    if dir.is_symlink() {
+        let target_path = fs::read_link(dir)?;
+        let t = target_path.to_string_lossy().replace(r"\\?\", "");
+        println!(" -> {}", t);
+        b.links_count += 1;
+        return Ok(());
+    }
+
+    b.dirs_count += 1;
+
+    // Some directories can't be read, add ... ? to name to indicate we don't know what's below
+    let rd = fs::read_dir(dir);
+    if rd.is_err() {
+        println!("  ... ?");
+        return Ok(());
+    }
+
+    let mut entries: Vec<PathBuf> = rd?
         .filter_map(Result::ok)
         .map(|entry| entry.path())
         .filter(|path| path.is_dir())
@@ -199,14 +207,23 @@ fn print_tree(b: &mut DataBag, dir: &Path, prefix: &str, is_last: bool) -> io::R
     });
 
     let num_entries = entries.len();
+
+	if depth == 0 {
+		if num_entries > 0 {
+			println!(" ...");
+		} else {
+			println!();
+		}
+		return Ok(());
+	}
+	println!();
+
     for (i, entry) in entries.iter().enumerate() {
         let (h, s) = is_hidden_or_system_dir(&entry);
-        if h && s {
+        if s && !options.show_hidden_and_system || h && !options.show_hidden {
             continue;
         }
-        if (!h) || b.showall {
-            print_tree(b, entry, &new_prefix, i == num_entries - 1)?;
-        }
+        print_tree(b, entry, &new_prefix, i == num_entries - 1, options, depth-1)?;
     }
 
     Ok(())
@@ -216,11 +233,14 @@ fn print_tree(b: &mut DataBag, dir: &Path, prefix: &str, is_last: bool) -> io::R
 // But just hidden dirs such as .git are included
 // But just hidden dirs such as .git are included
 fn is_hidden_or_system_dir(path: &Path) -> (bool, bool) {
-    let starts_with_a_dot = path.file_name().unwrap_or_default().to_str().unwrap_or_default().starts_with(".");
+    let filename = path.file_name().unwrap_or_default().to_str().unwrap_or_default();
+    let starts_with_dot = filename.starts_with(".");
+    let starts_with_dollar = filename.starts_with("$");
 
     #[cfg(target_os = "windows")]
     {
-        let metadata = match fs::metadata(path) {
+        //let metadata = match fs::metadata(path) {
+        let metadata = match fs::symlink_metadata(path) {
             Ok(m) => m,
             Err(_) => return (false, false),
         };
@@ -228,8 +248,8 @@ fn is_hidden_or_system_dir(path: &Path) -> (bool, bool) {
         let attributes = metadata.file_attributes();
         let is_system = (attributes & 0x00000004) != 0;
         let is_hidden = (attributes & 0x00000002) != 0;
-        return (is_hidden || starts_with_a_dot, is_system);
+        return (is_hidden || starts_with_dot, is_system || (is_hidden && starts_with_dollar));
     }
 
-    (starts_with_a_dot, false)
+    (starts_with_dot, false)
 }

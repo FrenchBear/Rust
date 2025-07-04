@@ -2,6 +2,8 @@
 // Parse and render my own markup language
 //
 // 2025-05-05   PV      First version
+// 2025-05-07   PV      Clippy cleanup
+// 2025-07-04   PV      1.0.1 Fixed add \n if text doesn't ends with \n
 //
 // MyMarkup use pecialized brackets for formatting text:
 // ⟪Bold⟫           ~W  ~X
@@ -26,7 +28,7 @@ mod tests;
 // -----------------------------------
 // Globals
 
-const LIB_VERSION: &str = "1.0.0";
+const LIB_VERSION: &str = "1.0.1";
 const SHOW_LIMITS: bool = false; // For dev
 
 // Styles
@@ -99,7 +101,7 @@ impl MyMarkup {
     pub fn render_markup(txt_str: &str) {
         // To simplify code, ensure that string always ends with \n
         let mut txt_string = String::from(txt_str);
-        if !(txt_string.ends_with('\n')) {
+        if !txt_string.ends_with('\n') {
             txt_string.push('\n');
         }
 
@@ -171,7 +173,7 @@ impl MyMarkup {
                 '\n' => {
                     if !word.is_empty() && !is_only_spaces(&word) {
                         if col + len <= width {
-                            print!("{}", word);
+                            print!("{word}");
                             if SHOW_LIMITS {
                                 col += len;
                                 while col < width {
@@ -197,7 +199,7 @@ impl MyMarkup {
                                 word.remove(0);
                                 len -= 1;
                             }
-                            print!("{}", word);
+                            print!("{word}");
                             col = tab + len;
                             if SHOW_LIMITS {
                                 while col < width {
@@ -224,7 +226,7 @@ impl MyMarkup {
                     tab = 0;
                 }
                 '¬' => {
-                    print!("{}", word);
+                    print!("{word}");
                     col += len;
                     tab = col;
                     word.clear();
@@ -239,7 +241,7 @@ impl MyMarkup {
                         }
 
                         if col + len <= width {
-                            print!("{}", word);
+                            print!("{word}");
                             col += len;
                             word.clear();
                             len = 0;
@@ -261,7 +263,7 @@ impl MyMarkup {
                                 len -= 1;
                             }
 
-                            print!("{}", word);
+                            print!("{word}");
                             col += len;
                             word.clear();
                             len = 0;
@@ -296,7 +298,7 @@ impl MyMarkup {
                         }
 
                         if col + len >= width {
-                            println!("{}|", word);
+                            println!("{word}|");
 
                             word.clear();
                             len = 0;

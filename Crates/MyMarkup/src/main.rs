@@ -2,6 +2,7 @@
 // Quick-and-dirty main function to test code during dev
 //
 // 2025-05-05   PV      First version
+// 2025-05-07   PV      Clippy cleanup
 
 #![allow(unused)]
 
@@ -61,7 +62,16 @@ Files without BOM must be more than 10 characters for auto-detection of UTF-8 or
 • ¬⟪Patterns without ⟦**⟧ and ending with a filter⟫: ⟦\\**⟧ is inserted before final filter to find all matching files of all subdirectories.
 ";
 
-    //let text = "to match a single digit, see https://docs.rs/regex/latest/regex/#character-classes for character classes and escape sequences supported.";
+// Exemple of string that does not ends with \n
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄] [-⦃a⦄|-⦃A⦄] [⦃-d⦄ ⟨max_depth⟩] [-⦃v⦄] [⟨dir⟩]
+
+⌊Options⌋:
+⦃?⦄|⦃-?⦄|⦃-h⦄      ¬Show this message
+⦃-a⦄           ¬Show hidden directories and directories starting with a dot
+⦃-A⦄           ¬Show system+hidden directories and directories starting with a dollar sign
+⦃-d⦄ ⟨max_depth⟩ ¬Limits recursion to max_depth folders, default is 0 meaning no limitation
+⦃-v⦄           ¬Verbose output
+⟨dir⟩          ¬Starting directory";
 
     MyMarkup::render_markup(text);
     //test_own();
@@ -69,15 +79,15 @@ Files without BOM must be more than 10 characters for auto-detection of UTF-8 or
 
 fn test_own() {
     println!("Style Default");
-    println!("Style {}Bold{}, and default", STYLE_BOLD_ON, STYLE_BOLD_OFF);
-    println!("Style {}Underline{}, and default", STYLE_UNDERLINE_ON, STYLE_UNDERLINE_OFF);
-    println!("Style {}Dimmed{}, and default", STYLE_DIM_ON, STYLE_DIM_OFF);
-    println!("Style {}Italic{}, and default", STYLE_ITALIC_ON, STYLE_ITALIC_OFF);
-    println!("Style {}Underline{}, and default", STYLE_UNDERLINE_ON, STYLE_UNDERLINE_OFF);
-    println!("Style {}Blink{}, and default", STYLE_BLINK_ON, STYLE_BLINK_OFF);
-    println!("Style {}Reverse{}, and default", STYLE_REVERSE_ON, STYLE_REVERSE_OFF);
-    println!("Style {}Hidden{}, and default", STYLE_HIDDEN_ON, STYLE_HIDDEN_OFF);
-    println!("Style {}Strikethrough{}, and default", STYLE_STRIKETHROUGH_ON, STYLE_STRIKETHROUGH_OFF);
+    println!("Style {STYLE_BOLD_ON}Bold{STYLE_BOLD_OFF}, and default");
+    println!("Style {STYLE_UNDERLINE_ON}Underline{STYLE_UNDERLINE_OFF}, and default");
+    println!("Style {STYLE_DIM_ON}Dimmed{STYLE_DIM_OFF}, and default");
+    println!("Style {STYLE_ITALIC_ON}Italic{STYLE_ITALIC_OFF}, and default");
+    println!("Style {STYLE_UNDERLINE_ON}Underline{STYLE_UNDERLINE_OFF}, and default");
+    println!("Style {STYLE_BLINK_ON}Blink{STYLE_BLINK_OFF}, and default");
+    println!("Style {STYLE_REVERSE_ON}Reverse{STYLE_REVERSE_OFF}, and default");
+    println!("Style {STYLE_HIDDEN_ON}Hidden{STYLE_HIDDEN_OFF}, and default");
+    println!("Style {STYLE_STRIKETHROUGH_ON}Strikethrough{STYLE_STRIKETHROUGH_OFF}, and default");
 
     println!("\nColors");
     let fga = [
@@ -101,6 +111,6 @@ fn test_own() {
     ];
 
     for (name, fg) in fga {
-        println!("{}{:?}{}", fg, name, FG_DEFAULT);
+        println!("{fg}{name:?}{FG_DEFAULT}");
     }
 }
