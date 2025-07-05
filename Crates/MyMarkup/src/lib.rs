@@ -117,7 +117,7 @@ impl MyMarkup {
     }
 
     pub fn build_markup_core(txt_str: &str, show_limits: bool, width: usize) -> String {
-        // Ensure that string always ends with £
+        // Add END_OF_STRING special char
         let mut txt_string = String::from(txt_str);
         txt_string.push(END_OF_STRING);
 
