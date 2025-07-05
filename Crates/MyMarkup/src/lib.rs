@@ -4,6 +4,7 @@
 // 2025-05-05   PV      First version
 // 2025-05-07   PV      Clippy cleanup
 // 2025-07-04   PV      1.0.1 Fixed add \n if text doesn't ends with \n
+// 2025-07-05   PV      1.1.0 Main generation is now build_markup_core, which returns a string rather than printing directly
 //
 // MyMarkup use pecialized brackets for formatting text:
 // ⟪Bold⟫           ~W  ~X
@@ -14,6 +15,8 @@
 // ⦃Color2⦄         ~C  ~V  Yellow
 // ⟮⟯               ~à  ~)  (Unused for now)
 // ¬ (AltGr+7) sets left margin
+//
+// Note: Tab are not managed yet, nor tab expansions
 
 //#![allow(unused)]
 
@@ -28,8 +31,7 @@ mod tests;
 // -----------------------------------
 // Globals
 
-const LIB_VERSION: &str = "1.0.1";
-const SHOW_LIMITS: bool = false; // For dev
+const LIB_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // Styles
 pub const STYLE_CLEAR: &str = "\x1b[0m";
@@ -87,6 +89,8 @@ pub const BG_BRIGHT_MAGENTA: &str = "\x1b[105m";
 pub const BG_BRIGHT_CYAN: &str = "\x1b[106m";
 pub const BG_BRIGHT_WHITE: &str = "\x1b[107m";
 
+const END_OF_STRING: char = '£';
+
 // -----------------------------------
 // Structures
 
@@ -98,29 +102,33 @@ impl MyMarkup {
         LIB_VERSION
     }
 
-    pub fn render_markup(txt_str: &str) {
-        // To simplify code, ensure that string always ends with \n
-        let mut txt_string = String::from(txt_str);
-        if !txt_string.ends_with('\n') {
-            txt_string.push('\n');
-        }
+    pub fn render_markup(txt_string: &str) {
+        println!("{}", MyMarkup::build_markup(txt_string))
+    }
 
+    pub fn build_markup(txt_str: &str) -> String {
         let width = if let Some((Width(w), _)) = terminal_size() {
             w as usize
         } else {
             80usize
         };
 
-        //let width = 40;
+        MyMarkup::build_markup_core(txt_str, false, width)
+    }
 
-        if SHOW_LIMITS {
+    pub fn build_markup_core(txt_str: &str, show_limits: bool, width: usize) -> String {
+        // Ensure that string always ends with £
+        let mut txt_string = String::from(txt_str);
+        txt_string.push(END_OF_STRING);
+
+        let mut res = String::new();
+
+        if show_limits {
             for _ in 0..width {
-                print!("-");
+                res.push('-');
             }
-            println!();
+            res.push('\n');
         }
-
-        // ToDo: Tabs expansion
 
         let mut word = String::new();
         let mut len = 0;
@@ -170,55 +178,61 @@ impl MyMarkup {
                     continue;
                 }
                 '\r' => continue,
-                '\n' => {
+                '\n' | END_OF_STRING => {
                     if !word.is_empty() && !is_only_spaces(&word) {
                         if col + len <= width {
-                            print!("{word}");
-                            if SHOW_LIMITS {
+                            res.push_str(&word);
+                            if show_limits {
                                 col += len;
                                 while col < width {
                                     col += 1;
-                                    print!(" ");
+                                    res.push(' ');
                                 }
-                                print!("|");
+                                res.push('|');
                             }
-                            println!();
+                            if c == '\n' {
+                                res.push('\n');
+                            }
                         } else {
-                            if SHOW_LIMITS {
+                            if show_limits {
                                 while col < width {
                                     col += 1;
-                                    print!(" ");
+                                    res.push(' ');
                                 }
-                                print!("|");
+                                res.push('|');
                             }
-                            println!();
+                            res.push('\n');
                             for _ in 0..tab {
-                                print!(" ");
+                                res.push(' ');
                             }
                             while word.starts_with(' ') {
                                 word.remove(0);
                                 len -= 1;
                             }
-                            print!("{word}");
+                            res.push_str(&word);
                             col = tab + len;
-                            if SHOW_LIMITS {
+                            if show_limits {
                                 while col < width {
                                     col += 1;
-                                    print!(" ");
+                                    res.push(' ');
                                 }
-                                print!("|");
+                                res.push('|');
                             }
-                            println!();
+                            if c == '\n' {
+                                res.push('\n');
+                            }
                         }
                     } else {
                         while col < width {
                             col += 1;
-                            print!(" ");
+                            res.push(' ');
                         }
-                        if SHOW_LIMITS {
-                            print!("|");
+                        if show_limits {
+                            res.push('|');
                         }
-                        println!();
+                        if c == '\n' {
+                            res.push('\n');
+                        }
                     }
                     word.clear();
                     len = 0;
@@ -226,7 +240,7 @@ impl MyMarkup {
                     tab = 0;
                 }
                 '¬' => {
-                    print!("{word}");
+                    res.push_str(&word);
                     col += len;
                     tab = col;
                     word.clear();
@@ -241,21 +255,21 @@ impl MyMarkup {
                         }
 
                         if col + len <= width {
-                            print!("{word}");
+                            res.push_str(&word);
                             col += len;
                             word.clear();
                             len = 0;
                         } else {
-                            if SHOW_LIMITS {
+                            if show_limits {
                                 while col < width {
                                     col += 1;
-                                    print!(" ");
+                                    res.push(' ');
                                 }
-                                print!("|");
+                                res.push('|');
                             }
-                            println!();
+                            res.push('\n');
                             for _ in 0..tab {
-                                print!(" ");
+                                res.push(' ');
                             }
                             col = tab;
                             while word.starts_with(' ') {
@@ -263,7 +277,7 @@ impl MyMarkup {
                                 len -= 1;
                             }
 
-                            print!("{word}");
+                            res.push_str(&word);
                             col += len;
                             word.clear();
                             len = 0;
@@ -277,17 +291,17 @@ impl MyMarkup {
                         // We can't accumulate char, it would be longer than width
                         if col > tab {
                             // if we have already printed some chars, we need to flush and start a new line
-                            if SHOW_LIMITS {
+                            if show_limits {
                                 while col < width {
                                     col += 1;
-                                    print!(" ");
+                                    res.push(' ');
                                 }
-                                print!("|");
+                                res.push('|');
                             }
-                            println!();
+                            res.push('\n');
 
                             for _ in 0..tab {
-                                print!(" ");
+                                res.push(' ');
                             }
                             col = tab;
                         }
@@ -298,12 +312,16 @@ impl MyMarkup {
                         }
 
                         if col + len >= width {
-                            println!("{word}|");
+                            res.push_str(&word);
+                            if show_limits {
+                                res.push('|');
+                            }
+                            res.push('\n');
 
                             word.clear();
                             len = 0;
                             for _ in 0..tab {
-                                print!(" ");
+                                res.push(' ');
                             }
                             col = tab;
                         }
@@ -314,7 +332,7 @@ impl MyMarkup {
                 }
             }
         }
-        println!();
+        return res;
     }
 }
 

@@ -1,4 +1,4 @@
-// rwc tests
+// rtc tests
 //
 // 2025-04-21   PV
 

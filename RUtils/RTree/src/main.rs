@@ -1,5 +1,5 @@
 // rtree
-// Print visual directory structure in Rust
+// Visual directory structure in Rust
 //
 // 2025-05-05   PV      First version (from Gemini)
 // 2025-06-29   PV      Renames (from -h) and parsed correctly option -a, but still don't use it in code
@@ -40,8 +40,9 @@ use options::*;
 // -----------------------------------
 // Global constants
 
-const APP_NAME: &str = "rtree";
-const APP_VERSION: &str = "1.2.0";
+const APP_NAME: &str = env!("CARGO_PKG_NAME");   //  "rtree";
+const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
+const APP_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 
 // ==============================================================================================
 // Call StrCmpLogicalW

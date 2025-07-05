@@ -345,7 +345,7 @@ fn print_eol_styles_counts(e: &EOLStyleCounts) {
 
 // Print in red parts between « »
 fn print_result(msg: &str, options: &Options) {
-    if !options.show_only_warnings || msg.find('«').is_some() {
+    if !msg.is_empty() && (!options.show_only_warnings || msg.find('«').is_some()) {
         print_result_core(msg);
     }
 }
@@ -417,6 +417,7 @@ fn process_file(b: &mut DataBag, path_for_read: &Path, path_for_name: &Path) -> 
                         );
                     }
                     return res;
+
                 }
                 TextFileEncoding::Empty => {
                     b.files_types.empty += 1;

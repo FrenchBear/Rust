@@ -29,22 +29,53 @@ impl Options {
     fn header() {
         println!(
             "{APP_NAME} {APP_VERSION}\n\
-            Visual directory structure in Rust"
+            {APP_DESCRIPTION}"
         );
     }
 
     fn usage() {
         Options::header();
         println!();
-        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄] [-⦃a⦄|-⦃A⦄] [⦃-d⦄ ⟨max_depth⟩] [-⦃v⦄] [⟨dir⟩]
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄|⦃-??⦄] [-⦃a⦄|-⦃A⦄] [⦃-d⦄ ⟨max_depth⟩] [-⦃v⦄] [⟨dir⟩]
 
 ⌊Options⌋:
 ⦃?⦄|⦃-?⦄|⦃-h⦄      ¬Show this message
+⦃??⦄|⦃-??⦄       ¬Show advanced usage notes
 ⦃-a⦄           ¬Show hidden directories and directories starting with a dot
-⦃-A⦄           ¬Show system+hidden directories and directories starting with a dollar sign
+⦃-A⦄           ¬Show system+hidden directories and hidden directories starting with a dollar sign
 ⦃-d⦄ ⟨max_depth⟩ ¬Limits recursion to max_depth folders, default is 0 meaning no limitation
 ⦃-v⦄           ¬Verbose output
 ⟨dir⟩          ¬Starting directory";
+
+        MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
+    }
+
+    fn extended_usage() {
+        Options::header();
+        println!("Copyright ©2025 Pierre Violent");
+        println!();
+
+        MyMarkup::render_markup("⌊Dependencies⌋");
+        println!("MyMarkup: {}", MyMarkup::version());
+        
+        // The env! macro reads the environment variable at COMPILE TIME
+        // and replaces this line with a string literal.
+        let getopt_version = env!("DEP_GETOPT_VERSION");
+        println!("getopt: {}", getopt_version);
+        println!();
+
+        let text = "⟪⌊Advanced usage notes⌋⟫
+By default, hidden folders are not shown.
+Option ⦃-a⦄ shows hidden folders, that is, folders with file attribute H (Windows, Hidden) such as ⟦C:\\ProgramData⟧ or name starting with a . such as ⟦.git⟧.
+Option ⦃-A⦄ (WIndows only) shows system hidden folders, folders with file attribute H and S (Windows, Hidden+System) such as ⟦C:\\Recovery⟧ or hidden folders having a name starting with a $ such as ⟦C:\\$SysReset⟧.
+
+On Windows, folders are sorted by default using File Explorer sorting rules, use option ⦃-s 2⦄ to sort folders using case folding. On Linux, folders are always sorted using case folding.
+
+When recurstion depth is limited using option ⦃-d⦄, \"...\" at the end of the folder means that there are unexplored subfolders.
+
+Regardless of recursion depth limitation, \"... ?\" at the end of a folder means that folder content access is denied, so it's unknown if there are subfolders or not.
+
+Option ⦃-v⦄ show small statistics at the end of tree.";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }
@@ -53,10 +84,18 @@ impl Options {
     /// Some invalid/inconsistent options or missing arguments return an error.
     pub fn new() -> Result<Options, Box<dyn Error>> {
         let mut args: Vec<String> = std::env::args().collect();
-        if args.len() > 1 && (args[1] == "?" || args[1].to_lowercase() == "help") {
+
+        if args.len() > 1 {
+        if args[1] == "?" || args[1].to_lowercase() == "help" {
             Self::usage();
             return Err("".into());
         }
+
+        if args[1] == "??" {
+            Self::extended_usage();
+            return Err("".into());
+        }
+    }
 
         let mut options = Options { ..Default::default() };
         let mut opts = getopt::Parser::new(&args, "h?aAvd:");

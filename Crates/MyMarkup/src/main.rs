@@ -59,11 +59,14 @@ Files without BOM must be more than 10 characters for auto-detection of UTF-8 or
 
 ⌊Autorecurse glob pattern transformation⌋
 • ¬⟪Constant pattern (no filter, no **⟧) pointing to a directory⟫: ⟦\\**\\*⟧ is appended at the end to search all files of all subdirectories.
-• ¬⟪Patterns without ⟦**⟧ and ending with a filter⟫: ⟦\\**⟧ is inserted before final filter to find all matching files of all subdirectories.
-";
+• ¬⟪Patterns without ⟦**⟧ and ending with a filter⟫: ⟦\\**⟧ is inserted before final filter to find all matching files of all subdirectories.";
 
-// Exemple of string that does not ends with \n
-        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄] [-⦃a⦄|-⦃A⦄] [⦃-d⦄ ⟨max_depth⟩] [-⦃v⦄] [⟨dir⟩]
+    MyMarkup::render_markup(text);
+
+    println!("******************************************************************************************************");
+
+    // Exemple of string that does not ends with \n
+    let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄] [-⦃a⦄|-⦃A⦄] [⦃-d⦄ ⟨max_depth⟩] [-⦃v⦄] [⟨dir⟩]
 
 ⌊Options⌋:
 ⦃?⦄|⦃-?⦄|⦃-h⦄      ¬Show this message
@@ -74,6 +77,22 @@ Files without BOM must be more than 10 characters for auto-detection of UTF-8 or
 ⟨dir⟩          ¬Starting directory";
 
     MyMarkup::render_markup(text);
+
+    println!("******************************************************************************************************");
+
+    let txt = "Ceci est un texte à formater, avec un mot très long comme anticonstitutionnellement qui va être tronqué quand la largeur du rendu devient particulièrement petite.";
+    let s = MyMarkup::build_markup_core(txt, true, 25);
+    println!("{s}");
+
+    println!("******************************************************************************************************");
+
+    let s = MyMarkup::build_markup("⌊Dependencies versions⌋");
+    println!("«{s}»");
+    println!("Dependency one");
+    println!("Dependency two");
+
+    println!("******************************************************************************************************");
+
     //test_own();
 }
 

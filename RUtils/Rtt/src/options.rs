@@ -13,6 +13,7 @@ use std::error::Error;
 // External crates imports
 use getopt::Opt;
 use mymarkup::MyMarkup;
+use myglob::MyGlobSearch;
 
 // Dedicated struct to store command line arguments
 #[derive(Debug, Default)]
@@ -34,11 +35,11 @@ impl Options {
     fn usage() {
         Options::header();
         println!();
-        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄] [⦃-a+⦄|⦃-a-⦄] [⦃-w⦄] [⦃-v⦄] [⟨source⟩...]
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄|⦃-??⦄] [⦃-a+⦄|⦃-a-⦄] [⦃-w⦄] [⦃-v⦄] [⟨source⟩...]
 
 ⌊Options⌋:
 ⦃?⦄|⦃-?⦄|⦃-h⦄  ¬Show this message
-⦃??⦄       ¬Show advanced usage notes
+⦃??⦄|⦃-??⦄   ¬Show advanced usage notes
 ⦃-a+⦄|⦃-a-⦄  ¬Enable (default) or disable glob autorecurse mode (see extended usage)
 ⦃-w⦄       ¬Only show warnings
 ⦃-v⦄       ¬Verbose output
@@ -49,9 +50,15 @@ impl Options {
 
     fn extended_usage() {
         Options::header();
-        let text = "Copyright ©2025 Pierre Violent
+        println!("Copyright ©2025 Pierre Violent");
+        println!();
 
-⟪⌊Advanced usage notes⌋⟫
+        println!("MyGlob: {}", MyGlobSearch::version());
+        println!("MyMarkup: {}", MyMarkup::version());
+        println!("TextAutoDecode: {}", TextAutoDecode::version());
+        println!();
+
+        let text = "⟪⌊Advanced usage notes⌋⟫
 
 Counts include with and without BOM variants.
 8-bit text files are likely Windows 1252/Latin-1/ANSI or OEM 850/OEM 437, there is no detailed analysis.
