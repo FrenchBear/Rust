@@ -55,25 +55,22 @@ impl Options {
         println!("Copyright ©2025 Pierre Violent");
         println!();
 
-        MyMarkup::render_markup("⌊Dependencies⌋");
-        println!("MyMarkup: {}", MyMarkup::version());
-        
-        // The env! macro reads the environment variable at COMPILE TIME
-        // and replaces this line with a string literal.
-        let getopt_version = env!("DEP_GETOPT_VERSION");
-        println!("getopt: {}", getopt_version);
+        MyMarkup::render_markup("⌊Dependencies⌋:");
+        println!("- MyMarkup: {}", MyMarkup::version());
+        println!("- getopt: {}", env!("DEP_GETOPT_VERSION"));
         println!();
 
         let text = "⟪⌊Advanced usage notes⌋⟫
+
 By default, hidden folders are not shown.
 Option ⦃-a⦄ shows hidden folders, that is, folders with file attribute H (Windows, Hidden) such as ⟦C:\\ProgramData⟧ or name starting with a . such as ⟦.git⟧.
-Option ⦃-A⦄ (WIndows only) shows system hidden folders, folders with file attribute H and S (Windows, Hidden+System) such as ⟦C:\\Recovery⟧ or hidden folders having a name starting with a $ such as ⟦C:\\$SysReset⟧.
+Option ⦃-A⦄ (Windows only) shows system hidden folders, folders with file attribute H and S (Windows, Hidden+System) such as ⟦C:\\Recovery⟧ or hidden folders having a name starting with a $ such as ⟦C:\\$SysReset⟧.
 
 On Windows, folders are sorted by default using File Explorer sorting rules, use option ⦃-s 2⦄ to sort folders using case folding. On Linux, folders are always sorted using case folding.
 
-When recurstion depth is limited using option ⦃-d⦄, \"...\" at the end of the folder means that there are unexplored subfolders.
+When recursion depth is limited using option ⦃-d⦄, \"...\" at the end of the folder means that there are unexplored subfolders.
 
-Regardless of recursion depth limitation, \"... ?\" at the end of a folder means that folder content access is denied, so it's unknown if there are subfolders or not.
+Regardless of recursion depth limitation, \"... ?\" at the end of a folder means that folder content access is denied, so it is unknown if there are subfolders or not.
 
 Option ⦃-v⦄ show small statistics at the end of tree.";
 
@@ -86,16 +83,16 @@ Option ⦃-v⦄ show small statistics at the end of tree.";
         let mut args: Vec<String> = std::env::args().collect();
 
         if args.len() > 1 {
-        if args[1] == "?" || args[1].to_lowercase() == "help" {
-            Self::usage();
-            return Err("".into());
-        }
+            if args[1] == "?" || args[1].to_lowercase() == "help" {
+                Self::usage();
+                return Err("".into());
+            }
 
-        if args[1] == "??" {
-            Self::extended_usage();
-            return Err("".into());
+            if args[1] == "??" || args[1] == "-??" {
+                Self::extended_usage();
+                return Err("".into());
+            }
         }
-    }
 
         let mut options = Options { ..Default::default() };
         let mut opts = getopt::Parser::new(&args, "h?aAvd:");

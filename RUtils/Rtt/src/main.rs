@@ -29,8 +29,9 @@ use options::*;
 // -----------------------------------
 // Global constants
 
-const APP_NAME: &str = "rtt";
-const APP_VERSION: &str = "1.0.1";
+const APP_NAME: &str = env!("CARGO_PKG_NAME");
+const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
+const APP_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 
 // These extensions should indicate a text content
 const TEXT_EXT: [&str; 53] = [

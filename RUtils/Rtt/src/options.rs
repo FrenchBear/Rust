@@ -12,8 +12,8 @@ use std::error::Error;
 
 // External crates imports
 use getopt::Opt;
-use mymarkup::MyMarkup;
 use myglob::MyGlobSearch;
+use mymarkup::MyMarkup;
 
 // Dedicated struct to store command line arguments
 #[derive(Debug, Default)]
@@ -28,7 +28,7 @@ impl Options {
     fn header() {
         println!(
             "{APP_NAME} {APP_VERSION}\n\
-            Text type information in Rust"
+            {APP_DESCRIPTION}"
         );
     }
 
@@ -53,9 +53,13 @@ impl Options {
         println!("Copyright ©2025 Pierre Violent");
         println!();
 
-        println!("MyGlob: {}", MyGlobSearch::version());
-        println!("MyMarkup: {}", MyMarkup::version());
-        println!("TextAutoDecode: {}", TextAutoDecode::version());
+        MyMarkup::render_markup("⌊Dependencies⌋:");
+        println!("- MyGlob: {}", MyGlobSearch::version());
+        println!("- MyMarkup: {}", MyMarkup::version());
+        println!("- TextAutoDecode: {}", TextAutoDecode::version());
+        println!("- getopt: {}", env!("DEP_GETOPT_VERSION"));
+        println!("- coloredt: {}", env!("DEP_COLORED_VERSION"));
+        println!("- tempfile: {}", env!("DEP_TEMPFILE_VERSION"));
         println!();
 
         let text = "⟪⌊Advanced usage notes⌋⟫
@@ -63,12 +67,12 @@ impl Options {
 Counts include with and without BOM variants.
 8-bit text files are likely Windows 1252/Latin-1/ANSI or OEM 850/OEM 437, there is no detailed analysis.
 
-⌊EOL styles:⌋
+⌊EOL styles⌋:
 - ¬⟪Windows⟫: ⟦\\r\\n⟧
 - ¬⟪Unix⟫: ⟦\\n⟧
 - ¬⟪Mac⟫: ⟦\\r⟧
 
-⌊Warnings report:⌋
+⌊Warnings report⌋:
 - ¬Empty files
 - ¬Source text files (based on extension) that should contain text, but with unrecognized content
 - ¬UTF-8 files with BOM
@@ -78,6 +82,7 @@ Counts include with and without BOM variants.
 - ¬Different EOL styles for a given file type (extension) in a directory";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
+        println!();
         MyMarkup::render_markup(MyGlobSearch::glob_syntax());
     }
 

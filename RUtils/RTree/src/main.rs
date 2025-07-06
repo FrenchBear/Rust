@@ -40,7 +40,7 @@ use options::*;
 // -----------------------------------
 // Global constants
 
-const APP_NAME: &str = env!("CARGO_PKG_NAME");   //  "rtree";
+const APP_NAME: &str = env!("CARGO_PKG_NAME");
 const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 const APP_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 

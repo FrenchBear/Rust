@@ -13,3 +13,5 @@ getopt = "1.1.7"
 colored = "3.0.0"
 tempfile = "3.19.1"
 
+[build-dependencies]
+toml = "0.8.23"
