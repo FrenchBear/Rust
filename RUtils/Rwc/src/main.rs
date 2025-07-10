@@ -5,6 +5,7 @@
 // 2025-05-02   PV      1.2.0 Use crate textautodecode instead of decode_encoding module. Also use file length instead of string bytes count to include BOM size
 // 2025-05-04   PV      1.2.1 Use MyMarkup crate to format usage and extended help
 // 2025-05-05   PV      1.2.2 Linux compatibility; Ignore files larger than 1GB
+// 2025-07-10   PV      1.2.3 Get information from Cargo.toml, and use build script build.rs
 
 //#![allow(unused)]
 
@@ -29,8 +30,9 @@ use options::*;
 // -----------------------------------
 // Global constants
 
-const APP_NAME: &str = "rwc";
-const APP_VERSION: &str = "1.2.2";
+const APP_NAME: &str = env!("CARGO_PKG_NAME");
+const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
+const APP_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 
 // ==============================================================================================
 // Main
@@ -143,8 +145,7 @@ fn process_file(b: &mut DataBag, path: &Path, options: &Options) {
     }
 }
 
-/// Core rgrep process, search for re in txt, read from filename, according to options.
-/// filename is a &str and not a &Path because of "(stdin)" name
+/// Core rwc process, compute counts for a string
 fn process_text(b: &mut DataBag, txt: &str, filename: &str, options: &Options, filesize: usize) {
     let mut lines = 0;
     let mut words = 0;

@@ -3,6 +3,7 @@
 //
 // 2025-04-21   PV      First version
 // 2025-05-04   PV      Use MyMarkup crate to format usage and extended help
+// 2025-07-10   PV      Use APP_DESCRIPTION variable
 
 // Application imports
 use crate::*;
@@ -27,40 +28,48 @@ impl Options {
     fn header() {
         println!(
             "{APP_NAME} {APP_VERSION}\n\
-            Word count in Rust"
+            {APP_DESCRIPTION}"
         );
     }
 
     fn usage() {
         Options::header();
         println!();
-        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄] [⦃-a+⦄|⦃-a-⦄] [-⦃t⦄] [-⦃v⦄] [⟨source⟩...]
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄|⦃-??⦄] [⦃-a+⦄|⦃-a-⦄] [-⦃t⦄] [-⦃v⦄] [⟨source⟩...]
 
 ⌊Options⌋:
 ⦃?⦄|⦃-?⦄|⦃-h⦄  ¬Show this message
-⦃??⦄       ¬Show advanced usage notes
+⦃??⦄|⦃-??⦄   ¬Show advanced usage notes
 ⦃-a+|-a-⦄  ¬Enable (default) or disable glob autorecurse mode (see extended usage)
 ⦃-t⦄       ¬Only show total line
 ⦃-v⦄       ¬Verbose output
-⟨source⟩   ¬File or directory search, glob syntax supported. Without source, search stdin.";
+⟨source⟩   ¬File or directory to search, glob syntax supported (see extended usage). Without source, search stdin.";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }
 
     fn extended_usage() {
         Options::header();
-        let text =
-"Copyright ©2025 Pierre Violent
+        println!("Copyright ©2025 Pierre Violent");
+        println!();
 
-⟪⌊Advanced usage notes⌋⟫
+        MyMarkup::render_markup("⌊Dependencies⌋:");
+        println!("- MyGlob: {}", MyGlobSearch::version());
+        println!("- MyMarkup: {}", MyMarkup::version());
+        println!("- TextAutoDecode: {}", TextAutoDecode::version());
+        println!("- getopt: {}", env!("DEP_GETOPT_VERSION"));
+        println!();
 
-The four numerical fields report lines, words, characters and bytes counts. For UTF-8 or UTF-16 encoded files, a character is an Unicode codepoint, so bytes and characters counts may be different. BOM if present is included in bytes count, but not in characters count.
+        let text = "⟪⌊Advanced usage notes⌋⟫
+
+The four numerical fields report lines, words, characters and bytes counts. For UTF-8 or UTF-16 encoded files, a character is a Unicode codepoint, so bytes and characters counts may be different. Characters count neither include line terminators, nor BOM if present. Bytes count is the total file size as reported by the operating system, including line terminators and BOM if present.
 
 Words are series of character(s) separated by space(s), spaces are either ASCII 9 (tab) or 32 (regular space).  Unicode \"fancy spaces\" are not considered.
 
 Lines end with ⟦\\r⟧, ⟦\\n⟧ or ⟦\\r\\n⟧. If the last line of the file ends with such termination character, an extra empty line is counted.";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
+        println!();
         MyMarkup::render_markup(MyGlobSearch::glob_syntax());
     }
 

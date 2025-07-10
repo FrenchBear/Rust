@@ -12,6 +12,7 @@
 // 2025-04-18   PV      1.5.0   End of glob crate and options -1/-2
 // 2025-05-02   PV      1.6.0   Use crate textautodecode instead of decode_encoding module
 // 2025-05-04   PV      1.7.0   Do not crash with patterns as [^abc]. Created Options module. Use MyMarkup for extended help formatting.
+// 2025-07-10   PV      1.7.1   Get information from Cargo.toml, and use build script build.rs
 
 //#![allow(unused)]
 
@@ -41,8 +42,9 @@ use options::*;
 // -----------------------------------
 // Global constants
 
-const APP_NAME: &str = "rgrep";
-const APP_VERSION: &str = "1.7.0";
+const APP_NAME: &str = env!("CARGO_PKG_NAME");
+const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
+const APP_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 
 // -----------------------------------
 // Main

@@ -135,47 +135,6 @@ struct EOLStyleCounts {
     mixed: usize,
 }
 
-// fn main() -> Result<(), io::Error> {
-//     let model: [u8; 24] = [
-//         0x41, 0x00, // A
-//         0x42, 0x00, // B
-//         0x43, 0x00, // C
-//         0x44, 0x00, // D
-//         0x45, 0x00, // E
-//         b'\n', 0x00, // Unix EOL
-//         0x61, 0x00, // a
-//         0x62, 0x00, // b
-//         0x63, 0x00, // c
-//         0x64, 0x00, // d
-//         0x65, 0x00, // e
-//         b'\n', 0x00 // Unix EOL
-//     ];
-
-//     let mut temp_file = Builder::new().tempfile()?;
-//     temp_file.write_all(&model);
-//     let o = Options {..Default::default()};
-//     let mut b = DataBag {..Default::default()};
-//     let res = process_file(&mut b, temp_file.path(), Path::new("(test utf16le)"), &o);
-
-//     assert_eq!(res.as_str(), "(test utf16le): UTF-16 LE «without BOM», Unix");
-
-//     assert_eq!(b.files_types.total, 1);
-//     assert_eq!(b.files_types.empty, 0);
-//     assert_eq!(b.files_types.ascii, 0);
-//     assert_eq!(b.files_types.utf8, 0);
-//     assert_eq!(b.files_types.utf16, 1);
-//     assert_eq!(b.files_types.eightbit, 0);
-//     assert_eq!(b.files_types.nontext, 0);
-
-//     assert_eq!(b.eol_styles.total, 1);
-//     assert_eq!(b.eol_styles.windows, 0);
-//     assert_eq!(b.eol_styles.unix, 1);
-//     assert_eq!(b.eol_styles.mac, 0);
-//     assert_eq!(b.eol_styles.mixed, 0);
-
-//     Ok(())
-// }
-
 fn main() {
     // Process options
     let options = Options::new().unwrap_or_else(|err| {

@@ -2,6 +2,7 @@
 // Process options parsing
 //
 // 2025-05-04   PV      Moved to a separate module; use MyMarkup for formatting
+// 2025-07-10   PV      Use APP_DESCRIPTION variable
 
 // Application imports
 use crate::*;
@@ -27,18 +28,18 @@ impl Options {
     fn header() {
         println!(
             "{APP_NAME} {APP_VERSION}\n\
-            Simplified grep in Rust"
+            {APP_DESCRIPTION}"
         );
     }
 
     fn usage() {
         Options::header();
         println!();
-        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄] [⦃-i⦄] [⦃-w⦄] [⦃-F⦄] [⦃-a+⦄|⦃-a-⦄] [⦃-v⦄] [⦃-c⦄] [⦃-l⦄] ⟨pattern⟩ [⟨source⟩...]
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄|⦃-??⦄] [⦃-i⦄] [⦃-w⦄] [⦃-F⦄] [⦃-a+⦄|⦃-a-⦄] [⦃-v⦄] [⦃-c⦄] [⦃-l⦄] ⟨pattern⟩ [⟨source⟩...]
 
 ⌊Options⌋:
 ⦃?⦄|⦃-?⦄|⦃-h⦄  ¬Show this message
-⦃??⦄       ¬Show advanced usage notes
+⦃??⦄|⦃-??⦄   ¬Show advanced usage notes
 ⦃-v⦄       ¬Verbose output
 ⦃-i⦄       ¬Ignore case during search
 ⦃-w⦄       ¬Whole word search
@@ -54,10 +55,20 @@ impl Options {
 
     fn extended_usage() {
         Options::header();
-        let text =
-"Copyright ©2025 Pierre Violent
+        println!("Copyright ©2025 Pierre Violent");
+        println!();
 
-⟪⌊Advanced usage notes⌋⟫
+        MyMarkup::render_markup("⌊Dependencies⌋:");
+        println!("- MyGlob: {}", MyGlobSearch::version());
+        println!("- MyMarkup: {}", MyMarkup::version());
+        println!("- TextAutoDecode: {}", TextAutoDecode::version());
+        println!("- getopt: {}", env!("DEP_GETOPT_VERSION"));
+        println!("- regex: {}", env!("DEP_REGEX_VERSION"));
+        println!("- colored: {}", env!("DEP_COLORED_VERSION"));
+        println!("- atty: {}", env!("DEP_ATTY_VERSION"));
+        println!();
+        
+        let text = "⟪⌊Advanced usage notes⌋⟫
 
 Options ⦃-c⦄ (show count of matching lines) and ⦃-l⦄ (show matching file names only) can be used together to show matching lines count only for matching files.
 Put special characters such as ⟦.⟧, ⟦*⟧ or ⟦?⟧ between brackets such as ⟦[.]⟧, ⟦[*]⟧ or ⟦[?]⟧ to search them as is.
@@ -66,6 +77,7 @@ To search for a string containing double quotes, surround string by double quote
 To search for the string help, use option ⦃-F⦄: {APP_NAME} ⦃-F⦄ help ⟦C:\\Sources\\**\\*.rs⟧";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
+        println!();
         MyMarkup::render_markup(MyGlobSearch::glob_syntax());
     }
 

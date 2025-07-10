@@ -1,7 +1,7 @@
 [package]
 name = "rwc"
 description = "Word Count utility in Rust"
-version = "1.2.2"
+version = "1.2.3"
 authors = ["Pierre Violent"]
 edition = "2024"
 
@@ -10,3 +10,6 @@ myglob = { path = "../../Crates/MyGlob" }
 textautodecode = { path = "../../Crates/TextAutoDecode" }
 mymarkup = { path = "../../Crates/MyMarkup" }
 getopt = "1.1.7"
+
+[build-dependencies]
+toml = "0.8.23"
