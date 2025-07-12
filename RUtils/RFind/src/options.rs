@@ -85,7 +85,7 @@ impl Options {
 
 ⌊Compatibility with XFind⌋:
 - ¬Option ⦃-norecycle⦄ can be used instead of ⦃-r-⦄ to indicate to delete forever.
-- ¬Option -name can be used to indicate a specific file name to search.";
+- ¬Option ⦃-name⦄ can be used to indicate a specific file name or pattern to search.";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
         println!();
@@ -160,7 +160,7 @@ impl Options {
 
                     "e" | "empty" => options.isempty = true,
 
-                    "r+" => options.recycle = true,
+                    "r+" | "recycle" => options.recycle = true,
                     "r-" | "norecycle" => options.recycle = false,
 
                     "a+" => options.autorecurse = true,

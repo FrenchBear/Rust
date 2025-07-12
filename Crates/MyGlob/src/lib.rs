@@ -18,6 +18,7 @@
 // 2025-04-23   PV      1.5.2 Added impl From<regex::Error> for MyGlobError and fn source in impl Error for MyGlobError
 // 2025-05-03   PV      1.5.3 Removed #![allow(...)]
 // 2025-05-04   PV      1.5.4 Added glob_syntax()
+// 2025-07-12   PV      1.6.0 Don't complain about glob patterns ending with / or \
 
 //#![allow(unused_variables, dead_code, unused_imports)]
 
@@ -37,7 +38,7 @@ mod tests;
 // -----------------------------------
 // Globals
 
-const LIB_VERSION: &str = "1.5.4";
+const LIB_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // -----------------------------------
 // Structures
@@ -107,13 +108,13 @@ impl MyGlobSearch {
 - ¬⟦**⟧ matches the current directory and arbitrary subdirectories. To match files in arbitrary subdirectories, use ⟦**/*⟧. This sequence must form a single path component, so both ⟦**a⟧ and ⟦b**⟧ are invalid and will result in an error.
 - ¬⟦[...]⟧ matches any character inside the brackets. Character sequences can also specify ranges of characters (Unicode order), so ⟦[0-9]⟧ specifies any character between 0 and 9 inclusive. Special cases: ⟦[[]⟧ represents an opening bracket, ⟦[]]⟧ represents a closing bracket. 
 - ¬⟦[!...]⟧ is the negation of ⟦[...]⟧, it matches any characters not in the brackets.
-- ¬The metacharacters ⟦?⟧, ⟦*⟧, ⟦[⟧, ⟦]⟧ can be matched by escaping them between brackets such as ⟦[\\?]⟧ or ⟦[\\[]⟧. When a ⟦]⟧ occurs immediately following ⟦[⟧ or ⟦[!⟧ then it is interpreted as being part of, rather then ending, the character set, so ⟦]⟧ and NOT ⟦]⟧ can be matched by ⟦[]]⟧ and ⟦[!]]⟧ respectively. The ⟦-⟧ character can be specified inside a character sequence pattern by placing it at the start or the end, e.g. ⟦[abc-]⟧.
+- ¬The metacharacters ⟦?⟧, ⟦*⟧, ⟦[⟧, ⟦]⟧ can be matched by escaping them between brackets such as ⟦[\\?]⟧ or ⟦[\\[]⟧. When a ⟦]⟧ occurs immediately following ⟦[⟧ or ⟦[!⟧ then it is interpreted as being part of, rather than ending the character set, so ⟦]⟧ and NOT ⟦]⟧ can be matched by ⟦[]]⟧ and ⟦[!]]⟧ respectively. The ⟦-⟧ character can be specified inside a character sequence pattern by placing it at the start or the end, e.g. ⟦[abc-]⟧.
 - ¬⟦{choice1,choice2...}⟧  match any of the comma-separated choices between braces. Can be nested, and include ⟦?⟧, ⟦*⟧ and character classes.
 - ¬Character classes ⟦[ ]⟧ accept regex syntax such as ⟦[\\d]⟧ to match a single digit, see https://docs.rs/regex/latest/regex/#character-classes for character classes and escape sequences supported.
 
 ⌊Autorecurse glob pattern transformation⌋:
 - ¬⟪Constant pattern⟫ (no filter, no ⟦**⟧) pointing to a directory: ⟦/**/*⟧ is appended at the end to search all files of all subdirectories.
-- ¬⟪Patterns without ⟦**⟧ and ending with a filter⟫: ⟦/**⟧ is inserted before final filter to find all matching files of all subdirectories.
+- ¬⟪Patterns without ⟦**⟧ and ending with a filter⟫: ⟦/**⟧ is inserted before the final filter to find all matching files of all subdirectories.
 "
     }
 
@@ -185,31 +186,47 @@ impl MyGlobBuilder {
         if self.glob_pattern.is_empty() {
             return Err(MyGlobError::GlobError("Glob pattern can't be empty".to_string()));
         }
-        // For now, reject a pattern ending with / or \, although it could also be understood as a search for directory only...
-        if self.glob_pattern.ends_with('\\') || self.glob_pattern.ends_with('/') {
-            return Err(MyGlobError::GlobError("Glob pattern can't end with \\ or /".to_string()));
+
+        // If pattern ends with / or \, just strip it (once) to normalize path
+        let mut glob = self.glob_pattern.clone();
+        if glob.ends_with("/") {
+            glob = glob.strip_suffix("/").unwrap().to_string();
         }
+        if glob.ends_with("\\") {
+            glob = glob.strip_suffix("\\").unwrap().to_string();
+        }
+
         // Trick: add a final \ so that we don't have duplicate code to process last segment
         let dir_sep = if cfg!(target_os = "windows") { '\\' } else { '/' };
-        let mut glob = self.glob_pattern.clone();
         glob.push(dir_sep);
 
         // First get root part, the constant segments at the beginning
         let mut cut = 0;
         let mut pos = 0;
-        for c in glob.chars() {
-            if "*?[{".contains(c) {
-                break;
+        let mut root: String;
+
+        // Special case for windows, a pattern such as C:\ is considered as root, inluding final \,
+        // this final \ is not considered as a cut point
+        let vglobc: Vec<char> = glob.chars().collect();
+        if vglobc.len() == 3 && vglobc[1] == ':' {
+            root = glob.to_string();
+            cut = 3;
+            pos = 4;
+        } else {
+            for c in glob.chars() {
+                if "*?[{".contains(c) {
+                    break;
+                }
+                if c == '/' || c == '\\' {
+                    // Note that \ have a special meaning between [ ] but we break the loop at the first [ so it's Ok
+                    cut = pos;
+                }
+                pos += c.len_utf8();
             }
-            if c == '/' || c == '\\' {
-                // Note that \ have a special meaning between [ ] but we break the loop at the first [ so it's Ok
-                cut = pos;
+            root = glob[..cut].to_string();
+            if root.is_empty() {
+                root.push('.');
             }
-            pos += c.len_utf8();
-        }
-        let mut root = glob[..cut].to_string();
-        if root.is_empty() {
-            root.push('.');
         }
 
         // Then build segments

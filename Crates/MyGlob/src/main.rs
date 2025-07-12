@@ -12,7 +12,7 @@ use std::time::Instant;
 fn main() {
     println!("MyGlob lib version: {}\n", MyGlobSearch::version());
 
-    test_myglob(r"C:\Development\*\*.*", false, &["d2"], 1);
+    test_myglob(r"C:\", true, &["d2"], 1);
 }
 
 // Entry point for testing

@@ -4,6 +4,7 @@
 // 2025-03-31	PV      Action Print with option detail
 // 2025-04-06	PV      Use fs::remove_dir_all instead of fs::remove_dir to delete non-empty directories
 // 2025-05-05	PV      Linux compatibility
+// 2025-07-12	PV      Bug name inverted (recycle/permanent delete) for action delete
 
 use super::*;
 
@@ -28,7 +29,7 @@ impl ActionPrint {
 }
 
 impl Action for ActionPrint {
-    fn action(&self, lw: &mut LogWriter, path: &Path, _do_it: bool, _verbose: bool) {
+    fn action(&self, lw: &mut LogWriter, path: &Path, _noaction: bool, _verbose: bool) {
         if path.is_file() {
             if self.detailed_output {
                 match path.metadata() {
@@ -135,9 +136,9 @@ impl Action for ActionDelete {
 
     fn name(&self) -> &'static str {
         if self.recycle {
-            "Delete files (permanent)"
-        } else {
             "Delete files (use recycle bin for local files, permanently for remote files)"
+        } else {
+            "Delete files (permanently)"
         }
     }
 }
@@ -196,9 +197,9 @@ impl Action for ActionRmdir {
 
     fn name(&self) -> &'static str {
         if self.recycle {
-            "Delete directories (permanent)"
-        } else {
             "Delete directories (use recycle bin for local files, permanently for remote files)"
+        } else {
+            "Delete directories (permanent)"
         }
     }
 }

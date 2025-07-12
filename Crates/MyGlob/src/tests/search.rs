@@ -100,6 +100,7 @@ fn search_1() -> io::Result<()> {
     assert_eq!(search_count_autorecurse(r"C:\Temp\search1\*.txt"), (8, 0));
     assert_eq!(search_count(r"C:\Temp\search1"), (0, 1));
     assert_eq!(search_count_autorecurse(r"C:\Temp\search1"), (9, 2));
+    assert_eq!(search_count_autorecurse(r"C:\Temp\search1\"), (9, 2));      // Test with final \
 
     // Testing ignore
     assert_eq!(search_count_ignore(r"C:\Temp\search1\**\*.txt", &["Légumes"]), (5, 0));
