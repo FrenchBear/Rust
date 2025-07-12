@@ -36,7 +36,7 @@ impl Options {
     fn header() {
         println!(
             "{APP_NAME} {APP_VERSION}\n\
-            Searching files in Rust"
+            {APP_DESCRIPTION}"
         );
     }
 
@@ -69,15 +69,26 @@ impl Options {
 
     fn extended_usage() {
         Options::header();
-        let text = "Copyright ©2025 Pierre Violent
+        println!("Copyright ©2025 Pierre Violent");
+        println!();
 
-⟪⌊Advanced usage notes⌋⟫
+        MyMarkup::render_markup("⌊Dependencies⌋:");
+        println!("- MyGlob: {}", MyGlobSearch::version());
+        println!("- MyMarkup: {}", MyMarkup::version());
+        println!("- Logging: {}", logging::version());
+        println!("- trash: {}", env!("DEP_TRASH_VERSION"));
+        println!("- chrono: {}", env!("DEP_CHRONO_VERSION"));
+        println!("- num-format: {}", env!("DEP_NUM_FORMAT_VERSION"));
+        println!();
+
+        let text = "⟪⌊Advanced usage notes⌋⟫
 
 ⌊Compatibility with XFind⌋:
 - ¬Option ⦃-norecycle⦄ can be used instead of ⦃-r-⦄ to indicate to delete forever.
-- ¬Option -name can be used to indicate a specific file name to search";
+- ¬Option -name can be used to indicate a specific file name to search.";
 
-        MyMarkup::render_markup(text);
+        MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
+        println!();
         MyMarkup::render_markup(MyGlobSearch::glob_syntax());
     }
 

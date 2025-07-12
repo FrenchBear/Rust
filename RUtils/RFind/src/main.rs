@@ -37,8 +37,9 @@ use options::*;
 // -----------------------------------
 // Global constants
 
-const APP_NAME: &str = "rfind";
-const APP_VERSION: &str = "1.7.0";
+const APP_NAME: &str = env!("CARGO_PKG_NAME");
+const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
+const APP_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 
 // -----------------------------------
 // Traits
