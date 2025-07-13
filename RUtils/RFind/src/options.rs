@@ -5,6 +5,7 @@
 // 2025-05-03	PV      Option -name
 // 2025-05-04   PV      Use MyMarkup for formatting
 // 2025-05-05   PV      is_option for Linux compatibility
+// 2025-07-13 	PV 		Option -nop
 
 // Application imports
 use crate::*;
@@ -61,6 +62,7 @@ impl Options {
 ⌊Actions⌋:
 ⦃-print⦄           ¬Default, print matching files names and dir names
 ⦃-dir⦄             ¬Variant of ⦃-print⦄, with last modification date and size
+⦃-nop[rint]⦄       ¬Do nothing, useful to replace default action ⦃-print⦄ to count files and folders with option ⦃-v⦄
 ⦃-delete⦄          ¬Delete matching files
 ⦃-rmdir⦄           ¬Delete matching directories, whether empty or not";
 
@@ -171,6 +173,9 @@ impl Options {
                     }
                     "dir" => {
                         options.actions_names.insert("dir");
+                    }
+                    "nop" | "noprint" => {
+                        options.actions_names.insert("nop");
                     }
                     "rm" | "del" | "delete" => {
                         options.actions_names.insert("delete");

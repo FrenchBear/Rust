@@ -14,6 +14,7 @@
 // 2025-05-05	PV      1.7.0 Logging crate and Linux compatibility
 // 2025-07-11   PV      1.7.1 Get info from Cargo.toml and use build.rs
 // 2025-07-12	PV      1.7.2 Bug name inverted (recycle/permanent delete) for action delete
+// 2025-07-13 	PV 		1.8.0 Option -nop
 
 //#![allow(unused)]
 
@@ -142,6 +143,7 @@ fn main() {
             "dir" => actions.push(Box::new(actions::ActionPrint::new(true))),
             "delete" => actions.push(Box::new(actions::ActionDelete::new(options.recycle))),
             "rmdir" => actions.push(Box::new(actions::ActionRmdir::new(options.recycle))),
+            "nop" => {}
             _ => panic!("{APP_NAME}: Internal error, unknown action_name {action_name}"),
         }
     }

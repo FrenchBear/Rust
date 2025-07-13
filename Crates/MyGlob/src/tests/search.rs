@@ -3,6 +3,7 @@
 //
 // 2025-04-09   PV
 // 2025-04-23   PV      Added search_error tests
+// 2025-07-13   PV      Tests with chinese characters
 
 #![cfg(test)]
 use crate::*;
@@ -83,27 +84,41 @@ fn search_1() -> io::Result<()> {
     create_file(r"C:\Temp\search1\légumes\épinard.txt", "Épinard")?;
     create_file(r"C:\Temp\search1\légumes\tomate.txt", "Tomate")?;
     create_file(r"C:\Temp\search1\légumes\pomme.de.terre.txt", "Pomme de terre")?;
+    create_directory(r"C:\Temp\search1\我爱你")?;
+    create_file(r"C:\Temp\search1\我爱你\你好世界.txt", "Hello world")?;
+    create_file(r"C:\Temp\search1\我爱你\tomate.txt", "Hello Tomate")?;
+    create_directory(r"C:\Temp\search1\我爱你\Ƥḭҽɾɾҽ ѵìǫłҽղէ")?;
+    create_file(r"C:\Temp\search1\我爱你\Ƥḭҽɾɾҽ ѵìǫłҽղէ\tomate.txt", "Hello Tomate")?;
+    create_file(r"C:\Temp\search1\我爱你\Ƥḭҽɾɾҽ ѵìǫłҽղէ\Aé♫山𝄞🐗.txt", "Random 1")?;
+    create_file(r"C:\Temp\search1\我爱你\Ƥḭҽɾɾҽ ѵìǫłҽղէ\œæĳøß≤≠Ⅷﬁﬆ.txt", "Random 2")?;
 
+    // Basic testing
     assert_eq!(search_count(r"C:\Temp\search1\info"), (1, 0));
-    assert_eq!(search_count(r"C:\Temp\search1\*"), (2, 2));
+    assert_eq!(search_count(r"C:\Temp\search1\*"), (2, 3));
     assert_eq!(search_count(r"C:\Temp\search1\*.*"), (1, 0));
     assert_eq!(search_count(r"C:\Temp\search1\fruits\*"), (4, 0));
     assert_eq!(search_count(r"C:\Temp\search1\{fruits,légumes}\p*"), (3, 0));
     assert_eq!(search_count(r"C:\Temp\search1\**\p*"), (3, 0));
-    assert_eq!(search_count(r"C:\Temp\search1\**\*.txt"), (8, 0));
+    assert_eq!(search_count(r"C:\Temp\search1\**\*.txt"), (13, 0));
     assert_eq!(search_count(r"C:\Temp\search1\**\*.*.*"), (1, 0));
     assert_eq!(search_count(r"C:\Temp\search1\légumes\*"), (3, 0));
     assert_eq!(search_count(r"C:\Temp\search1\*s\to[a-z]a{r,s,t}e.t[xX]t"), (2, 0));
 
+    // Multibyte characters
+    assert_eq!(search_count(r"C:\Temp\search1\**\*爱*\*a*.txt"), (1, 0));
+    assert_eq!(search_count(r"C:\Temp\search1\**\*爱*\**\*a*.txt"), (3, 0));
+    assert_eq!(search_count(r"C:\Temp\search1\我爱你\**\*🐗*"), (1, 0));
+
     // Testing autorecurse
     assert_eq!(search_count(r"C:\Temp\search1\*.txt"), (1, 0));
-    assert_eq!(search_count_autorecurse(r"C:\Temp\search1\*.txt"), (8, 0));
+    assert_eq!(search_count_autorecurse(r"C:\Temp\search1\*.txt"), (13, 0));
     assert_eq!(search_count(r"C:\Temp\search1"), (0, 1));
-    assert_eq!(search_count_autorecurse(r"C:\Temp\search1"), (9, 2));
-    assert_eq!(search_count_autorecurse(r"C:\Temp\search1\"), (9, 2));      // Test with final \
+    assert_eq!(search_count_autorecurse(r"C:\Temp\search1"), (14, 4));
+    assert_eq!(search_count_autorecurse(r"C:\Temp\search1\"), (14, 4));      // Test with final \
 
     // Testing ignore
-    assert_eq!(search_count_ignore(r"C:\Temp\search1\**\*.txt", &["Légumes"]), (5, 0));
+    assert_eq!(search_count_ignore(r"C:\Temp\search1\**\*.txt", &["Légumes"]), (10, 0));
+    assert_eq!(search_count_ignore(r"C:\Temp\search1\**\*.txt", &["Légumes","我爱你"]), (5, 0));
 
     fs::remove_dir_all(r"C:\Temp\search1")?;
 
