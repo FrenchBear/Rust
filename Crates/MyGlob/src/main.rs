@@ -3,16 +3,23 @@
 //
 // 2025-03-25   PV  First version
 
-//#![allow(unused)]
+#![allow(unused)]
 
-use myglob::{MyGlobMatch, MyGlobSearch};
+use myglob::{MyGlobMatch, MyGlobSearch, MyGlobBuilder};
 use regex as _;
+use std::env;
+use std::path::Path;
 use std::time::Instant;
+
 
 fn main() {
     println!("MyGlob lib version: {}\n", MyGlobSearch::version());
 
-    test_myglob(r"C:\", true, &["d2"], 1);
+    let new_path = Path::new(r"S:\Temp");
+    _ = env::set_current_dir(&new_path);
+    test_myglob(r"S:\**\*Intel*", true, &["d2"], 1);
+
+    //test_myglob(r"C:\Temp\search1\info", false, &[], 1);
 }
 
 // Entry point for testing
@@ -30,6 +37,8 @@ pub fn test_myglob(pattern: &str, autorecurse: bool, ignore_dirs: &[&str], loops
 
         match resgs {
             Ok(gs) => {
+                println!("gs: {:?}", gs);
+
                 let mut nf = 0;
                 let mut nd = 0;
                 for ma in gs.explore_iter() {
@@ -74,3 +83,4 @@ fn median(v: &[f64]) -> f64 {
     v2.sort_by(|a, b| a.partial_cmp(b).unwrap());
     if l % 2 == 0 { (v2[l >> 1] + v2[(l >> 1) - 1]) / 2.0 } else { v2[l >> 1] }
 }
+

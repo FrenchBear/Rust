@@ -2,5 +2,6 @@
 
 #![cfg(test)]
 
-mod regexp_conversions;
-mod search;
+mod test_regexp_conversions;
+mod test_search;
+mod test_glob_expression;

@@ -1,4 +1,4 @@
-// MyGlob tests - search
+// MyGlob tests - test_search
 // Unit tests for MyGlob
 //
 // 2025-04-09   PV

@@ -1,4 +1,5 @@
 // my_glob library
+// 
 // Attempt to implement an efficient glob in Rust
 //
 // 2025-03-25   PV      First version, experiments around various options to select the fastest
@@ -19,8 +20,9 @@
 // 2025-05-03   PV      1.5.3 Removed #![allow(...)]
 // 2025-05-04   PV      1.5.4 Added glob_syntax()
 // 2025-07-12   PV      1.6.0 Don't complain about glob patterns ending with / or \
+// 2025-08-08   PV      1.7.0 Use get_root to rewrite root separation, and handle windows C:\xxx patterns corretcly
 
-//#![allow(unused_variables, dead_code, unused_imports)]
+#![allow(unused_variables, dead_code, unused_imports)]
 
 // Standard library imports
 use regex::Regex;
@@ -45,7 +47,7 @@ const LIB_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // Internal structure, store one segment of a glob pattern, either a constant string, a recurse tag (**), or a glob filter, converted into a Regex
 #[derive(Debug)]
-enum Segment {
+pub enum Segment {
     Constant(String),
     Recurse,
     Filter(Regex),
@@ -181,59 +183,59 @@ impl MyGlobBuilder {
         self
     }
 
-    /// Constructs a new MyGlobSearch based on pattern glob expression, or return an error if there is Glob/Regex error
-    pub fn compile(self) -> Result<MyGlobSearch, MyGlobError> {
-        if self.glob_pattern.is_empty() {
-            return Err(MyGlobError::GlobError("Glob pattern can't be empty".to_string()));
+    // Helper to separate constant root prefix from segments
+    // Was initially part of compile, but it's better to put in a separate function for careful testing
+    pub fn get_root(glob_pattern: &str) -> (String, String) {
+        let mut glob = glob_pattern.to_string();
+        // Instead of raising an error in case of empty pattern, just consider it's equivalent to *, similar to dir/ls commands behavior
+        if glob.is_empty() {
+            glob = String::from("*")
         }
 
-        // If pattern ends with / or \, just strip it (once) to normalize path
-        let mut glob = self.glob_pattern.clone();
-        if glob.ends_with("/") {
-            glob = glob.strip_suffix("/").unwrap().to_string();
-        }
-        if glob.ends_with("\\") {
-            glob = glob.strip_suffix("\\").unwrap().to_string();
-        }
-
-        // Trick: add a final \ so that we don't have duplicate code to process last segment
-        let dir_sep = if cfg!(target_os = "windows") { '\\' } else { '/' };
-        glob.push(dir_sep);
-
-        // First get root part, the constant segments at the beginning
+        // Extract the root pattern, the constant beginning of glob expression not containing *?[{ chars
         let mut cut = 0;
         let mut pos = 0;
         let mut root: String;
 
-        // Special case for windows, a pattern such as C:\ is considered as root, inluding final \,
-        // this final \ is not considered as a cut point
-        let vglobc: Vec<char> = glob.chars().collect();
-        if vglobc.len() == 3 && vglobc[1] == ':' {
-            root = glob.to_string();
-            cut = 3;
-            pos = 4;
-        } else {
-            for c in glob.chars() {
-                if "*?[{".contains(c) {
-                    break;
-                }
-                if c == '/' || c == '\\' {
-                    // Note that \ have a special meaning between [ ] but we break the loop at the first [ so it's Ok
-                    cut = pos;
-                }
-                pos += c.len_utf8();
+        glob.push('\u{0}'); // Add a end marker to simplify code
+        for c in glob.chars() {
+            if "*?[{".contains(c) {
+                break;
             }
-            root = glob[..cut].to_string();
-            if root.is_empty() {
-                root.push('.');
+            if c == '/' || c == '\\' {
+                // Note that \ have a special meaning between [ ] but we break the loop at the first [ so it's Ok
+                cut = pos + 1;
             }
+            if c == '\u{0}' {
+                cut = pos;
+                break;
+            }
+            pos += c.len_utf8();
         }
 
-        // Then build segments
-        let mut segments = if pos < glob.len() {
-            Self::glob_to_segments(&glob[if cut == 0 { 0 } else { cut + 1 }..])?
+        root = glob[..cut].to_string();
+        if root.is_empty() {
+            root.push('.');
+        }
+
+        let rem = if pos < glob.len()-1 {
+            &glob[if cut == 0 { 0 } else { cut }..glob.len() - 1]
         } else {
+            ""
+        };
+
+        (root, rem.to_string())
+    }
+
+    /// Constructs a new MyGlobSearch based on pattern glob expression, or return an error if there is Glob/Regex error
+    pub fn compile(self) -> Result<MyGlobSearch, MyGlobError> {
+        let (root, rem) = MyGlobBuilder::get_root(&self.glob_pattern);
+
+        // Then build segments
+        let mut segments = if rem.is_empty() {
             Vec::new()
+        } else {
+            Self::glob_to_segments(&rem)?
         };
 
         // Process autorecurse transformation if required
@@ -261,11 +263,13 @@ impl MyGlobBuilder {
     }
 
     // Conversion of a glob string into a Vec<Segment>, or an error if glob syntax is invalid
-    // This is used internally and for testing, but not called by applications hence pub(crate)
-    pub(crate) fn glob_to_segments(glob_pattern: &str) -> Result<Vec<Segment>, MyGlobError> {
+    pub fn glob_to_segments(glob_pattern_arg: &str) -> Result<Vec<Segment>, MyGlobError> {
         // glob_pattern ends with \ so no duplicate code to process last segment
         let dir_sep = if cfg!(target_os = "windows") { '\\' } else { '/' };
-        assert!(glob_pattern.ends_with(dir_sep));
+        let mut glob_pattern = glob_pattern_arg.to_string();
+        if !glob_pattern.ends_with("/") && !glob_pattern.ends_with("\\") {
+            glob_pattern.push(dir_sep);
+        }
 
         let mut segments = Vec::<Segment>::new();
         let mut regex_buffer = String::new();
