@@ -45,29 +45,29 @@ fn relative_glob() {
 
 #[test]
 fn test_get_root() {
-tgr("", ".", "*");
-tgr("*", ".", "*");
-tgr("C:", "C:", "");
-tgr("C:\\", "C:\\", "");
-tgr("file.ext", "file.ext", "");
-tgr("C:file.ext", "C:file.ext", "");
-tgr("C:\\file.ext", "C:\\file.ext", "");
-tgr("path\\file.ext", "path\\file.ext", "");
-tgr("path\\*.jpg", "path\\", "*.jpg");
-tgr("path\\**\\*.jpg", "path\\", "**\\*.jpg");
-tgr("C:path\\file.ext", "C:path\\file.ext", "");
-tgr("C:\\path\\file.ext", "C:\\path\\file.ext", "");
-tgr("\\\\server\\share", "\\\\server\\share", "");
-tgr("\\\\server\\share\\", "\\\\server\\share\\", "");
-tgr("\\\\server\\share\\file.txt", "\\\\server\\share\\file.txt", "");
-tgr("\\\\server\\share\\path\\file.txt", "\\\\server\\share\\path\\file.txt", "");
-tgr("\\\\server\\share\\*.jpg", "\\\\server\\share\\", "*.jpg");
-tgr("\\\\server\\share\\path\\*.jpg", "\\\\server\\share\\path\\", "*.jpg");
-tgr("\\\\server\\share\\**\\*.jpg", "\\\\server\\share\\", "**\\*.jpg");
+    tgr("", ".", "*");
+    tgr("*", ".", "*");
+    tgr("C:", "C:", "");
+    tgr("C:\\", "C:\\", "");
+    tgr("file.ext", "file.ext", "");
+    tgr("C:file.ext", "C:file.ext", "");
+    tgr("C:\\file.ext", "C:\\file.ext", "");
+    tgr("path\\file.ext", "path\\file.ext", "");
+    tgr("path\\*.jpg", "path\\", "*.jpg");
+    tgr("path\\**\\*.jpg", "path\\", "**\\*.jpg");
+    tgr("C:path\\file.ext", "C:path\\file.ext", "");
+    tgr("C:\\path\\file.ext", "C:\\path\\file.ext", "");
+    tgr("\\\\server\\share", "\\\\server\\share", "");
+    tgr("\\\\server\\share\\", "\\\\server\\share\\", "");
+    tgr("\\\\server\\share\\file.txt", "\\\\server\\share\\file.txt", "");
+    tgr("\\\\server\\share\\path\\file.txt", "\\\\server\\share\\path\\file.txt", "");
+    tgr("\\\\server\\share\\*.jpg", "\\\\server\\share\\", "*.jpg");
+    tgr("\\\\server\\share\\path\\*.jpg", "\\\\server\\share\\path\\", "*.jpg");
+    tgr("\\\\server\\share\\**\\*.jpg", "\\\\server\\share\\", "**\\*.jpg");
 }
 
 fn tgr(pat: &str, root: &str, rem: &str) {
-    let (r,s) = MyGlobBuilder::get_root(pat);
+    let (r, s) = MyGlobBuilder::get_root(pat);
     assert_eq!(r, root);
     assert_eq!(s, rem);
 }

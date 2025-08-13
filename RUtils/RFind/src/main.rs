@@ -14,7 +14,8 @@
 // 2025-05-05	PV      1.7.0 Logging crate and Linux compatibility
 // 2025-07-11   PV      1.7.1 Get info from Cargo.toml and use build.rs
 // 2025-07-12	PV      1.7.2 Bug name inverted (recycle/permanent delete) for action delete
-// 2025-07-13 	PV 		1.8.0 Option -nop
+// 2025-07-12	PV      1.7.2 Bug name inverted (recycle/permanent delete) for action delete
+// 2025-08-11 	PV 		1.8.1 Fixed is_file_empty bug
 
 //#![allow(unused)]
 
@@ -215,7 +216,7 @@ fn main() {
 }
 
 fn is_file_empty(path: &PathBuf) -> bool {
-    fs::metadata(path).unwrap().len() > 0
+    fs::metadata(path).unwrap().len() == 0
 }
 
 fn is_dir_empty(path: &PathBuf) -> bool {
