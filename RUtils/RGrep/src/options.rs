@@ -19,7 +19,7 @@ pub struct Options {
     pub whole_word: bool,
     pub fixed_string: bool,
     pub autorecurse: bool,
-    pub show_path: bool,
+    pub show_path: bool, // Set to true by main if there is more than 1 file to search from
     pub out_level: u8, // 0: normal output, 1: (-l) matching filenames only, 2: (-c) filenames and matching lines count, 3: (-c -l) only matching filenames and matching lines count
     pub verbose: u8,
 }
@@ -67,7 +67,7 @@ impl Options {
         println!("- colored: {}", env!("DEP_COLORED_VERSION"));
         println!("- atty: {}", env!("DEP_ATTY_VERSION"));
         println!();
-        
+
         let text = "⟪⌊Advanced usage notes⌋⟫
 
 Options ⦃-c⦄ (show count of matching lines) and ⦃-l⦄ (show matching file names only) can be used together to show matching lines count only for matching files.
@@ -97,7 +97,7 @@ To search for the string help, use option ⦃-F⦄: {APP_NAME} ⦃-F⦄ help ⟦
             }
         }
 
-        let mut options = Options { 
+        let mut options = Options {
             autorecurse: true,
             ..Default::default()
         };
@@ -132,7 +132,6 @@ To search for the string help, use option ⦃-F⦄: {APP_NAME} ⦃-F⦄ help ⟦
                         "-" => options.autorecurse = false,
                         _ => return Err("Only -a+ and -a- (enable/disable autorecurse) are supported".into()),
                     },
-
 
                     Opt('l', None) => {
                         options.out_level |= 1;

@@ -33,8 +33,8 @@ use textautodecode::{TextAutoDecode, TextFileEncoding};
 // -----------------------------------
 // Submodules
 
-mod options;
 mod grepiterator;
+mod options;
 mod tests;
 
 use options::*;
@@ -70,7 +70,8 @@ fn main() {
     let start = Instant::now();
 
     // Building list of files
-    // ToDo: It could be better to process file just when it's returned by iterator rather than stored in a Vec and processed later...
+    // It could be better to process file just when it's returned by iterator rather than stored in a Vec and processed
+    // later... but then we don't know when processing the first file whether there's more than one, to print paths...
     let mut files: Vec<PathBuf> = Vec::new();
     for source in options.sources.iter() {
         let mut count = 0;
@@ -145,12 +146,21 @@ fn main() {
 /// Return an error in case of invalid Regex.
 pub fn build_re(options: &Options) -> Result<Regex, regex::Error> {
     let spat = if options.fixed_string {
-        regex::escape(options.pattern.as_str())
+        if options.whole_word {
+            format!("\\b{}\\b", regex::escape(options.pattern.as_str()))
+        } else {
+            regex::escape(options.pattern.as_str())
+        }
     } else if options.whole_word {
         format!("\\b{}\\b", options.pattern)
     } else {
         options.pattern.clone()
     };
+
+    // Options:
+    // i  case-insensitive: letters match both upper and lower case
+    // m  multi-line mode: ^ and $ match begin/end of line
+    // R  enables CRLF mode: when multi-line mode is enabled, \r\n is used
     let spat = String::from(if options.ignore_case { "(?imR)" } else { "(?mR)" }) + spat.as_str();
     Regex::new(spat.as_str())
 }
@@ -224,8 +234,8 @@ fn process_text(re: &Regex, txt: &str, filename: &str, options: &Options) {
         }
     }
 
-    // Note: both options -c and -l (out_level==3) is not supported by Linux version
+    // Note: Using together options -c and -l (out_level==3) is not supported by Linux grep command
     if options.out_level == 2 || (options.out_level == 3 && matchlinecount > 0) {
-        println!("{}:{}", filename, matchlinecount);
+        println!("{}: {}", filename, matchlinecount);
     }
 }
