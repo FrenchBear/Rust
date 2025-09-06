@@ -16,6 +16,7 @@
 // 2025-07-12	PV      1.7.2 Bug name inverted (recycle/permanent delete) for action delete
 // 2025-07-12	PV      1.7.2 Bug name inverted (recycle/permanent delete) for action delete
 // 2025-08-11 	PV 		1.8.1 Fixed is_file_empty bug
+// 2025-09-06 	PV 		1.0.0 Option -maxdepth n
 
 //#![allow(unused)]
 
@@ -27,8 +28,8 @@ use std::process;
 use std::time::Instant;
 
 // External crates imports
-use myglob::{MyGlobMatch, MyGlobSearch};
 use logging::*;
+use myglob::{MyGlobMatch, MyGlobSearch};
 
 // -----------------------------------
 // Submodules
@@ -103,7 +104,10 @@ fn main() {
     // Convert String sources into MyGlobSearch structs
     let mut sources: Vec<(&String, MyGlobSearch)> = Vec::new();
     for source in options.sources.iter() {
-        let resgs = MyGlobSearch::new(source).autorecurse(options.autorecurse).compile();
+        let resgs = MyGlobSearch::new(source)
+            .autorecurse(options.autorecurse)
+            .maxdepth(options.maxdepth)
+            .compile();
         match resgs {
             Ok(gs) => sources.push((source, gs)),
             Err(e) => {

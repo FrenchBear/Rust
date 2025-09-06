@@ -6,6 +6,7 @@
 // 2025-05-04   PV      Use MyMarkup for formatting
 // 2025-05-05   PV      is_option for Linux compatibility
 // 2025-07-13 	PV 		Option -nop
+// 2025-09-06 	PV 		Option -maxdepth n
 
 // Application imports
 use crate::*;
@@ -26,6 +27,7 @@ pub struct Options {
     pub search_files: bool,
     pub search_dirs: bool,
     pub names: Vec<String>,
+    pub maxdepth: usize,
     pub isempty: bool,
     pub recycle: bool,
     pub autorecurse: bool,
@@ -44,7 +46,7 @@ impl Options {
     fn usage() {
         Options::header();
         println!();
-        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄] [⦃-v⦄] [⦃-n⦄] [⦃-f⦄|⦃-type f⦄|⦃-d⦄|⦃-type d⦄] [⦃-e⦄|⦃-empty⦄] [⦃-r+⦄|⦃-r-⦄] [⦃-a+⦄|⦃-a-⦄] [⟨action⟩...] [⦃-name⦄ ⟨name⟩] ⟨source⟩...
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄] [⦃-v⦄] [⦃-n⦄] [⦃-f⦄|⦃-type f⦄|⦃-d⦄|⦃-type d⦄] [⦃-e⦄|⦃-empty⦄] [⦃-r+⦄|⦃-r-⦄] [⦃-a+⦄|⦃-a-⦄] [⟨action⟩...] [⦃-name⦄ ⟨name⟩] [⦃-maxdepth⦄ ⟨n⟩] ⟨source⟩...
 
 ⌊Options⌋:
 ⦃?⦄|⦃-?⦄|⦃-h⦄          ¬Show this message
@@ -57,6 +59,7 @@ impl Options {
 ⦃-r+⦄|⦃-r-⦄          ¬Delete to recycle bin (default) or delete forever; Recycle bin is not allowed on network sources
 ⦃-a+⦄|⦃-a-⦄          ¬Enable (default) or disable glob autorecurse mode (see extended usage)
 ⦃-name⦄ ⟨name⟩       ¬Append ⟦**/⟧⟨name⟩ to each source directory (compatibility with XFind/Search)
+⦃-maxdepth⦄ ⟨n⟩      ¬Limit the recursion depth of ** segments, 1=One directory only, ... Default=0 is unlimited depth
 ⟨source⟩           ¬File or directory to search
 
 ⌊Actions⌋:
@@ -157,6 +160,17 @@ impl Options {
                             options.names.push(name.clone());
                         } else {
                             return Err("Option -name requires an argument".into());
+                        }
+                    }
+
+                    "maxdepth" => {
+                        if let Some(name) = args_iter.next() {
+                            if name.parse::<usize>().is_err() {
+                                return Err("Option -maxdepth requires a numeric argument".into());
+                            }
+                            options.maxdepth = name.parse::<usize>().unwrap();
+                        } else {
+                            return Err("Option -maxdepth requires an argument".into());
                         }
                     }
 

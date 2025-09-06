@@ -1,5 +1,5 @@
 // my_glob library
-// 
+//
 // Attempt to implement an efficient glob in Rust
 //
 // 2025-03-25   PV      First version, experiments around various options to select the fastest
@@ -21,6 +21,7 @@
 // 2025-05-04   PV      1.5.4 Added glob_syntax()
 // 2025-07-12   PV      1.6.0 Don't complain about glob patterns ending with / or \
 // 2025-08-08   PV      1.7.0 Use get_root to rewrite root separation, and handle windows C:\xxx patterns corretcly
+// 2025-09-06   PV      1.8.0 MaxDepth added
 
 #![allow(unused_variables, dead_code, unused_imports)]
 
@@ -59,12 +60,14 @@ pub struct MyGlobSearch {
     root: String,
     segments: Vec<Segment>,
     ignore_dirs: Vec<String>,
+    maxdepth: usize,
 }
 
 #[derive(Debug, Default)]
 pub struct MyGlobBuilder {
     glob_pattern: String,
     ignore_dirs: Vec<String>, // just plain lowercase dir name, no path, no *
+    maxdepth: usize,          // Counted from ** segment, 0 means no limit
     autorecurse: bool,        // Apply optional autorecurse transformation
 }
 
@@ -153,14 +156,16 @@ impl MyGlobSearch {
                 stack,
                 segments: &self.segments,
                 ignore_dirs: &self.ignore_dirs,
+                maxdepth: self.maxdepth,
             };
         }
 
         // Normal case, start iterator at root
         MyGlobIteratorState {
-            stack: vec![SearchPendingData::DirToExplore(Path::new(&self.root).to_path_buf(), 0, false)],
+            stack: vec![SearchPendingData::DirToExplore(Path::new(&self.root).to_path_buf(), 0, false, 0)],
             segments: &self.segments,
             ignore_dirs: &self.ignore_dirs,
+            maxdepth: self.maxdepth,
         }
     }
 
@@ -172,12 +177,22 @@ impl MyGlobSearch {
 }
 
 impl MyGlobBuilder {
+    /// Add a directory name to ignore during search, case insensitive (no path, no *)
     pub fn add_ignore_dir(mut self, dir: &str) -> Self {
         self.ignore_dirs.push(dir.to_lowercase());
         self
     }
 
-    // Set autorecurse flag. There is no mechanism to clear it, since it's clear by default.
+    /// Set maxdepth, counted from ** segment, 0 means no limit
+    pub fn maxdepth(mut self, depth: usize) -> Self {
+        if depth == 0 {
+            return self;
+        }
+        self.maxdepth = depth;
+        self
+    }
+
+    /// Set autorecurse flag. There is no mechanism to clear it, since it's clear by default.
     pub fn autorecurse(mut self, active: bool) -> Self {
         self.autorecurse = active;
         self
@@ -218,7 +233,7 @@ impl MyGlobBuilder {
             root.push('.');
         }
 
-        let rem = if pos < glob.len()-1 {
+        let rem = if pos < glob.len() - 1 {
             &glob[if cut == 0 { 0 } else { cut }..glob.len() - 1]
         } else {
             ""
@@ -232,11 +247,7 @@ impl MyGlobBuilder {
         let (root, rem) = MyGlobBuilder::get_root(&self.glob_pattern);
 
         // Then build segments
-        let mut segments = if rem.is_empty() {
-            Vec::new()
-        } else {
-            Self::glob_to_segments(&rem)?
-        };
+        let mut segments = if rem.is_empty() { Vec::new() } else { Self::glob_to_segments(&rem)? };
 
         // Process autorecurse transformation if required
         if self.autorecurse {
@@ -259,6 +270,7 @@ impl MyGlobBuilder {
             root,
             segments,
             ignore_dirs: self.ignore_dirs,
+            maxdepth: self.maxdepth,
         })
     }
 
@@ -399,15 +411,16 @@ struct MyGlobIteratorState<'a> {
     stack: Vec<SearchPendingData>,
     segments: &'a Vec<Segment>,
     ignore_dirs: &'a Vec<String>,
+    maxdepth: usize,
 }
 
 // Internal structure of derecursived search, pending data to explore or return, stored in stack
 #[derive(Debug)]
 enum SearchPendingData {
-    File(PathBuf),                      // Data to return
-    Dir(PathBuf),                       // Data to return
-    DirToExplore(PathBuf, usize, bool), // Dir not explored yet
-    Error(IOError),                     // Returns an error
+    File(PathBuf),                             // Data to return
+    Dir(PathBuf),                              // Data to return
+    DirToExplore(PathBuf, usize, bool, usize), // Dir not explored yet
+    Error(IOError),                            // Returns an error
 }
 
 impl Iterator for MyGlobIteratorState<'_> {
@@ -422,7 +435,7 @@ impl Iterator for MyGlobIteratorState<'_> {
 
                 SearchPendingData::Dir(pb) => return Some(MyGlobMatch::Dir(pb)),
 
-                SearchPendingData::DirToExplore(root, depth, recurse) => {
+                SearchPendingData::DirToExplore(root, depth, recurse, recurse_depth) => {
                     match &self.segments[depth] {
                         Segment::Constant(name) => {
                             let pb = root.join(name);
@@ -438,22 +451,23 @@ impl Iterator for MyGlobIteratorState<'_> {
                                 // non-final segment, can only match a directory
                                 if pb.is_dir() {
                                     // Found a matching directory, we continue exploration in next loop
-                                    self.stack.push(SearchPendingData::DirToExplore(pb, depth + 1, false));
+                                    self.stack.push(SearchPendingData::DirToExplore(pb, depth + 1, false, 0));
                                 }
                             }
 
                             // Then if recurse mode, we also search in all subdirectories
-                            if recurse {
+                            if recurse && (self.maxdepth == 0 || recurse_depth < self.maxdepth) {
                                 match fs::read_dir(&root) {
                                     Ok(contents) => {
                                         for resentry in contents {
                                             match resentry {
                                                 Ok(entry) => {
+                                                    // Don't follow folders recursively if maxdepth has been reached
                                                     if entry.file_type().unwrap().is_dir() {
                                                         let p = entry.path();
                                                         let fnlc = p.file_name().unwrap().to_string_lossy().to_lowercase();
                                                         if !self.ignore_dirs.iter().any(|ie| *ie == fnlc.to_lowercase()) {
-                                                            self.stack.push(SearchPendingData::DirToExplore(p, depth, true));
+                                                            self.stack.push(SearchPendingData::DirToExplore(p, depth, true, recurse_depth + 1));
                                                         }
                                                     }
                                                 }
@@ -476,7 +490,7 @@ impl Iterator for MyGlobIteratorState<'_> {
                         }
 
                         Segment::Recurse => {
-                            self.stack.push(SearchPendingData::DirToExplore(root, depth + 1, true));
+                            self.stack.push(SearchPendingData::DirToExplore(root, depth + 1, true, 0));
                         }
 
                         Segment::Filter(re) => {
@@ -500,10 +514,14 @@ impl Iterator for MyGlobIteratorState<'_> {
                                                     let flnc = fname.to_lowercase();
                                                     if !self.ignore_dirs.iter().any(|ie| *ie == flnc) {
                                                         if re.is_match(&fname) {
-                                                            if depth == self.segments.len() - 1 {
-                                                                self.stack.push(SearchPendingData::Dir(pb.clone()));
-                                                            } else {
-                                                                self.stack.push(SearchPendingData::DirToExplore(pb.clone(), depth + 1, false));
+                                                            if self.maxdepth == 0 || recurse_depth < self.maxdepth {
+                                                                // If it's the last segment, we just return the directory
+                                                                // Otherwise, we continue exploration in next loop
+                                                                if depth == self.segments.len() - 1 {
+                                                                    self.stack.push(SearchPendingData::Dir(pb.clone()));
+                                                                } else {
+                                                                    self.stack.push(SearchPendingData::DirToExplore(pb.clone(), depth + 1, false, 0));
+                                                                }
                                                             }
                                                         }
                                                         dirs.push(pb);
@@ -527,9 +545,9 @@ impl Iterator for MyGlobIteratorState<'_> {
                             }
 
                             // Then if recurse mode, we also search in all subdirectories (already collected in dirs in previous loop to avoid enumerating directory twice)
-                            if recurse {
+                            if recurse && (self.maxdepth == 0 || recurse_depth < self.maxdepth) {
                                 for dir in dirs {
-                                    self.stack.push(SearchPendingData::DirToExplore(dir, depth, true));
+                                    self.stack.push(SearchPendingData::DirToExplore(dir, depth, true, recurse_depth + 1));
                                 }
                             }
                         }

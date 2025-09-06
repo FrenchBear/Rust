@@ -17,19 +17,20 @@ fn main() {
 
     let new_path = Path::new(r"S:\Temp");
     _ = env::set_current_dir(&new_path);
-    test_myglob(r"S:\**\*Intel*", true, &["d2"], 1);
-
-    //test_myglob(r"C:\Temp\search1\info", false, &[], 1);
+    //test_myglob(r"S:\**\*Intel*", true, &["d2"], 0, 1);
+    //test_myglob(r"C:\Temp\search1\info", false, &[], 0, 1);
+    //test_myglob(r"S:\MaxDepth", true, &[], 1, 1);
+    test_myglob(r"C:\Program Files", true, &[], 1, 1);
 }
 
 // Entry point for testing
-pub fn test_myglob(pattern: &str, autorecurse: bool, ignore_dirs: &[&str], loops: usize) {
+pub fn test_myglob(pattern: &str, autorecurse: bool, ignore_dirs: &[&str], maxdepth: usize, loops: usize) {
     let mut durations: Vec<f64> = Vec::new();
     for pass in 0..loops {
         println!("\nTest #{pass}");
 
         let start = Instant::now();
-        let mut builder = MyGlobSearch::new(pattern).autorecurse(autorecurse);
+        let mut builder = MyGlobSearch::new(pattern).autorecurse(autorecurse).maxdepth(maxdepth);
         for ignore_dir in ignore_dirs {
             builder = builder.add_ignore_dir(ignore_dir);
         }
