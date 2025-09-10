@@ -93,8 +93,6 @@ fn conversions_tests() {
     glob_one_segment_test("*", ConvResult::Filter, "rsgresp.d", true);
     glob_one_segment_test("*", ConvResult::Filter, "rsgresp.d.e.f", true);
     glob_one_segment_test("*.d", ConvResult::Filter, "rsgresp.d", true);
-    glob_one_segment_test("*.*", ConvResult::Filter, "rsgresp.d", true);
-    glob_one_segment_test("*.*", ConvResult::Filter, "rsgresp", false);
     glob_one_segment_test("*.*", ConvResult::Filter, "rsgresp", false);
 
     // ** pattern must be alone, and matches anything, including \

@@ -16,7 +16,8 @@
 // 2025-07-12	PV      1.7.2 Bug name inverted (recycle/permanent delete) for action delete
 // 2025-07-12	PV      1.7.2 Bug name inverted (recycle/permanent delete) for action delete
 // 2025-08-11 	PV 		1.8.1 Fixed is_file_empty bug
-// 2025-09-06 	PV 		1.0.0 Option -maxdepth n
+// 2025-09-06 	PV 		1.9.0 Option -maxdepth n
+// 2025-09-08 	PV 		1.9.1 Use MyGlobSearch 1.9.0 with breadth-first search for a more natural order
 
 //#![allow(unused)]
 

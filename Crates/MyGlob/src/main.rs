@@ -20,7 +20,7 @@ fn main() {
     //test_myglob(r"S:\**\*Intel*", true, &["d2"], 0, 1);
     //test_myglob(r"C:\Temp\search1\info", false, &[], 0, 1);
     //test_myglob(r"S:\MaxDepth", true, &[], 1, 1);
-    test_myglob(r"C:\Program Files", true, &[], 1, 1);
+    test_myglob(r"C:\Development\GitVSTS\DevForFun", true, &[], 2, 1);
 }
 
 // Entry point for testing

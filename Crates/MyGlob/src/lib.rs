@@ -22,6 +22,7 @@
 // 2025-07-12   PV      1.6.0 Don't complain about glob patterns ending with / or \
 // 2025-08-08   PV      1.7.0 Use get_root to rewrite root separation, and handle windows C:\xxx patterns corretcly
 // 2025-09-06   PV      1.8.0 MaxDepth added
+// 2025-09-08   PV      1.9.0 Use queue instead of stack to have a breadth-first search instead of depth-first, and return results in a more natural order
 
 #![allow(unused_variables, dead_code, unused_imports)]
 
@@ -148,12 +149,12 @@ impl MyGlobSearch {
             let p = Path::new(&self.root);
             let mut stack: Vec<SearchPendingData> = Vec::new();
             if p.is_file() {
-                stack.push(SearchPendingData::File(p.to_path_buf()));
+                stack.insert(0, SearchPendingData::File(p.to_path_buf()));
             } else if p.is_dir() {
-                stack.push(SearchPendingData::Dir(p.to_path_buf()));
+                stack.insert(0, SearchPendingData::Dir(p.to_path_buf()));
             }
             return MyGlobIteratorState {
-                stack,
+                queue: stack,
                 segments: &self.segments,
                 ignore_dirs: &self.ignore_dirs,
                 maxdepth: self.maxdepth,
@@ -162,7 +163,7 @@ impl MyGlobSearch {
 
         // Normal case, start iterator at root
         MyGlobIteratorState {
-            stack: vec![SearchPendingData::DirToExplore(Path::new(&self.root).to_path_buf(), 0, false, 0)],
+            queue: vec![SearchPendingData::DirToExplore(Path::new(&self.root).to_path_buf(), 0, false, 0)],
             segments: &self.segments,
             ignore_dirs: &self.ignore_dirs,
             maxdepth: self.maxdepth,
@@ -408,7 +409,7 @@ pub enum MyGlobMatch {
 
 // Internal state of iterator
 struct MyGlobIteratorState<'a> {
-    stack: Vec<SearchPendingData>,
+    queue: Vec<SearchPendingData>,
     segments: &'a Vec<Segment>,
     ignore_dirs: &'a Vec<String>,
     maxdepth: usize,
@@ -418,7 +419,7 @@ struct MyGlobIteratorState<'a> {
 #[derive(Debug)]
 enum SearchPendingData {
     File(PathBuf),                             // Data to return
-    Dir(PathBuf),                              // Data to return
+    Dir(PathBuf),                              // Data to returnSpecial case: ! at the beginning
     DirToExplore(PathBuf, usize, bool, usize), // Dir not explored yet
     Error(IOError),                            // Returns an error
 }
@@ -427,7 +428,7 @@ impl Iterator for MyGlobIteratorState<'_> {
     type Item = MyGlobMatch;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while let Some(fof) = self.stack.pop() {
+        while let Some(fof) = self.queue.pop() {
             match fof {
                 SearchPendingData::Error(e) => return Some(MyGlobMatch::Error(e)),
 
@@ -443,15 +444,15 @@ impl Iterator for MyGlobIteratorState<'_> {
                                 // Final segment
                                 if pb.is_file() {
                                     // Case-insensitive comparison is provided by filesystem
-                                    self.stack.push(SearchPendingData::File(pb));
+                                    self.queue.insert(0, SearchPendingData::File(pb));
                                 } else if pb.is_dir() {
-                                    self.stack.push(SearchPendingData::Dir(pb.clone()));
+                                    self.queue.insert(0, SearchPendingData::Dir(pb.clone()));
                                 }
                             } else {
                                 // non-final segment, can only match a directory
                                 if pb.is_dir() {
                                     // Found a matching directory, we continue exploration in next loop
-                                    self.stack.push(SearchPendingData::DirToExplore(pb, depth + 1, false, 0));
+                                    self.queue.insert(0, SearchPendingData::DirToExplore(pb, depth + 1, false, 0));
                                 }
                             }
 
@@ -467,14 +468,14 @@ impl Iterator for MyGlobIteratorState<'_> {
                                                         let p = entry.path();
                                                         let fnlc = p.file_name().unwrap().to_string_lossy().to_lowercase();
                                                         if !self.ignore_dirs.iter().any(|ie| *ie == fnlc.to_lowercase()) {
-                                                            self.stack.push(SearchPendingData::DirToExplore(p, depth, true, recurse_depth + 1));
+                                                            self.queue.insert(0, SearchPendingData::DirToExplore(p, depth, true, recurse_depth + 1));
                                                         }
                                                     }
                                                 }
 
                                                 Err(e) => {
                                                     let f = std::io::Error::new(e.kind(), format!("Error enumerating dir {}: {}", root.display(), e));
-                                                    self.stack.push(SearchPendingData::Error(f));
+                                                    self.queue.insert(0, SearchPendingData::Error(f));
                                                     continue;
                                                 }
                                             }
@@ -483,14 +484,14 @@ impl Iterator for MyGlobIteratorState<'_> {
 
                                     Err(e) => {
                                         let f = std::io::Error::new(e.kind(), format!("Error reading dir {}: {}", root.display(), e));
-                                        self.stack.push(SearchPendingData::Error(f));
+                                        self.queue.insert(0, SearchPendingData::Error(f));
                                     }
                                 }
                             }
                         }
 
                         Segment::Recurse => {
-                            self.stack.push(SearchPendingData::DirToExplore(root, depth + 1, true, 0));
+                            self.queue.insert(0, SearchPendingData::DirToExplore(root, depth + 1, true, 0));
                         }
 
                         Segment::Filter(re) => {
@@ -508,7 +509,7 @@ impl Iterator for MyGlobIteratorState<'_> {
 
                                                 if ft.is_file() {
                                                     if depth == self.segments.len() - 1 && re.is_match(&fname) {
-                                                        self.stack.push(SearchPendingData::File(pb));
+                                                        self.queue.insert(0, SearchPendingData::File(pb));
                                                     }
                                                 } else if ft.is_dir() {
                                                     let flnc = fname.to_lowercase();
@@ -518,9 +519,9 @@ impl Iterator for MyGlobIteratorState<'_> {
                                                                 // If it's the last segment, we just return the directory
                                                                 // Otherwise, we continue exploration in next loop
                                                                 if depth == self.segments.len() - 1 {
-                                                                    self.stack.push(SearchPendingData::Dir(pb.clone()));
+                                                                    self.queue.insert(0, SearchPendingData::Dir(pb.clone()));
                                                                 } else {
-                                                                    self.stack.push(SearchPendingData::DirToExplore(pb.clone(), depth + 1, false, 0));
+                                                                    self.queue.insert(0, SearchPendingData::DirToExplore(pb.clone(), depth + 1, false, 0));
                                                                 }
                                                             }
                                                         }
@@ -531,7 +532,7 @@ impl Iterator for MyGlobIteratorState<'_> {
 
                                             Err(e) => {
                                                 let f = std::io::Error::new(e.kind(), format!("Error enumerating dir {}: {}", root.display(), e));
-                                                self.stack.push(SearchPendingData::Error(f));
+                                                self.queue.insert(0, SearchPendingData::Error(f));
                                                 continue;
                                             }
                                         }
@@ -540,14 +541,14 @@ impl Iterator for MyGlobIteratorState<'_> {
 
                                 Err(e) => {
                                     let f = std::io::Error::new(e.kind(), format!("Error reading dir {}: {}", root.display(), e));
-                                    self.stack.push(SearchPendingData::Error(f));
+                                    self.queue.insert(0, SearchPendingData::Error(f));
                                 }
                             }
 
                             // Then if recurse mode, we also search in all subdirectories (already collected in dirs in previous loop to avoid enumerating directory twice)
                             if recurse && (self.maxdepth == 0 || recurse_depth < self.maxdepth) {
                                 for dir in dirs {
-                                    self.stack.push(SearchPendingData::DirToExplore(dir, depth, true, recurse_depth + 1));
+                                    self.queue.insert(0, SearchPendingData::DirToExplore(dir, depth, true, recurse_depth + 1));
                                 }
                             }
                         }
