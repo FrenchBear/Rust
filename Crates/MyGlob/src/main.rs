@@ -5,7 +5,7 @@
 
 #![allow(unused)]
 
-use myglob::{MyGlobMatch, MyGlobSearch, MyGlobBuilder};
+use myglob::{MyGlobMatch, MyGlobSearch, MyGlobBuilder, MyGlobError};
 use regex as _;
 use std::env;
 use std::path::Path;
@@ -15,8 +15,8 @@ use std::time::Instant;
 fn main() {
     println!("MyGlob lib version: {}\n", MyGlobSearch::version());
 
-    let new_path = Path::new(r"S:\Temp");
-    _ = env::set_current_dir(&new_path);
+    //let new_path = Path::new(r"S:\Temp");
+    //_ = env::set_current_dir(&new_path);
     //test_myglob(r"S:\**\*Intel*", true, &["d2"], 0, 1);
     //test_myglob(r"C:\Temp\search1\info", false, &[], 0, 1);
     //test_myglob(r"S:\MaxDepth", true, &[], 1, 1);

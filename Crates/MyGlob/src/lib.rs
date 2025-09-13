@@ -23,6 +23,7 @@
 // 2025-08-08   PV      1.7.0 Use get_root to rewrite root separation, and handle windows C:\xxx patterns corretcly
 // 2025-09-06   PV      1.8.0 MaxDepth added
 // 2025-09-08   PV      1.9.0 Use queue instead of stack to have a breadth-first search instead of depth-first, and return results in a more natural order
+// 2025-09-13   PV      1.9.1 Check for unclosed brackets in glob expressions such as "C:\[a-z"
 
 #![allow(unused_variables, dead_code, unused_imports)]
 
@@ -288,6 +289,7 @@ impl MyGlobBuilder {
         let mut regex_buffer = String::new();
         let mut constant_buffer = String::new();
         let mut brace_depth = 0;
+        let mut in_bracket = false;
         let mut iter = glob_pattern.chars().peekable();
         while let Some(c) = iter.next() {
             if c != '\\' && c != '/' {
@@ -342,7 +344,7 @@ impl MyGlobBuilder {
                 }
                 '[' => {
                     regex_buffer.push('[');
-                    let mut depth = 1;
+                    in_bracket = true;
 
                     // Special case, ! at the beginning of a glob match is converted to a ^ in regex syntax
                     if let Some(next_c) = iter.peek() {
@@ -356,10 +358,8 @@ impl MyGlobBuilder {
                         match inner_c {
                             ']' => {
                                 regex_buffer.push(inner_c);
-                                depth -= 1;
-                                if depth == 0 {
-                                    break;
-                                }
+                                in_bracket = false;
+                                break;
                             }
                             '\\' => {
                                 if let Some(next_c) = iter.next() {
@@ -380,6 +380,10 @@ impl MyGlobBuilder {
                 _ => regex_buffer.push(c),
             }
         }
+        if in_bracket {
+            return Err(MyGlobError::GlobError("Unclosed [".to_string()));
+        }
+
         if !regex_buffer.is_empty() {
             return Err(MyGlobError::GlobError("Invalid glob pattern".to_string()));
         }
@@ -419,7 +423,7 @@ struct MyGlobIteratorState<'a> {
 #[derive(Debug)]
 enum SearchPendingData {
     File(PathBuf),                             // Data to return
-    Dir(PathBuf),                              // Data to returnSpecial case: ! at the beginning
+    Dir(PathBuf),                              // Data to return
     DirToExplore(PathBuf, usize, bool, usize), // Dir not explored yet
     Error(IOError),                            // Returns an error
 }

@@ -145,3 +145,19 @@ fn search_error_2() {
     let e = MyGlobSearch::build(r"C:\[\d&&\p{ascii]");
     assert!(matches!(e.unwrap_err(), MyGlobError::RegexError(..)));
 }
+
+#[test]
+fn search_error_3() {
+    let e = MyGlobSearch::build(r"C:\[Hello");
+    assert!(matches!(e.unwrap_err(), MyGlobError::GlobError(..)));
+}
+
+#[test]
+fn search_error_4() {
+    let e = MyGlobSearch::build("");
+    assert!(e.is_ok());
+    let gs = e.unwrap();
+    assert_eq!(gs.root, ".");
+    assert_eq!(gs.segments.len(), 1);
+    assert!(matches!(gs.segments[0], Segment::Filter(..)));
+}
