@@ -3,6 +3,7 @@
 //
 // 2025-05-04   PV      Moved to a separate module; use MyMarkup for formatting
 // 2025-07-10   PV      Use APP_DESCRIPTION variable
+// 2025-09-15   PV      Option -d for debugging
 
 // Application imports
 use crate::*;
@@ -22,6 +23,7 @@ pub struct Options {
     pub show_path: bool, // Set to true by main if there is more than 1 file to search from
     pub out_level: u8, // 0: normal output, 1: (-l) matching filenames only, 2: (-c) filenames and matching lines count, 3: (-c -l) only matching filenames and matching lines count
     pub verbose: u8,
+    pub debug: bool,
 }
 
 impl Options {
@@ -101,7 +103,7 @@ To search for the string help, use option ⦃-F⦄: {APP_NAME} ⦃-F⦄ help ⟦
             autorecurse: true,
             ..Default::default()
         };
-        let mut opts = getopt::Parser::new(&args, "h?12iwFra:vcl");
+        let mut opts = getopt::Parser::new(&args, "h?12iwFra:vcld");
 
         loop {
             match opts.next().transpose()? {
@@ -143,6 +145,10 @@ To search for the string help, use option ⦃-F⦄: {APP_NAME} ⦃-F⦄ help ⟦
 
                     Opt('v', None) => {
                         options.verbose += 1;
+                    }
+
+                    Opt('d', None) => {
+                        options.debug = true;
                     }
 
                     _ => unreachable!(),

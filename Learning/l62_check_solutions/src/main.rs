@@ -1,7 +1,8 @@
-// l62_check_solutions: Check Visual Studio .sln files
+// l62_check_solutions: Check Visual Studio .sln files, make sure that referenced projects exist
 //
 // 2025-05-14	PV      First version
 // 2025-05-15	PV      1.1 AUTOFIX, support for vbproj/vcxproj, tests
+// 2025-09-15	PV      1.1.1 logwriter_none
 
 //#![allow(unused)]
 
@@ -13,7 +14,7 @@ use std::fs;
 
 // external crates imports
 use colored::*;
-use logging::*;
+use logging::{LogWriter, log, logln, logwriter_none};
 use myglob::{MyGlobError, MyGlobMatch, MyGlobSearch};
 use textautodecode::{TextAutoDecode, TextFileEncoding};
 
@@ -24,7 +25,7 @@ mod tests;
 // Global constants
 
 const APP_NAME: &str = "check_solutions";
-const APP_VERSION: &str = "1.1.0";
+const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const AUTOFIX: bool = false;
 
@@ -42,8 +43,8 @@ struct DataBag {
 #[allow(unused)]
 fn tmain() {
     let mut b = DataBag { ..Default::default() };
-    process_file(
-        &mut None,
+    process_solution_file(
+        &mut logwriter_none(),
         &mut b,
         //Path::new(r"C:\Development\GitVSTS\CSMisc\Net9\CS25_Gnu.Getopt.Getopt\CS25_Gnu.Getopt.sln"),
         Path::new(r"C:\Development\GitHub\Visual-Studio-Projects\FW4.8\033 VB ILDASM\033 VB ILDASM.sln"),
@@ -53,7 +54,6 @@ fn tmain() {
 fn main() {
     // Use autorecurse
     let globstrsource = r"C:\Development\Git*\*.sln";
-    //let globstrsource = r"C:\Development\GitVSTS\CSMisc\**\*.sln";
 
     let mut writer = logging::new(APP_NAME, APP_VERSION, true);
     let mut b = DataBag { ..Default::default() };
@@ -73,7 +73,7 @@ fn main() {
 
     for ma in gs.explore_iter() {
         match ma {
-            MyGlobMatch::File(pb) => process_file(&mut writer, &mut b, &pb),
+            MyGlobMatch::File(pb) => process_solution_file(&mut writer, &mut b, &pb),
             MyGlobMatch::Dir(_) => {}
             MyGlobMatch::Error(err) => {
                 logln(&mut writer, format!("{APP_NAME}: MyGlobMatch error {}", err).as_str());
@@ -95,7 +95,7 @@ fn main() {
     }
 }
 
-fn process_file(writer: &mut LogWriter, b: &mut DataBag, path: &Path) {
+fn process_solution_file(writer: &mut LogWriter, b: &mut DataBag, path: &Path) {
     let res = TextAutoDecode::read_text_file(path);
     match res {
         Ok(tad) => {

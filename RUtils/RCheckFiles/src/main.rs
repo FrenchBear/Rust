@@ -21,7 +21,7 @@ use std::time::Instant;
 
 // External crates imports
 use getopt::Opt;
-use logging::*;
+use logging::{LogWriter, log, logln};
 use mymarkup::MyMarkup;
 use unicode_normalization::{UnicodeNormalization, is_nfc};
 

@@ -1,4 +1,4 @@
-// l47_check_dates: Check dates in source files headers
+ // l47_check_dates: Check dates in source files headers
 //
 // 2025-04-21	PV      First version
 // 2025-05-02   PV      Use textautodecode crate instead of decode_encoding module
@@ -17,13 +17,13 @@ use std::{collections::HashMap, fmt::Debug};
 use myglob::{MyGlobMatch, MyGlobSearch};
 use regex::Regex;
 use textautodecode::{TextAutoDecode, TextFileEncoding};
-use logging::*;
+use logging::{LogWriter, log, logln};
 
 // -----------------------------------
 // Global constants
 
 const APP_NAME: &str = "check_dates";
-const APP_VERSION: &str = "1.2.0";
+const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // -----------------------------------
 // Main

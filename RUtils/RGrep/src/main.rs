@@ -13,6 +13,7 @@
 // 2025-05-02   PV      1.6.0   Use crate textautodecode instead of decode_encoding module
 // 2025-05-04   PV      1.7.0   Do not crash with patterns as [^abc]. Created Options module. Use MyMarkup for extended help formatting.
 // 2025-07-10   PV      1.7.1   Get information from Cargo.toml, and use build script build.rs
+// 2025-09-15   PV      1.7.2   Option -d for debugging, not used for now (I wanted to add it to rfind, not rgrep!!!)
 
 //#![allow(unused)]
 

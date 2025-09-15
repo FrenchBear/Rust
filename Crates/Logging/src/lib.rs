@@ -4,7 +4,8 @@
 // 2025-04-03   PV      Moved to separate file
 // 2025-04-30   PV      Use colored instead of termcolor
 // 2025-05-05   PV      Moved to a crate and added support for MacOS and Linux
-//
+// 2025-09-15   PV      1.1: Debugging lines with prefix dbg: are shown in cyan; LogWriter now a struct with path field; logwriter_none()
+
 //#[allow(unused)]
 
 // External crates imports
@@ -26,7 +27,7 @@ mod tests;
 // -----------------------------------
 // Globals
 
-const LIB_VERSION: &str = "1.0.0";
+const LIB_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub fn version() -> &'static str {
     LIB_VERSION
@@ -34,15 +35,35 @@ pub fn version() -> &'static str {
 
 // -----------------------------------
 
-pub type LogWriter = Option<BufWriter<File>>;
+pub struct LogWriter {
+    writer_opt: Option<BufWriter<File>>,
+    path: Option<PathBuf>,
+}
+
+pub fn logwriter_none() -> LogWriter {
+    LogWriter {
+        writer_opt: None,
+        path: None,
+    }
+}
+
+impl LogWriter {
+    pub fn get_path(self) -> Option<PathBuf> {
+        self.path.clone()
+    }
+}
+
+// -----------------------------------
 
 pub fn logln(lw: &mut LogWriter, msg: &str) {
     if msg.starts_with("***") {
         println!("{}", msg.red().bold());
+    } else if msg.starts_with("dbg:") {
+        println!("{}", msg.cyan());
     } else {
         println!("{}", msg);
     }
-    if let Some(bw) = lw {
+    if let Some(bw) = lw.writer_opt.as_mut() {
         let _ = writeln!(bw, "{}", msg);
     }
 }
@@ -50,7 +71,7 @@ pub fn logln(lw: &mut LogWriter, msg: &str) {
 #[allow(unused)]
 pub fn log(lw: &mut LogWriter, msg: &str) {
     print!("{}", msg);
-    if let Some(bw) = lw {
+    if let Some(bw) = lw.writer_opt.as_mut() {
         let _ = write!(bw, "{}", msg);
     }
 }
@@ -63,33 +84,39 @@ pub fn new(app_name: &str, app_version: &str, verbose: bool) -> LogWriter {
     let tmp_folder = if cfg!(target_os = "windows") {
         PathBuf::from("C:\\Temp")
     } else if cfg!(target_os = "linux") {
-        expand_tilde( r"~/temp")
+        expand_tilde(r"~/temp")
     } else if cfg!(target_os = "macos") {
-        expand_tilde ( r"~/Temp")
+        expand_tilde(r"~/Temp")
     } else {
         eprintln!("{app_name}: OS not recognized when creating LogWriter, no log created.");
-        return None;
+        return logwriter_none();
     };
     if !tmp_folder.is_dir() {
         eprintln!("{app_name}: Can't find temp folder {}, no log created.", tmp_folder.display());
-        return None;
+        return logwriter_none();
     }
     let dir_sep = if cfg!(target_os = "windows") { '\\' } else { '/' };
     let logpath = format!("{}{dir_sep}{app_name}-{formatted_now}.log", tmp_folder.display());
     let file = File::create(logpath.clone());
     if file.is_err() {
         logln(
-            &mut None,
+            &mut logwriter_none(),
             format!("{app_name}: Error creating log file {logpath}, no log created: {:?}", file.err()).as_str(),
         );
-        return None;
+        return logwriter_none();
     }
-    let mut writer = Some(BufWriter::new(file.unwrap()));
+    let writer = Some(BufWriter::new(file.unwrap()));
+
+    let mut lw = LogWriter {
+        writer_opt: writer,
+        path: Some(PathBuf::from(logpath)),
+    };
+
     if verbose {
-        logln(&mut writer, &format!("{app_name} {app_version}"));
+        logln(&mut lw, &format!("{app_name} {app_version}"));
     }
 
-    writer
+    lw
 }
 
 fn expand_tilde(path: &str) -> PathBuf {

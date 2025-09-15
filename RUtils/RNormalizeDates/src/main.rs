@@ -21,7 +21,7 @@ use std::time::Instant;
 use getopt::Opt;
 use myglob::{MyGlobMatch, MyGlobSearch};
 use unicode_normalization::UnicodeNormalization;
-use logging::*;
+use logging::{LogWriter, log, logln};
 
 // -----------------------------------
 // Submodules

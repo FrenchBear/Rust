@@ -7,6 +7,7 @@
 // 2025-05-05   PV      is_option for Linux compatibility
 // 2025-07-13 	PV 		Option -nop
 // 2025-09-06 	PV 		Option -maxdepth n
+// 2025-09-15 	PV 		Option -dbg for debugging and -log to write log file
 
 // Application imports
 use crate::*;
@@ -33,6 +34,8 @@ pub struct Options {
     pub autorecurse: bool,
     pub noaction: bool,
     pub verbose: bool,
+    pub debug: bool,
+    pub log: bool,
 }
 
 impl Options {
@@ -88,6 +91,10 @@ impl Options {
 
         let text = "⟪⌊Advanced usage notes⌋⟫
 
+⌊Advanced options⌋:
+⦃-dbg⦄       ¬Debug mode, show internal dev informations
+⦃-log⦄       ¬Write log file in temp folder
+
 ⌊Compatibility with XFind⌋:
 - ¬Option ⦃-norecycle⦄ can be used instead of ⦃-r-⦄ to indicate to delete forever.
 - ¬Option ⦃-name⦄ can be used to indicate a specific file name or pattern to search.";
@@ -139,6 +146,8 @@ impl Options {
                     }
 
                     "v" => options.verbose = true,
+                    "log" => options.log = true,
+                    "dbg" => options.debug = true,
                     "n" => options.noaction = true,
 
                     "f" => options.search_files = true,

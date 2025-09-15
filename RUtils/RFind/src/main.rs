@@ -18,6 +18,7 @@
 // 2025-08-11 	PV 		1.8.1 Fixed is_file_empty bug
 // 2025-09-06 	PV 		1.9.0 Option -maxdepth n
 // 2025-09-08 	PV 		1.9.1 Use MyGlobSearch 1.9.0 with breadth-first search for a more natural order
+// 2025-09-15 	PV 		1.10.0 Do not write log file by default, use option -log for that. Option -dbg for debugging; logwriter_none
 
 //#![allow(unused)]
 
@@ -29,7 +30,7 @@ use std::process;
 use std::time::Instant;
 
 // External crates imports
-use logging::*;
+use logging::{LogWriter, log, logln, logwriter_none};
 use myglob::{MyGlobMatch, MyGlobSearch};
 
 // -----------------------------------
@@ -65,12 +66,16 @@ fn main() {
         if msg.is_empty() {
             process::exit(0);
         }
-        logln(&mut None, format!("*** {APP_NAME}: Problem parsing arguments: {}", err).as_str());
+        logln(&mut logwriter_none(), format!("*** {APP_NAME}: Problem parsing arguments: {}", err).as_str());
         process::exit(1);
     });
 
     // Prepare log writer
-    let mut writer = logging::new(APP_NAME, APP_VERSION, options.verbose);
+    let mut writer = if options.log {
+        logging::new(APP_NAME, APP_VERSION, options.verbose)
+    } else {
+        logwriter_none()
+    };
 
     let start = Instant::now();
 
@@ -110,7 +115,12 @@ fn main() {
             .maxdepth(options.maxdepth)
             .compile();
         match resgs {
-            Ok(gs) => sources.push((source, gs)),
+            Ok(gs) => {
+                if options.debug {
+                    logln(&mut writer, format!("dbg: {} -> {:?}", source, gs.segments).as_str());
+                }
+                sources.push((source, gs));
+            }
             Err(e) => {
                 logln(&mut writer, format!("*** Error building MyGlob: {:?}", e).as_str());
             }

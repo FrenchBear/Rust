@@ -4,6 +4,7 @@
 // 2025-04-17	PV      1.1.0 Fixed logic errors (return statement misplaced in embedded is blocks)
 // 2025-05-05   PV      1.1.2 Use MyMarkup crate to format usage and extended help
 // 2025-05-05	PV      1.1.3 Logging crate
+// 2025-09-15	PV      1.1.4 logwriter_none
 
 //#![allow(unused)]
 
@@ -17,7 +18,7 @@ use std::time::Instant;
 use getopt::Opt;
 use myglob::{MyGlobMatch, MyGlobSearch};
 use mymarkup::MyMarkup;
-use logging::*;
+use logging::{LogWriter, log, logln, logwriter_none};
 
 // -----------------------------------
 // Submodules
@@ -33,7 +34,7 @@ use reparse::*;
 // Globals
 
 const APP_NAME: &str = "recycle";
-const APP_VERSION: &str = "1.1.3";
+const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // ==============================================================================================
 // Options processing
@@ -156,7 +157,7 @@ fn main() {
         if msg.is_empty() {
             process::exit(0);
         }
-        logln(&mut None, format!("*** {APP_NAME}: Problem parsing arguments: {}", err).as_str());
+        logln(&mut logwriter_none(), format!("*** {APP_NAME}: Problem parsing arguments: {}", err).as_str());
         process::exit(1);
     });
 
