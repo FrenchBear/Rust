@@ -370,7 +370,7 @@ impl TextAutoDecode {
         return Ok(TextAutoDecode { text: Some(s), encoding: e });
     }
 
-    pub fn check_utf8(buffer_1000: &[u8], n: usize) -> Option<Cow<str>> {
+    pub fn check_utf8(buffer_1000: &'_ [u8], n: usize) -> Option<Cow<'_, str>> {
         let test_buffer=
             // Since we potentially truncated a UTF-8 sequence at the end, we may have to reduce buffer size to avoid a
             // truncated sequence that would render buffer invalid for UTF-8.

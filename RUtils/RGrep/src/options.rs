@@ -22,7 +22,7 @@ pub struct Options {
     pub autorecurse: bool,
     pub show_path: bool, // Set to true by main if there is more than 1 file to search from
     pub out_level: u8, // 0: normal output, 1: (-l) matching filenames only, 2: (-c) filenames and matching lines count, 3: (-c -l) only matching filenames and matching lines count
-    pub verbose: u8,
+    pub verbose: bool,
     pub debug: bool,
 }
 
@@ -37,12 +37,12 @@ impl Options {
     fn usage() {
         Options::header();
         println!();
-        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄|⦃-??⦄] [⦃-i⦄] [⦃-w⦄] [⦃-F⦄] [⦃-a+⦄|⦃-a-⦄] [⦃-v⦄] [⦃-c⦄] [⦃-l⦄] ⟨pattern⟩ [⟨source⟩...]
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄|⦃-??⦄] [⦃-i⦄] [⦃-t⦄] [⦃-F⦄] [⦃-a+⦄|⦃-a-⦄] [⦃-v⦄] [⦃-c⦄] [⦃-l⦄] ⟨pattern⟩ [⟨source⟩...]
 
 ⌊Options⌋:
 ⦃?⦄|⦃-?⦄|⦃-h⦄  ¬Show this message
 ⦃??⦄|⦃-??⦄   ¬Show advanced usage notes
-⦃-v⦄       ¬Verbose output
+⦃-t⦄       ¬Show execution time
 ⦃-i⦄       ¬Ignore case during search
 ⦃-w⦄       ¬Whole word search
 ⦃-F⦄       ¬Fixed string search (no regexp interpretation), also for patterns starting with - ? or help
@@ -143,8 +143,8 @@ To search for the string help, use option ⦃-F⦄: {APP_NAME} ⦃-F⦄ help ⟦
                         options.out_level |= 2;
                     }
 
-                    Opt('v', None) => {
-                        options.verbose += 1;
+                    Opt('t', None) => {
+                        options.verbose = true;
                     }
 
                     Opt('d', None) => {

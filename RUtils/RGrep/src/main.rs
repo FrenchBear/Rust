@@ -14,6 +14,7 @@
 // 2025-05-04   PV      1.7.0   Do not crash with patterns as [^abc]. Created Options module. Use MyMarkup for extended help formatting.
 // 2025-07-10   PV      1.7.1   Get information from Cargo.toml, and use build script build.rs
 // 2025-09-15   PV      1.7.2   Option -d for debugging, not used for now (I wanted to add it to rfind, not rgrep!!!)
+// 2025-09-21   PV      1.8.0   Option -v (verbose) renamed -t (show execution time); Option -v to invert the sense of matching, to select non-matching lines
 
 //#![allow(unused)]
 
@@ -91,7 +92,7 @@ fn main() {
                         MyGlobMatch::Dir(_) => {}
 
                         MyGlobMatch::Error(err) => {
-                            if options.verbose > 0 {
+                            if options.verbose {
                                 eprintln!("{APP_NAME}: error {}", err);
                             }
                         }
@@ -112,7 +113,7 @@ fn main() {
 
     // Finally processing files, if more than 1 file, prefix output with file
     if options.sources.is_empty() {
-        if options.verbose > 0 {
+        if options.verbose {
             println!("Reading from stdin");
         }
         let s = io::read_to_string(io::stdin()).unwrap();
@@ -122,7 +123,7 @@ fn main() {
             options.show_path = true;
         }
         for pb in &files {
-            if options.verbose > 1 {
+            if options.debug {
                 println!("Process: {}", pb.display());
             }
             process_path(&re, pb, &options);
@@ -130,7 +131,7 @@ fn main() {
     }
     let duration = start.elapsed();
 
-    if options.verbose > 0 {
+    if options.verbose {
         if files.is_empty() {
             print!("\nstdin");
         } else {
@@ -173,7 +174,7 @@ fn process_path(re: &Regex, path: &Path, options: &Options) {
         Ok(tad) => {
             if tad.encoding == TextFileEncoding::NotText {
                 // Non-text files are ignored
-                if options.verbose == 1 {
+                if options.debug {
                     println!("{APP_NAME}: ignored non-text file {}", path.display());
                 }
             } else {
