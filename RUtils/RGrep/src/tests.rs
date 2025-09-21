@@ -3,6 +3,7 @@
 // 2025-03-14   PV
 // 2025-04-01   PV      Adapted tests to read_text_file_2
 // 2025-05-02   PV      Removed decode_encoding tests, moved to crate TextAutoDecode
+// 2025-09-22   PV      Added invert_match test
 
 #[cfg(test)]
 
@@ -109,4 +110,19 @@ pub mod build_re {
         assert_eq!(res.len(), 1);
     }
 
+    #[test]
+    fn invert_match() {
+        let haystack = "line with word\nline without\nanother line with word";
+        let options = Options {
+            pattern: String::from("word"),
+            invert_match: true,
+            ..Default::default()
+        };
+        let re = build_re(&options).unwrap();
+        
+        let non_matching_lines: Vec<_> = haystack.lines().filter(|line| !re.is_match(line)).collect();
+
+        assert_eq!(non_matching_lines.len(), 1);
+        assert_eq!(non_matching_lines[0], "line without");
+    }
 }

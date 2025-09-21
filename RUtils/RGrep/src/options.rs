@@ -4,6 +4,7 @@
 // 2025-05-04   PV      Moved to a separate module; use MyMarkup for formatting
 // 2025-07-10   PV      Use APP_DESCRIPTION variable
 // 2025-09-15   PV      Option -d for debugging
+// 2025-09-22   PV      Option -v -> -t to show execution time. Option -v to invert the sense of matching, to select non-matching lines
 
 // Application imports
 use crate::*;
@@ -23,6 +24,7 @@ pub struct Options {
     pub show_path: bool, // Set to true by main if there is more than 1 file to search from
     pub out_level: u8, // 0: normal output, 1: (-l) matching filenames only, 2: (-c) filenames and matching lines count, 3: (-c -l) only matching filenames and matching lines count
     pub verbose: bool,
+    pub invert_match: bool,
     pub debug: bool,
 }
 
@@ -37,16 +39,16 @@ impl Options {
     fn usage() {
         Options::header();
         println!();
-        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄|⦃-??⦄] [⦃-i⦄] [⦃-t⦄] [⦃-F⦄] [⦃-a+⦄|⦃-a-⦄] [⦃-v⦄] [⦃-c⦄] [⦃-l⦄] ⟨pattern⟩ [⟨source⟩...]
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄|⦃-??⦄] [⦃-i⦄] [⦃-w⦄] [⦃-F⦄] [⦃-v⦄] [⦃-t⦄] [⦃-c⦄] [⦃-l⦄] ⟨pattern⟩ [⟨source⟩...]
 
 ⌊Options⌋:
 ⦃?⦄|⦃-?⦄|⦃-h⦄  ¬Show this message
 ⦃??⦄|⦃-??⦄   ¬Show advanced usage notes
-⦃-t⦄       ¬Show execution time
 ⦃-i⦄       ¬Ignore case during search
 ⦃-w⦄       ¬Whole word search
 ⦃-F⦄       ¬Fixed string search (no regexp interpretation), also for patterns starting with - ? or help
-⦃-a+⦄|⦃-a-⦄  ¬Enable (default) or disable glob autorecurse mode (see extended usage)
+⦃-v⦄       ¬Invert the sense of matching, to select non-matching lines
+⦃-t⦄       ¬Show execution time
 ⦃-c⦄       ¬Suppress normal output, show count of matching lines for each file
 ⦃-l⦄       ¬Suppress normal output, show matching file names only
 ⟨pattern⟩  ¬Regular expression to search
@@ -67,10 +69,13 @@ impl Options {
         println!("- getopt: {}", env!("DEP_GETOPT_VERSION"));
         println!("- regex: {}", env!("DEP_REGEX_VERSION"));
         println!("- colored: {}", env!("DEP_COLORED_VERSION"));
-        println!("- atty: {}", env!("DEP_ATTY_VERSION"));
+        // println!("- atty: {}", env!("DEP_ATTY_VERSION"));
         println!();
 
         let text = "⟪⌊Advanced usage notes⌋⟫
+
+⌊Extended options⌋:
+⦃-a+⦄|⦃-a-⦄  ¬Enable (default) or disable glob autorecurse mode
 
 Options ⦃-c⦄ (show count of matching lines) and ⦃-l⦄ (show matching file names only) can be used together to show matching lines count only for matching files.
 Put special characters such as ⟦.⟧, ⟦*⟧ or ⟦?⟧ between brackets such as ⟦[.]⟧, ⟦[*]⟧ or ⟦[?]⟧ to search them as is.
@@ -145,6 +150,10 @@ To search for the string help, use option ⦃-F⦄: {APP_NAME} ⦃-F⦄ help ⟦
 
                     Opt('t', None) => {
                         options.verbose = true;
+                    }
+
+                    Opt('v', None) => {
+                        options.invert_match = true;
                     }
 
                     Opt('d', None) => {

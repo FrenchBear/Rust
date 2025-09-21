@@ -191,49 +191,80 @@ fn process_path(re: &Regex, path: &Path, options: &Options) {
 /// Core rgrep process, search for re in txt, read from filename, according to options.
 fn process_text(re: &Regex, txt: &str, filename: &str, options: &Options) {
     let mut matchlinecount = 0;
+    //let is_tty = atty::is(atty::Stream::Stdout);
 
-    // Note that this test is actually useless since colored doesn't emit ANSI sequences when stdout is not a tty
-    if atty::is(atty::Stream::Stdout) {
-        for gi in grepiterator::GrepLineMatches::new(txt, re) {
-            matchlinecount += 1;
-
-            if options.out_level == 1 {
-                println!("{}", filename);
-                return;
+    if options.invert_match {
+        let mut non_matching_lines = Vec::new();
+        for line in txt.lines() {
+            if !re.is_match(line) {
+                non_matching_lines.push(line);
             }
+        }
+        matchlinecount = non_matching_lines.len();
 
-            if options.out_level == 0 {
+        if options.out_level == 1 { // -l
+            if matchlinecount > 0 {
+                println!("{}", filename);
+            }
+            return;
+        }
+
+        if options.out_level == 0 { // normal
+            for line in non_matching_lines {
                 if options.show_path {
-                    print!("{}: ", filename.bright_black());
+                    // if is_tty {
+                        print!("{}: ", filename.bright_black());
+                    // } else {
+                    //     print!("{}: ", filename);
+                    // }
                 }
-
-                let mut p: usize = 0;
-                for ma in gi.ranges {
-                    if ma.start < gi.line.len() {
-                        let e = ma.end;
-                        print!("{}{}", &gi.line[p..ma.start], &gi.line[ma].red().bold());
-                        p = e;
-                    }
-                }
-                println!("{}", &gi.line[p..]);
+                println!("{}", line);
             }
         }
     } else {
-        for gi in grepiterator::GrepLineMatches::new(txt, re) {
-            matchlinecount += 1;
+        // // Note that this test is actually useless since colored doesn't emit ANSI sequences when stdout is not a tty
+        // if is_tty {
+            for gi in grepiterator::GrepLineMatches::new(txt, re) {
+                matchlinecount += 1;
 
-            if options.out_level == 1 {
-                println!("{}", filename);
-                return;
-            }
-
-            if options.out_level == 0 {
-                if options.show_path {
-                    print!("{}: ", filename);
+                if options.out_level == 1 {
+                    println!("{}", filename);
+                    return;
                 }
-                println!("{}", gi.line);
+
+                if options.out_level == 0 {
+                    if options.show_path {
+                        print!("{}: ", filename.bright_black());
+                    }
+
+                    let mut p: usize = 0;
+                    for ma in gi.ranges {
+                        if ma.start < gi.line.len() {
+                            let e = ma.end;
+                            print!("{}{}", &gi.line[p..ma.start], &gi.line[ma].red().bold());
+                            p = e;
+                        }
+                    }
+                    println!("{}", &gi.line[p..]);
+                }
             }
-        }
+        // } else {
+        //     for gi in grepiterator::GrepLineMatches::new(txt, re) {
+        //         matchlinecount += 1;
+
+        //         if options.out_level == 1 {
+        //             println!("{}", filename);
+        //             return;
+        //         }
+
+        //         if options.out_level == 0 {
+        //             if options.show_path {
+        //                 print!("{}: ", filename);
+        //             }
+        //             println!("{}", gi.line);
+        //         }
+        //     }
+        //}
     }
 
     // Note: Using together options -c and -l (out_level==3) is not supported by Linux grep command

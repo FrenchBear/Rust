@@ -23,7 +23,7 @@ fn main() {
     generate_variable(&packages, "getopt");
     generate_variable(&packages, "regex");
     generate_variable(&packages, "colored");
-    generate_variable(&packages, "atty");
+    // generate_variable(&packages, "atty");
 
     // Tell cargo to re-run the build script if Cargo.lock changes.
     println!("cargo:rerun-if-changed=Cargo.lock");
