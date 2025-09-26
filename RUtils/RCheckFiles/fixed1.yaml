@@ -1,0 +1,14 @@
+- typ: dir
+  prb: Non-balanced brackets
+  old: W:\BD\Comics\# New 52\Night Force (001-007 - 2012 - (Not really New52)
+  new: W:\BD\Comics\# New 52\Night Force (001-007) - 2012 - (Not really New52)
+
+- typ: dir
+  prb: Non-balanced brackets
+  old: W:\BD\Comics\# Tarzan\Korak-Son of Tarzan (001-059+) 1964-1975\Korak - Son of Tarzan (046-059 - 1972-1975 - (DC)
+  new: W:\BD\Comics\# Tarzan\Korak-Son of Tarzan (001-059+) 1964-1975\Korak - Son of Tarzan (046-059) - 1972-1975 - (DC)
+
+- typ: file
+  prb: Non-balanced brackets
+  old: W:\BD\Revues\X-13 Agent Secret\X-13 Agent Secret - 031 - Jeu dangereux 2 (01-02-1962=.pdf
+  new: W:\BD\Revues\X-13 Agent Secret\X-13 Agent Secret - 031 - Jeu dangereux 2 (01-02-1962).pdf

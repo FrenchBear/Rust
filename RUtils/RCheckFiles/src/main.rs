@@ -9,6 +9,7 @@
 // 2025-04-08	PV      1.4.0 Check brackets (incl. unit tests)
 // 2025-05-05   PV      1.4.2 Use MyMarkup crate to format usage
 // 2025-05-05	PV      1.4.3 Logging crate
+// 2025-09-26	PV      2.0.0 Option - for yaml output, option -fy to apply cnages from a .yaml file
 
 // Standard library imports
 use std::collections::HashSet;
@@ -23,6 +24,7 @@ use std::time::Instant;
 use getopt::Opt;
 use logging::{LogWriter, log, logln};
 use mymarkup::MyMarkup;
+use serde::Deserialize;
 use unicode_normalization::{UnicodeNormalization, is_nfc};
 
 // -----------------------------------
@@ -33,8 +35,9 @@ pub mod tests;
 // -----------------------------------
 // Globals
 
-const APP_NAME: &str = "rcheckfiles";
-const APP_VERSION: &str = "1.4.2";
+const APP_NAME: &str = env!("CARGO_PKG_NAME");
+const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
+const APP_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 
 const SPECIAL_CHARS: &str = "€®™©–—…×·•∶⧹⧸／⚹†‽¿🎜🎝♫♪“”⚡♥";
 
@@ -93,6 +96,29 @@ const CONF_APO: [char; 33] = [
 ];
 
 // ==============================================================================================
+// Structures for deserialization of yaml file
+
+// Use an enum to represent the 'typ' field for type safety.
+// `serde(rename_all = "lowercase")` tells serde to match 'dir' with Dir and 'file' with File.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "lowercase")]
+enum ItemType {
+    Dir,
+    File,
+}
+
+// This struct represents a single entry in the YAML list.
+// The field names match the keys in the YAML file.
+#[derive(Debug, Deserialize)]
+#[allow(dead_code)]
+struct RenameItem {
+    typ: ItemType,
+    prb: String, // The 'prb' field is parsed but we won't use it
+    old: String,
+    new: String,
+}
+
+// ==============================================================================================
 // Options processing
 
 // Dedicated struct to store command line arguments
@@ -100,23 +126,41 @@ const CONF_APO: [char; 33] = [
 pub struct Options {
     sources: Vec<String>,
     fixit: bool,
+    yaml_output: bool,
+    yaml_file: String,
+}
+
+/// Checks if a path exists and is a file.
+/// Returns `true` only if the path points to an existing file.
+/// Returns `false` for directories, symlinks, or if the path doesn't exist.
+fn file_exists(path: &str) -> bool {
+    fs::metadata(path).map(|metadata| metadata.is_file()).unwrap_or(false)
+}
+
+/// Checks if a path exists and is a directory.
+/// Returns `true` only if the path points to an existing directory.
+/// Returns `false` for files, symlinks, or if the path doesn't exist.
+fn dir_exists(path: &str) -> bool {
+    fs::metadata(path).map(|metadata| metadata.is_dir()).unwrap_or(false)
 }
 
 impl Options {
     fn header() {
         println!(
             "{APP_NAME} {APP_VERSION}\n\
-            Detect and fix incorrect filenames"
+             {APP_DESCRIPTION}"
         );
     }
 
     fn usage() {
         Options::header();
         println!();
-        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄] [⦃-f⦄] ⟨source⟩...
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄] [⦃-f⦄] [⦃-y⦄] [⦃-F⦄ ⟨yamlfile⟩] ⟨source⟩...
 ⦃?⦄|⦃-?⦄|⦃-h⦄  ¬Show this message
-⦃-f⦄       ¬Automatic problems fixing
-⟨source⟩   ¬File or directory to analyze";
+⦃-f⦄            ¬Automatic problems fixing
+⦃-y⦄            ¬Yaml output
+⦃-F⦄ ⟨yamlfile⟩ ¬Rename files using old/new fields of provided yaml file
+⟨source⟩        ¬File or directory to analyze";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }
@@ -131,7 +175,7 @@ impl Options {
         }
 
         let mut options = Options { ..Default::default() };
-        let mut opts = getopt::Parser::new(&args, "h?f");
+        let mut opts = getopt::Parser::new(&args, "h?fyF:");
 
         loop {
             match opts.next().transpose()? {
@@ -144,6 +188,20 @@ impl Options {
 
                     Opt('f', None) => {
                         options.fixit = true;
+                    }
+
+                    Opt('y', None) => {
+                        options.yaml_output = true;
+                    }
+
+                    Opt('F', yamlfile) => {
+                        if yamlfile.is_none() {
+                            return Err("Option -f requires about yaml file as an argument".into());
+                        }
+                        options.yaml_file = yamlfile.unwrap();
+                        if !file_exists(&options.yaml_file) {
+                            return Err(format!("Can't find yaml file {}", options.yaml_file).into());
+                        }
                     }
 
                     _ => unreachable!(),
@@ -163,6 +221,22 @@ impl Options {
             }
 
             options.sources.push(arg);
+        }
+
+        // Validate options
+        let count_true = (options.yaml_output as u8) + (options.fixit as u8) + (!options.yaml_file.is_empty() as u8);
+        if count_true > 1 {
+            return Err("Options -y, -f and -F are exclusive".into());
+        }
+
+        if options.yaml_file.is_empty() {
+            if options.sources.is_empty() {
+                return Err("Without option -F, at least one source is required".into());
+            }
+        } else {
+            if !options.sources.is_empty() {
+                return Err("With option -F, no source is allowed".into());
+            }
         }
 
         Ok(options)
@@ -209,66 +283,141 @@ fn main() {
     // Prepare log writer
     let mut writer = logging::new(APP_NAME, APP_VERSION, true);
 
-    let mut files_stats = Statistics { ..Default::default() };
-    let mut dirs_stats = Statistics { ..Default::default() };
     let start = Instant::now();
 
-    for source in options.sources {
-        logln(&mut writer, &format!("Analyzing {}", source));
-        let p = Path::new(&source);
-        if p.is_file() {
-            process_file(p, &mut files_stats, options.fixit, &mut writer, &confusables);
-        } else {
-            process_directory(p, &mut dirs_stats, &mut files_stats, options.fixit, &mut writer, &confusables);
+    if options.yaml_file.is_empty() {
+        let mut files_stats = Statistics { ..Default::default() };
+        let mut dirs_stats = Statistics { ..Default::default() };
+
+        for source in &options.sources {
+            logln(&mut writer, &format!("Analyzing {}", source));
+            let p = Path::new(&source);
+            if p.is_file() {
+                process_file(p, &mut files_stats, &options, &mut writer, &confusables);
+            } else {
+                process_directory(p, &mut dirs_stats, &mut files_stats, &options, &mut writer, &confusables);
+            }
         }
+
+        let duration = start.elapsed();
+
+        fn s(n: i32) -> &'static str {
+            if n > 1 { "s" } else { "" }
+        }
+
+        fn final_status(writer: &mut LogWriter, stats: &Statistics, typename: &str) {
+            log(writer, &format!("{} {}{} checked", stats.total, typename, s(stats.total)));
+            if stats.nnn > 0 {
+                log(writer, &format!(", {} non-normalized", stats.nnn));
+            }
+            if stats.bra > 0 {
+                log(writer, &format!(", {} brackets issue{}", stats.bra, s(stats.bra)));
+            }
+            if stats.apo > 0 {
+                log(writer, &format!(", {} wrong apostrophe", stats.apo));
+            }
+            if stats.spc > 0 {
+                log(writer, &format!(", {} wrong space", stats.spc));
+            }
+            if stats.sp2 > 0 {
+                log(writer, &format!(", {} multiple space", stats.sp2));
+            }
+            if stats.car > 0 {
+                log(writer, &format!(", {} wrong character", stats.car));
+            }
+            if stats.fix > 0 {
+                log(writer, &format!(", {} problem{} fixed", stats.fix, s(stats.fix)));
+            }
+            if stats.err > 0 {
+                log(writer, &format!(", {} error{}", stats.err, s(stats.err)));
+            }
+            logln(writer, "");
+        }
+
+        logln(&mut writer, "");
+        final_status(&mut writer, &dirs_stats, "dir");
+        final_status(&mut writer, &files_stats, "file");
+        logln(&mut writer, &format!("Total duration: {:.3}s", duration.as_secs_f64()));
+    } else {
+        let res = process_yaml_file(&mut writer, &options);
+
+        match res {
+            Ok(_) => {}
+            Err(e) => {
+                logln(&mut writer, &format!("Error processing yaml file: {}", e));
+            }
+        }
+
+        let duration = start.elapsed();
+        logln(&mut writer, &format!("Total duration: {:.3}s", duration.as_secs_f64()));
+    }
+}
+
+fn process_yaml_file(writer: &mut LogWriter, options: &Options) -> Result<(), Box<dyn Error>> {
+    let yaml_content = fs::read_to_string(&options.yaml_file)?;
+
+    // Deserialize the YAML string into a vector of `RenameItem` structs.
+    // `serde_yaml` will return an error if the format is incorrect.
+    let items: Vec<RenameItem> = serde_yaml::from_str(&yaml_content)?;
+
+    for item in items {
+        if item.old == item.new {
+            logln(writer, format!("old==new, for file «{}»", item.old).as_str());
+            continue;
+        }
+
+        match item.typ {
+            ItemType::Dir => {
+                if !dir_exists(item.old.as_str()) {
+                    // If already renamed, don(t complain
+                    if !dir_exists(item.new.as_str()) {
+                        logln(writer, format!("*** Can't find dir to rename «{}»", item.old).as_str());
+                    }
+                    continue;
+                }
+                match fs::rename(item.old.as_str(), item.new.as_str()) {
+                    Err(e) => {
+                        logln(
+                            writer,
+                            format!("*** Renaming dir «{}» into «{}» caused error: {}", item.old, item.new, e).as_str(),
+                        );
+                    }
+                    Ok(_) => {
+                        logln(writer, format!("Success renaming dir «{}» into «{}»", item.old, item.new).as_str());
+                    }
+                }
+            }
+            ItemType::File => {
+                if !file_exists(item.old.as_str()) {
+                    // If already renamed, don(t complain
+                    if !file_exists(item.new.as_str()) {
+                        logln(writer, format!("*** Can't find file to rename «{}»", item.old).as_str());
+                    }
+                    continue;
+                }
+                match fs::rename(item.old.as_str(), item.new.as_str()) {
+                    Err(e) => {
+                        logln(
+                            writer,
+                            format!("*** Renaming file «{}» into «{}» caused error: {}", item.old, item.new, e).as_str(),
+                        );
+                    }
+                    Ok(_) => {
+                        logln(writer, format!("Success renaming file «{}» into «{}»", item.old, item.new).as_str());
+                    }
+                }
+            }
+        };
     }
 
-    let duration = start.elapsed();
-
-    fn s(n: i32) -> &'static str {
-        if n > 1 { "s" } else { "" }
-    }
-
-    fn final_status(writer: &mut LogWriter, stats: &Statistics, typename: &str) {
-        log(writer, &format!("{} {}{} checked", stats.total, typename, s(stats.total)));
-        if stats.nnn > 0 {
-            log(writer, &format!(", {} non-normalized", stats.nnn));
-        }
-        if stats.bra > 0 {
-            log(writer, &format!(", {} brackets issue{}", stats.bra, s(stats.bra)));
-        }
-        if stats.apo > 0 {
-            log(writer, &format!(", {} wrong apostrophe", stats.apo));
-        }
-        if stats.spc > 0 {
-            log(writer, &format!(", {} wrong space", stats.spc));
-        }
-        if stats.sp2 > 0 {
-            log(writer, &format!(", {} multiple space", stats.sp2));
-        }
-        if stats.car > 0 {
-            log(writer, &format!(", {} wrong character", stats.car));
-        }
-        if stats.fix > 0 {
-            log(writer, &format!(", {} problem{} fixed", stats.fix, s(stats.fix)));
-        }
-        if stats.err > 0 {
-            log(writer, &format!(", {} error{}", stats.err, s(stats.err)));
-        }
-        logln(writer, "");
-    }
-
-    logln(&mut writer, "");
-    final_status(&mut writer, &dirs_stats, "dir");
-    final_status(&mut writer, &files_stats, "file");
-    logln(&mut writer, &format!("Total duration: {:.3}s", duration.as_secs_f64()));
+    Ok(())
 }
 
 fn process_directory(
     pa: &Path,
     dirs_stats: &mut Statistics,
     files_stats: &mut Statistics,
-    fixit: bool,
+    options: &Options,
     writer: &mut LogWriter,
     pconfusables: &Confusables,
 ) {
@@ -291,8 +440,8 @@ fn process_directory(
 
     // First check directoru basename
     dirs_stats.total += 1;
-    if let Some(new_name) = check_basename(pa, "dir", dirs_stats, writer, pconfusables) {
-        if fixit {
+    if let Some(new_name) = check_basename(pa, "dir", dirs_stats, options, writer, pconfusables) {
+        if options.fixit {
             logln(writer, &format!("  --> rename directory \"{new_name}\""));
             let newpath = pb.parent().unwrap().join(Path::new(&new_name));
             match fs::rename(&pb, &newpath) {
@@ -320,17 +469,17 @@ fn process_directory(
         let pb = entry.path();
         let ft = entry.file_type().unwrap();
         if ft.is_file() {
-            process_file(&pb, files_stats, fixit, writer, pconfusables);
+            process_file(&pb, files_stats, options, writer, pconfusables);
         } else if ft.is_dir() {
-            process_directory(&pb, dirs_stats, files_stats, fixit, writer, pconfusables);
+            process_directory(&pb, dirs_stats, files_stats, options, writer, pconfusables);
         }
     }
 }
 
-fn process_file(p: &Path, files_stats: &mut Statistics, fixit: bool, writer: &mut LogWriter, pconfusables: &Confusables) {
+fn process_file(p: &Path, files_stats: &mut Statistics, options: &Options, writer: &mut LogWriter, pconfusables: &Confusables) {
     files_stats.total += 1;
-    if let Some(new_name) = check_basename(p, "file", files_stats, writer, pconfusables) {
-        if fixit {
+    if let Some(new_name) = check_basename(p, "file", files_stats, options, writer, pconfusables) {
+        if options.fixit {
             logln(writer, &format!("  --> rename file \"{new_name}\""));
             let newpath = p.parent().unwrap().join(Path::new(&new_name));
             match fs::rename(p, &newpath) {
@@ -341,7 +490,14 @@ fn process_file(p: &Path, files_stats: &mut Statistics, fixit: bool, writer: &mu
     }
 }
 
-fn check_basename(p: &Path, pt: &str, stats: &mut Statistics, writer: &mut LogWriter, pconfusables: &Confusables) -> Option<String> {
+fn check_basename(
+    p: &Path,
+    pt: &str,
+    stats: &mut Statistics,
+    options: &Options,
+    writer: &mut LogWriter,
+    pconfusables: &Confusables,
+) -> Option<String> {
     let fp = p.display();
     let file = p.file_name();
     file?; // file is None with network paths such as \\teraz\photo, that's normal, return None
@@ -355,16 +511,32 @@ fn check_basename(p: &Path, pt: &str, stats: &mut Statistics, writer: &mut LogWr
 
     let mut file = file.unwrap().to_string();
     let original_file = file.clone();
+    let mut problems = String::new();
+
+    fn add_problem(problems: &mut String, problem: &str) {
+        if !problems.is_empty() {
+            problems.push_str(", ");
+        }
+        problems.push_str(problem);
+    }
 
     // Check for balanced brackets, but don't attempt a correction
     if !is_balanced(&file) {
-        logln(writer, &format!("Non-balanced brackets {pt} name {fp}"));
+        if options.yaml_output {
+            add_problem(&mut problems, "Non-balanced brackets");
+        } else {
+            logln(writer, &format!("Non-balanced brackets {pt} name {fp}"));
+        }
         stats.bra += 1;
     }
 
     // Check normalization
     if !is_nfc(&file) {
-        logln(writer, &format!("Non-normalized {pt} name {fp}"));
+        if options.yaml_output {
+            add_problem(&mut problems, "Non-normalized");
+        } else {
+            logln(writer, &format!("Non-normalized {pt} name {fp}"));
+        }
         stats.nnn += 1;
         // Normalize it for the rest to avoid complaining on combining accents as invalid characters
         file = file.nfc().collect();
@@ -375,9 +547,14 @@ fn check_basename(p: &Path, pt: &str, stats: &mut Statistics, writer: &mut LogWr
     // Check apostrophes
     let mut pbapo = false;
     for c in &mut vc {
-        //if CONF_APO.contains(c) {
         if pconfusables.apostrophe.contains(c) {
-            logln(writer, &format!("Invalid apostrophe in {pt} name {fp} -> {c} {:04X}", *c as i32));
+            if options.yaml_output {
+                if !pbapo {
+                    add_problem(&mut problems, "Invalid apostrophe");
+                }
+            } else {
+                logln(writer, &format!("Invalid apostrophe in {pt} name {fp} -> {c} {:04X}", *c as i32));
+            }
             if !pbapo {
                 pbapo = true;
                 stats.apo += 1;
@@ -391,7 +568,13 @@ fn check_basename(p: &Path, pt: &str, stats: &mut Statistics, writer: &mut LogWr
     for c in &mut vc {
         //if CONF_SPC.contains(c) {
         if pconfusables.space.contains(c) {
-            logln(writer, &format!("Invalid space in {pt} name {fp} -> {:04X}", *c as i32));
+            if options.yaml_output {
+                if !pbspc {
+                    add_problem(&mut problems, "Invalid space");
+                }
+            } else {
+                logln(writer, &format!("Invalid space in {pt} name {fp} -> {:04X}", *c as i32));
+            }
             if !pbspc {
                 pbspc = true;
                 stats.spc += 1;
@@ -412,7 +595,11 @@ fn check_basename(p: &Path, pt: &str, stats: &mut Statistics, writer: &mut LogWr
         if c == ' ' {
             if lastc == ' ' {
                 if !pbsp2 {
-                    logln(writer, &format!("Multiple spaces in {pt} name {fp}"));
+                    if options.yaml_output {
+                        add_problem(&mut problems, "Multiple spaces");
+                    } else {
+                        logln(writer, &format!("Multiple spaces in {pt} name {fp}"));
+                    }
                     pbsp2 = true;
                     stats.sp2 += 1;
                 }
@@ -442,7 +629,11 @@ fn check_basename(p: &Path, pt: &str, stats: &mut Statistics, writer: &mut LogWr
                 pbchr = true;
                 stats.car += 1;
             }
-            logln(writer, &format!("Invalid char in {pt} name {fp} -> {c} {:04X}", c as i32));
+            if options.yaml_output {
+                add_problem(&mut problems, &format!("Invalid char {:04X}", c as i32));
+            } else {
+                logln(writer, &format!("Invalid char in {pt} name {fp} -> {c} {:04X}", c as i32));
+            }
             // Special case, fix U+200E by removing it (LEFT-TO-RIGHT MARK)
             if c == '\u{200E}' {
                 to_fix = true;
@@ -451,6 +642,13 @@ fn check_basename(p: &Path, pt: &str, stats: &mut Statistics, writer: &mut LogWr
     }
     if to_fix {
         file = file.replace("\u{200E}", "");
+    }
+
+    if options.yaml_output && !problems.is_empty() {
+        logln(writer, &format!("- typ: {pt}"));
+        logln(writer, &format!("  prb: {problems}"));
+        logln(writer, &format!("  old: {fp}"));
+        logln(writer, &format!("  new: {fp}\n"));
     }
 
     if file == original_file { None } else { Some(file) }

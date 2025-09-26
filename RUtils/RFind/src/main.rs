@@ -20,6 +20,11 @@
 // 2025-09-08 	PV 		1.9.1 Use MyGlobSearch 1.9.0 with breadth-first search for a more natural order
 // 2025-09-15 	PV 		1.10.0 Do not write log file by default, use option -log for that. Option -dbg for debugging; logwriter_none
 
+// ToDp:
+// - Not normalized paths -findnnn (-fixnnn ot pipe into another app?)
+// - Case sensitive search option (-cs C:\PicturesODMist\**\*.JPG)
+// - Accent insensitive search (actually maybe not useful, but everything does it)
+
 //#![allow(unused)]
 
 // Standard library imports
