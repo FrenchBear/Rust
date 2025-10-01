@@ -15,6 +15,7 @@
 // 2025-07-10   PV      1.7.1   Get information from Cargo.toml, and use build script build.rs
 // 2025-09-15   PV      1.7.2   Option -d for debugging, not used for now (I wanted to add it to rfind, not rgrep!!!)
 // 2025-09-21   PV      1.8.0   Option -v (verbose) renamed -t (show execution time); Option -v to invert the sense of matching, to select non-matching lines
+// 2025-10-01   PV      1.8.1   Use MyGlob 1.10 supporting !SOURCES macro
 
 //#![allow(unused)]
 
