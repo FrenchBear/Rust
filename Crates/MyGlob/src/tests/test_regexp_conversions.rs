@@ -3,6 +3,7 @@
 //
 // 2025-03-29   PV
 // 2025-04-08   PV      relative_blob test
+// 2025-10-01   PV      Added tests of macro !SOURCES
 
 #![cfg(test)]
 use crate::*;
@@ -108,6 +109,8 @@ fn conversions_tests() {
     glob_one_segment_test("a{b,c}{d,e}f", ConvResult::Filter, "acdf", true);
     glob_one_segment_test("file.{cs,py,rs,vb}", ConvResult::Filter, "file.bat", false);
     glob_one_segment_test("file.{cs,py,rs,vb}", ConvResult::Filter, "file.rs", true);
+    glob_one_segment_test("file.{!SOURCES}", ConvResult::Filter, "file.rs", true);
+    glob_one_segment_test("file.{!SOURCES}", ConvResult::Filter, "file.d", false);
 
     // ? replace exactly one character
     glob_one_segment_test("file.?s", ConvResult::Filter, "file.rs", true);

@@ -20,4 +20,12 @@
         "statusBarItem.remoteForeground": "#e7e7e7"
     },
     "peacock.color": "#2d1600",
+    "spellright.language": [
+        "en"
+    ],
+    "spellright.documentTypes": [
+        "code",
+        "markdown",
+        "latex"
+    ],
 }

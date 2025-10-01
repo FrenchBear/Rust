@@ -51,7 +51,6 @@ const RANDOM_SEED:u64 = 2;      // 0 = use time as seed, <>0 = use this specific
 
 fn main() {
     // Initialize a random number generator.
-    //let mut rng = rand::thread_rng();
     let mut rng: SmallRng = if RANDOM_SEED != 0 {
         SmallRng::seed_from_u64(RANDOM_SEED)
     } else {

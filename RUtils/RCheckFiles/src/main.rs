@@ -9,10 +9,11 @@
 // 2025-04-08	PV      1.4.0 Check brackets (incl. unit tests)
 // 2025-05-05   PV      1.4.2 Use MyMarkup crate to format usage
 // 2025-05-05	PV      1.4.3 Logging crate
-// 2025-09-26	PV      2.0.0 Option - for yaml output, option -fy to apply cnages from a .yaml file
+// 2025-09-26	PV      2.0.0 Option -y for yaml output, option -F <file> to apply chages from a yaml file
+// 2025-10-01	PV      2.1.0 Option -e to count extensions
 
 // Standard library imports
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::fs;
 use std::os::windows::prelude::*;
@@ -128,6 +129,7 @@ pub struct Options {
     fixit: bool,
     yaml_output: bool,
     yaml_file: String,
+    count_extensions: bool,
 }
 
 /// Checks if a path exists and is a file.
@@ -155,12 +157,13 @@ impl Options {
     fn usage() {
         Options::header();
         println!();
-        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄] [⦃-f⦄] [⦃-y⦄] [⦃-F⦄ ⟨yamlfile⟩] ⟨source⟩...
-⦃?⦄|⦃-?⦄|⦃-h⦄  ¬Show this message
-⦃-f⦄            ¬Automatic problems fixing
-⦃-y⦄            ¬Yaml output
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄] [⦃-f⦄] [⦃-y⦄] [⦃-F⦄ ⟨yamlfile⟩] [⦃-e⦄] ⟨source⟩...
+⦃?⦄|⦃-?⦄|⦃-h⦄     ¬Show this message
+⦃-f⦄          ¬Automatic problems fixing
+⦃-y⦄          ¬Yaml output
 ⦃-F⦄ ⟨yamlfile⟩ ¬Rename files using old/new fields of provided yaml file
-⟨source⟩        ¬File or directory to analyze";
+⦃-e⦄          ¬Count extensions
+⟨source⟩      ¬File or directory to analyze (note: glob pattern is not supported)";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }
@@ -175,7 +178,7 @@ impl Options {
         }
 
         let mut options = Options { ..Default::default() };
-        let mut opts = getopt::Parser::new(&args, "h?fyF:");
+        let mut opts = getopt::Parser::new(&args, "h?fyF:e");
 
         loop {
             match opts.next().transpose()? {
@@ -188,6 +191,10 @@ impl Options {
 
                     Opt('f', None) => {
                         options.fixit = true;
+                    }
+
+                    Opt('e', None) => {
+                        options.count_extensions = true;
                     }
 
                     Opt('y', None) => {
@@ -228,6 +235,9 @@ impl Options {
         if count_true > 1 {
             return Err("Options -y, -f and -F are exclusive".into());
         }
+        if options.count_extensions && !options.yaml_file.is_empty() {
+            return Err("Options -F and -e are exclusive".into());
+        }
 
         if options.yaml_file.is_empty() {
             if options.sources.is_empty() {
@@ -248,16 +258,19 @@ impl Options {
 
 #[derive(Default)]
 struct Statistics {
-    total: i32, // Total files/dirs processed
-    nnn: i32,   // Non-normalized names
-    bra: i32,   // Bracket issue
-    apo: i32,   // Incorrect apostrophe
-    spc: i32,   // Incorrect space
-    car: i32,   // Maybe incorrect char
-    sp2: i32,   // Double space
-    fix: i32,   // Number of path fixed
-    err: i32,   // Number of errors
+    total: i32,                        // Total files/dirs processed
+    nnn: i32,                          // Non-normalized names
+    bra: i32,                          // Bracket issue
+    apo: i32,                          // Incorrect apostrophe
+    spc: i32,                          // Incorrect space
+    car: i32,                          // Maybe incorrect char
+    sp2: i32,                          // Double space
+    fix: i32,                          // Number of path fixed
+    err: i32,                          // Number of errors
+    ext_counter: HashMap<String, u32>, // Count of extensions (lowercase)
 }
+
+impl Statistics {}
 
 struct Confusables {
     space: HashSet<char>,
@@ -337,6 +350,19 @@ fn main() {
         logln(&mut writer, "");
         final_status(&mut writer, &dirs_stats, "dir");
         final_status(&mut writer, &files_stats, "file");
+
+        if options.count_extensions {
+            // Print extensions counter by decreasing order of count
+            let mut extensions: Vec<_> = files_stats.ext_counter.iter().collect();
+            extensions.sort_by(|a, b| b.1.cmp(a.1));    
+
+            logln(&mut writer, "Extensions:");
+            for (ext, cnt) in extensions {
+                logln(&mut writer, format!("  {ext}: {cnt}").as_str());
+            }
+            logln(&mut writer, "");
+        }
+
         logln(&mut writer, &format!("Total duration: {:.3}s", duration.as_secs_f64()));
     } else {
         let res = process_yaml_file(&mut writer, &options);
@@ -478,6 +504,17 @@ fn process_directory(
 
 fn process_file(p: &Path, files_stats: &mut Statistics, options: &Options, writer: &mut LogWriter, pconfusables: &Confusables) {
     files_stats.total += 1;
+
+    // Count extension
+    if options.count_extensions {
+        let ext = match p.extension() {
+            Some(ext) => ext.to_str().unwrap().to_lowercase(),
+            None => "(none)".to_string(),
+        };
+        let e = files_stats.ext_counter.entry(ext).or_insert(0);
+        *e += 1;
+    }
+
     if let Some(new_name) = check_basename(p, "file", files_stats, options, writer, pconfusables) {
         if options.fixit {
             logln(writer, &format!("  --> rename file \"{new_name}\""));

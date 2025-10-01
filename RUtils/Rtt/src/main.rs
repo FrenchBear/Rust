@@ -2,6 +2,7 @@
 //
 // 2025-05-03	PV      First version
 // 2025-05-04   PV      1.0.1 Use MyMarkup crate to format usage and extended help
+// 2025-10-01   PV      1.0.2 Updated list of text extensions
 
 //#![allow(unused)]
 
@@ -34,15 +35,20 @@ const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 const APP_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 
 // These extensions should indicate a text content
-const TEXT_EXT: [&str; 53] = [
-    // Sources
+const TEXT_EXT: [&str; 61] = [
+    // Sources (d is not in the list since it's also a rust-generated extension)
+    "asm",
     "awk",
     "c",
+    "cc",
     "cpp",
     "cs",
+    "cxx",
     "fs",
     "go",
     "h",
+    "hpp",
+    "hxx",
     "java",
     "jl",
     "js",
@@ -79,6 +85,10 @@ const TEXT_EXT: [&str; 53] = [
     "targets",
     "pubxml",
     "filters",
+    // HTML
+    "htm",
+    "html",
+    "css",
     // Config
     "ini",
     "xml",

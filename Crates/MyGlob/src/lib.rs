@@ -24,6 +24,7 @@
 // 2025-09-06   PV      1.8.0 MaxDepth added
 // 2025-09-08   PV      1.9.0 Use queue instead of stack to have a breadth-first search instead of depth-first, and return results in a more natural order
 // 2025-09-13   PV      1.9.1 Check for unclosed brackets in glob expressions such as "C:\[a-z"
+// 2025-01-01   PV      1.10  Macro !SOURCES to represend common (for me) source files extensions. d is not in the list (also rust temp build files extension)
 
 #![allow(unused_variables, dead_code, unused_imports)]
 
@@ -283,6 +284,11 @@ impl MyGlobBuilder {
         let mut glob_pattern = glob_pattern_arg.to_string();
         if !glob_pattern.ends_with("/") && !glob_pattern.ends_with("\\") {
             glob_pattern.push(dir_sep);
+        }
+
+        // Macro expansion. For efficiency, don't use regexp or complex code to check it's surrounded by braces
+        if let Some(pos) = glob_pattern.to_ascii_uppercase().find("!SOURCES") {
+            glob_pattern = glob_pattern[..pos].to_string() + "asm,awk,c,cc,cpp,cs,cxx,fs,go,h,hpp,hxx,java,jl,js,lua,py,rs,sql,ts,vb,xaml" + &glob_pattern[pos + 8..];
         }
 
         let mut segments = Vec::<Segment>::new();
