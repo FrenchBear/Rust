@@ -1,8 +1,9 @@
- // l47_check_dates: Check dates in source files headers
+// l47_check_dates: Check dates in source files headers (validity and ordered sequence)
 //
 // 2025-04-21	PV      First version
 // 2025-05-02   PV      Use textautodecode crate instead of decode_encoding module
 // 2025-05-14   PV      1.2 Use logging crate instead of logging module
+// 2025-10-05   PV      1.3 Use MyGlob macro !SOURCES
 
 //#![allow(unused)]
 
@@ -22,7 +23,7 @@ use logging::{LogWriter, log, logln};
 // -----------------------------------
 // Global constants
 
-const APP_NAME: &str = "check_dates";
+const APP_NAME: &str = env!("CARGO_PKG_NAME");
 const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // -----------------------------------
@@ -37,7 +38,7 @@ struct DataBag {
 }
 
 fn main() {
-    let globstrsources: Vec<String> = vec![r"C:\Development\**\*.{awk,c,cpp,cs,fs,go,h,java,jl,js,lua,py,rs,sql,ts,vb}".to_string()];
+    let globstrsources: Vec<String> = vec![r"C:\Development\**\*.{!SOURCES}".to_string()];
 
     // Prepare log writer
     let mut writer = logging::new(APP_NAME, APP_VERSION, true);
@@ -108,6 +109,12 @@ fn main() {
 }
 
 fn process_file(writer: &mut LogWriter, b: &mut DataBag, p: &Path) {
+    // Ignore xaml files returned by !SOURCES macro
+    let extension = p.extension().map(|p| p.to_str().unwrap()).unwrap_or("").to_ascii_lowercase();
+    if extension=="xaml" {
+        return;
+    }
+
     let res = TextAutoDecode::read_text_file(p);
     match res {
         Ok(tad) => {
@@ -121,9 +128,9 @@ fn process_file(writer: &mut LogWriter, b: &mut DataBag, p: &Path) {
                 // b.errors_count += 1;
                 // logln(writer, format!("*** Non-text file: {}", p.display()).as_str());
             } else {
-                let extension = p.extension().map(|p| p.to_str().unwrap()).unwrap_or("").to_ascii_lowercase();
                 let comment = match extension.as_str() {
-                    "cs" | "c" | "h" | "cpp" | "rs" | "fs" | "go" | "java" | "js" | "ts" => "//",
+                    "asm" => ";",
+                    "cs" | "c" | "h" | "cc" | "cpp" | "cxx" | "hpp" | "hxx" | "rs" | "fs" | "go" | "java" | "js" | "ts" => "//",
                     "py" | "jl" | "awk" => "#",
                     "lua" | "sql" => "--",
                     "vb" => "'",
