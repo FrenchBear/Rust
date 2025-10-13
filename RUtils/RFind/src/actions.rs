@@ -5,7 +5,7 @@
 // 2025-04-06	PV      Use fs::remove_dir_all instead of fs::remove_dir to delete non-empty directories
 // 2025-05-05	PV      Linux compatibility
 // 2025-07-12	PV      Bug name inverted (recycle/permanent delete) for action delete
-// 2025-10-13   PV      ActionExec
+// 2025-10-13   PV      ActionExec, ActionXargs
 
 use super::*;
 
@@ -30,7 +30,11 @@ impl ActionPrint {
 }
 
 impl Action for ActionPrint {
-    fn action(&self, lw: &mut LogWriter, path: &Path, _noaction: bool, _verbose: bool) {
+    fn name(&self) -> String {
+        (if self.detailed_output { "Dir" } else { "Print" }).into()
+    }
+
+    fn action(&mut self, lw: &mut LogWriter, path: &Path, _noaction: bool, _verbose: bool) {
         if path.is_file() {
             if self.detailed_output {
                 match path.metadata() {
@@ -83,9 +87,7 @@ impl Action for ActionPrint {
         }
     }
 
-    fn name(&self) -> String {
-        (if self.detailed_output { "Dir" } else { "Print" }).into()
-    }
+    fn conclusion(&mut self, _lw: &mut LogWriter, _noaction: bool, _verbose: bool) {}
 }
 
 // ===============================================================
@@ -103,7 +105,16 @@ impl ActionDelete {
 }
 
 impl Action for ActionDelete {
-    fn action(&self, lw: &mut LogWriter, path: &Path, noaction: bool, verbose: bool) {
+    fn name(&self) -> String {
+        (if self.recycle {
+            "Delete files (use recycle bin for local files, permanently for remote files)"
+        } else {
+            "Delete files (permanently)"
+        })
+        .into()
+    }
+
+    fn action(&mut self, lw: &mut LogWriter, path: &Path, noaction: bool, verbose: bool) {
         if path.is_file() {
             let s = quoted_path(path);
             let qp = s.as_str();
@@ -135,14 +146,7 @@ impl Action for ActionDelete {
         }
     }
 
-    fn name(&self) -> String {
-        (if self.recycle {
-            "Delete files (use recycle bin for local files, permanently for remote files)"
-        } else {
-            "Delete files (permanently)"
-        })
-        .into()
-    }
+    fn conclusion(&mut self, _lw: &mut LogWriter, _noaction: bool, _verbose: bool) {}
 }
 
 fn quoted_path(path: &Path) -> String {
@@ -172,7 +176,16 @@ impl ActionRmdir {
 }
 
 impl Action for ActionRmdir {
-    fn action(&self, writer: &mut LogWriter, path: &Path, noaction: bool, verbose: bool) {
+    fn name(&self) -> String {
+        (if self.recycle {
+            "Delete directories (use recycle bin for local files, permanently for remote files)"
+        } else {
+            "Delete directories (permanent)"
+        })
+        .into()
+    }
+
+    fn action(&mut self, writer: &mut LogWriter, path: &Path, noaction: bool, verbose: bool) {
         if path.is_dir() {
             let s = quoted_path(path);
             let qp = s.as_str();
@@ -204,14 +217,7 @@ impl Action for ActionRmdir {
         }
     }
 
-    fn name(&self) -> String {
-        (if self.recycle {
-            "Delete directories (use recycle bin for local files, permanently for remote files)"
-        } else {
-            "Delete directories (permanent)"
-        })
-        .into()
-    }
+    fn conclusion(&mut self, _lw: &mut LogWriter, _noaction: bool, _verbose: bool) {}
 }
 
 // ===============================================================
@@ -229,7 +235,11 @@ impl ActionExec {
 }
 
 impl Action for ActionExec {
-    fn action(&self, lw: &mut LogWriter, path: &Path, _noaction: bool, _verbose: bool) {
+    fn name(&self) -> String {
+        format!("Exec «{}» {}", self.ctr.command, self.ctr.args.join(" "))
+    }
+
+    fn action(&mut self, lw: &mut LogWriter, path: &Path, _noaction: bool, _verbose: bool) {
         let pp = quoted_path(path);
         let mut args = self.ctr.args.clone();
         for refarg in args.iter_mut() {
@@ -240,14 +250,56 @@ impl Action for ActionExec {
 
         logln(lw, format!("exec {} {}", quoted_string(&self.ctr.command), args.join(" ")).as_str());
         if !_noaction {
-            let _status = Command::new(self.ctr.command.as_str())
-                .args(&args)
-                .spawn();
+            let _status = Command::new(self.ctr.command.as_str()).args(&args).spawn();
             //println!("Status: {:#?}", _status);
         }
     }
 
+    fn conclusion(&mut self, _lw: &mut LogWriter, _noaction: bool, _verbose: bool) {}
+}
+
+// ===============================================================
+// Xargs action
+
+#[derive(Debug)]
+pub struct ActionXargs {
+    ctr: CommandToRun,
+    paths: Vec<String>,
+}
+
+impl ActionXargs {
+    pub fn new(ctr: &CommandToRun) -> Self {
+        ActionXargs {
+            ctr: (*ctr).clone(),
+            paths: Vec::new(),
+        }
+    }
+}
+
+impl Action for ActionXargs {
     fn name(&self) -> String {
-        format!("Exec «{}» {}", self.ctr.command, self.ctr.args.join(" "))
+        format!("Xargs «{}» {}", self.ctr.command, self.ctr.args.join(" "))
+    }
+
+    fn action(&mut self, _lw: &mut LogWriter, path: &Path, _noaction: bool, _verbose: bool) {
+        self.paths.push(quoted_string(&path.display().to_string()));
+    }
+
+    fn conclusion(&mut self, lw: &mut LogWriter, _noaction: bool, _verbose: bool) {
+        let mut args = Vec::new();
+        for arg in self.ctr.args.iter() {
+            if arg.contains("{}") {
+                for pp in self.paths.iter() {
+                    args.push(arg.replace("{}", &pp));
+                }
+            } else {
+                args.push(arg.clone());
+            }
+        }
+
+        logln(lw, format!("xargs {} {}", quoted_string(&self.ctr.command), args.join(" ")).as_str());
+        if !_noaction {
+            let _status = Command::new(self.ctr.command.as_str()).args(&args).spawn();
+        }
     }
 }

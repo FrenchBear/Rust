@@ -8,7 +8,7 @@
 // 2025-07-13 	PV 		Option -nop
 // 2025-09-06 	PV 		Option -maxdepth n
 // 2025-09-15 	PV 		Option -dbg for debugging and -log to write log file
-// 2025-10-13 	PV 		Option -exec, struct CommandToRun
+// 2025-10-13 	PV 		Option -exec, -xargs and struct CommandToRun
 
 // Application imports
 use crate::*;
@@ -33,6 +33,7 @@ pub struct Options {
     pub sources: Vec<String>,
     pub actions_names: HashSet<&'static str>,
     pub exec_commands: Vec<CommandToRun>,
+    pub xargs_commands: Vec<CommandToRun>,
     pub search_files: bool,
     pub search_dirs: bool,
     pub names: Vec<String>,
@@ -80,7 +81,8 @@ impl Options {
 ⦃-nop[rint]⦄       ¬Do nothing, useful to replace default action ⦃-print⦄ to count files and folders with option ⦃-v⦄
 ⦃-delete⦄          ¬Delete matching files
 ⦃-rmdir⦄           ¬Delete matching directories, whether empty or not
-⦃-exec⦄ ⟨cmd⟩ [⦃;⦄]    ¬Execute command ⟨cmd⟩ for each path found, {} replaced by the path. A single semicolon marks the end of the command";
+⦃-exec⦄ ⟨cmd⟩ [⦃;⦄]    ¬Execute command ⟨cmd⟩ for each path found, {} replaced by the path. A single semicolon marks the end of the command
+⦃-xargs⦄ ⟨cmd⟩ [⦃;⦄]   ¬Execute command ⟨cmd⟩ at the end, {} replaced by all the paths found. A single semicolon marks the end of the command";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }
@@ -217,24 +219,28 @@ impl Options {
                         options.actions_names.insert("rmdir");
                     }
 
-                    "exec" => {
-                        let mut execargs: Vec<String> = Vec::new();
+                    "exec" | "xargs" => {
+                        let mut args: Vec<String> = Vec::new();
                         while let Some(arg) = args_iter.next() {
                             if arg == ";" {
                                 break;
                             }
-                            execargs.push(arg.clone());
+                            args.push(arg.clone());
                         }
-                        if execargs.len() == 0 {
-                            return Err("Option -exec requires an argument".into());
+                        if args.len() == 0 {
+                            return Err(format!("Option -{arglc} requires an argument").into());
                         }
 
                         // For now, simplified analysis
                         let ctr = CommandToRun {
-                            command: execargs[0].clone(),
-                            args: execargs[1..].to_vec(),
+                            command: args[0].clone(),
+                            args: args[1..].to_vec(),
                         };
-                        options.exec_commands.push(ctr);
+                        if arglc == "exec" {
+                            options.exec_commands.push(ctr);
+                        } else {
+                            options.xargs_commands.push(ctr);
+                        }
                     }
 
                     _ => {
@@ -267,7 +273,7 @@ impl Options {
         }
 
         // If no action is specified, then print action is default
-        if options.actions_names.is_empty() && options.exec_commands.is_empty() {
+        if options.actions_names.is_empty() && options.exec_commands.is_empty() && options.xargs_commands.is_empty() {
             options.actions_names.insert("print");
         }
 

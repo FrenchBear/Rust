@@ -20,8 +20,9 @@
 // 2025-09-08 	PV 		1.9.1 Use MyGlobSearch 1.9.0 with breadth-first search for a more natural order
 // 2025-09-15 	PV 		1.10.0 Do not write log file by default, use option -log for that. Option -dbg for debugging; logwriter_none
 // 2025-10-13 	PV 		2.0.0 option -exec cmd ;
+// 2025-10-13 	PV 		2.0.1 option -xargs cmd ;
 
-// ToDp:
+// ToDo:
 // - Not normalized paths -findnnn (-fixnnn ot pipe into another app?)
 // - Case sensitive search option (-cs C:\PicturesODMist\**\*.JPG)
 // - Accent insensitive search (actually maybe not useful, but everything does it)
@@ -58,8 +59,9 @@ const APP_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 // Traits
 
 trait Action: Debug {
-    fn action(&self, lw: &mut LogWriter, path: &Path, noaction: bool, verbose: bool);
     fn name(&self) -> String;
+    fn action(&mut self, lw: &mut LogWriter, path: &Path, noaction: bool, verbose: bool);
+    fn conclusion(&mut self, lw: &mut LogWriter, noaction: bool, verbose: bool);
 }
 
 // ==============================================================================================
@@ -172,6 +174,9 @@ fn main() {
     for ctr in options.exec_commands.iter() {
         actions.push(Box::new(actions::ActionExec::new(&ctr)));
     }
+    for ctr in options.xargs_commands.iter() {
+        actions.push(Box::new(actions::ActionXargs::new(&ctr)));
+    }
 
     if options.verbose {
         log(&mut writer, "\nAction(s): ");
@@ -197,7 +202,7 @@ fn main() {
                 MyGlobMatch::File(pb) => {
                     if options.search_files && (!options.isempty || is_file_empty(&pb)) {
                         files_count += 1;
-                        for ba in actions.iter() {
+                        for ba in actions.iter_mut() {
                             (**ba).action(&mut writer, &pb, options.noaction, options.verbose);
                         }
                     }
@@ -206,7 +211,7 @@ fn main() {
                 MyGlobMatch::Dir(pb) => {
                     if options.search_dirs && (!options.isempty || !is_dir_empty(&pb)) {
                         dirs_count += 1;
-                        for ba in actions.iter() {
+                        for ba in actions.iter_mut() {
                             (**ba).action(&mut writer, &pb, options.noaction, options.verbose);
                         }
                     }
@@ -220,6 +225,12 @@ fn main() {
             }
         }
     }
+
+    // Call conclusions
+    for ba in actions.iter_mut() {
+        (**ba).conclusion(&mut writer, options.noaction, options.verbose);
+    }
+
 
     let duration = start.elapsed();
 
