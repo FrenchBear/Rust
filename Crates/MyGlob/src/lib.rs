@@ -24,7 +24,7 @@
 // 2025-09-06   PV      1.8.0 MaxDepth added
 // 2025-09-08   PV      1.9.0 Use queue instead of stack to have a breadth-first search instead of depth-first, and return results in a more natural order
 // 2025-09-13   PV      1.9.1 Check for unclosed brackets in glob expressions such as "C:\[a-z"
-// 2025-10-01   PV      1.10  Macro !SOURCES to represend common (for me) source files extensions. d is not in the list (also rust temp build files extension)
+// 2025-10-01   PV      1.10  Macro !SOURCES to represent common (for me) source files extensions. d is not in the list (also rust temp build files extension)
 
 #![allow(unused_variables, dead_code, unused_imports)]
 

@@ -5,12 +5,13 @@
 // 2025-04-06	PV      Use fs::remove_dir_all instead of fs::remove_dir to delete non-empty directories
 // 2025-05-05	PV      Linux compatibility
 // 2025-07-12	PV      Bug name inverted (recycle/permanent delete) for action delete
+// 2025-10-13   PV      ActionExec
 
 use super::*;
 
 use chrono::{DateTime, Local, Utc};
 use num_format::{Locale, ToFormattedString};
-use std::fs;
+use std::{fs, process::Command};
 
 use trash::delete;
 
@@ -82,8 +83,8 @@ impl Action for ActionPrint {
         }
     }
 
-    fn name(&self) -> &'static str {
-        if self.detailed_output { "Dir" } else { "Print" }
+    fn name(&self) -> String {
+        (if self.detailed_output { "Dir" } else { "Print" }).into()
     }
 }
 
@@ -134,18 +135,26 @@ impl Action for ActionDelete {
         }
     }
 
-    fn name(&self) -> &'static str {
-        if self.recycle {
+    fn name(&self) -> String {
+        (if self.recycle {
             "Delete files (use recycle bin for local files, permanently for remote files)"
         } else {
             "Delete files (permanently)"
-        }
+        })
+        .into()
     }
 }
 
 fn quoted_path(path: &Path) -> String {
-    let n = path.display().to_string();
-    if n.contains(' ') { format!("\"{}\"", n) } else { n }
+    quoted_string(&path.display().to_string())
+}
+
+fn quoted_string(string: &String) -> String {
+    if string.contains(' ') {
+        format!("\"{}\"", string)
+    } else {
+        string.into()
+    }
 }
 
 // ===============================================================
@@ -195,11 +204,50 @@ impl Action for ActionRmdir {
         }
     }
 
-    fn name(&self) -> &'static str {
-        if self.recycle {
+    fn name(&self) -> String {
+        (if self.recycle {
             "Delete directories (use recycle bin for local files, permanently for remote files)"
         } else {
             "Delete directories (permanent)"
+        })
+        .into()
+    }
+}
+
+// ===============================================================
+// Exec action
+
+#[derive(Debug)]
+pub struct ActionExec {
+    ctr: CommandToRun,
+}
+
+impl ActionExec {
+    pub fn new(ctr: &CommandToRun) -> Self {
+        ActionExec { ctr: (*ctr).clone() }
+    }
+}
+
+impl Action for ActionExec {
+    fn action(&self, lw: &mut LogWriter, path: &Path, _noaction: bool, _verbose: bool) {
+        let pp = quoted_path(path);
+        let mut args = self.ctr.args.clone();
+        for refarg in args.iter_mut() {
+            if refarg.contains("{}") {
+                *refarg = refarg.replace("{}", &pp);
+            }
         }
+
+        logln(lw, format!("exec {} {}", quoted_string(&self.ctr.command), args.join(" ")).as_str());
+        if !_noaction {
+            let _status = Command::new(self.ctr.command.as_str())
+                .args(&args)
+                .spawn();
+            //println!("Status: {:#?}", _status);
+        }
+    }
+
+    fn name(&self) -> String {
+        format!("Exec «{}» {}", self.ctr.command, self.ctr.args.join(" "))
     }
 }

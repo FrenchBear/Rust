@@ -19,6 +19,7 @@
 // 2025-09-06 	PV 		1.9.0 Option -maxdepth n
 // 2025-09-08 	PV 		1.9.1 Use MyGlobSearch 1.9.0 with breadth-first search for a more natural order
 // 2025-09-15 	PV 		1.10.0 Do not write log file by default, use option -log for that. Option -dbg for debugging; logwriter_none
+// 2025-10-13 	PV 		2.0.0 option -exec cmd ;
 
 // ToDp:
 // - Not normalized paths -findnnn (-fixnnn ot pipe into another app?)
@@ -58,7 +59,7 @@ const APP_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 
 trait Action: Debug {
     fn action(&self, lw: &mut LogWriter, path: &Path, noaction: bool, verbose: bool);
-    fn name(&self) -> &'static str;
+    fn name(&self) -> String;
 }
 
 // ==============================================================================================
@@ -168,6 +169,10 @@ fn main() {
             _ => panic!("{APP_NAME}: Internal error, unknown action_name {action_name}"),
         }
     }
+    for ctr in options.exec_commands.iter() {
+        actions.push(Box::new(actions::ActionExec::new(&ctr)));
+    }
+
     if options.verbose {
         log(&mut writer, "\nAction(s): ");
         if options.noaction {
