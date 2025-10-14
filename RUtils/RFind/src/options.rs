@@ -72,7 +72,6 @@ impl Options {
 ⦃-a+⦄|⦃-a-⦄          ¬Enable (default) or disable glob autorecurse mode (see extended usage)
 ⦃-name⦄ ⟨name⟩       ¬Append ⟦**/⟧⟨name⟩ to each source directory (compatibility with XFind/Search)
 ⦃-maxdepth⦄ ⟨n⟩      ¬Limit the recursion depth of ** segments, 1=One directory only, ... Default=0 is unlimited depth
-
 ⟨source⟩           ¬File or directory to search
 
 ⌊Actions⌋:
