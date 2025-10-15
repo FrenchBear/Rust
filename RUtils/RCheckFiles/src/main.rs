@@ -11,6 +11,7 @@
 // 2025-05-05	PV      1.4.3 Logging crate
 // 2025-09-26	PV      2.0.0 Option -y for yaml output, option -F <file> to apply chages from a yaml file
 // 2025-10-01	PV      2.1.0 Option -e to count extensions
+// 2025-10-15	PV      2.2.0 Space before ? or !
 
 // Standard library imports
 use std::collections::{HashMap, HashSet};
@@ -19,12 +20,14 @@ use std::fs;
 use std::os::windows::prelude::*;
 use std::path::Path;
 use std::process;
+use std::sync::LazyLock;
 use std::time::Instant;
 
 // External crates imports
 use getopt::Opt;
 use logging::{LogWriter, log, logln};
 use mymarkup::MyMarkup;
+use regex::Regex;
 use serde::Deserialize;
 use unicode_normalization::{UnicodeNormalization, is_nfc};
 
@@ -265,6 +268,7 @@ struct Statistics {
     spc: i32,                          // Incorrect space
     car: i32,                          // Maybe incorrect char
     sp2: i32,                          // Double space
+    spm: i32,                          // Space before ¿ or !
     fix: i32,                          // Number of path fixed
     err: i32,                          // Number of errors
     ext_counter: HashMap<String, u32>, // Count of extensions (lowercase)
@@ -337,6 +341,9 @@ fn main() {
             }
             if stats.car > 0 {
                 log(writer, &format!(", {} wrong character", stats.car));
+            }
+            if stats.spm > 0 {
+                log(writer, &format!(", {} space before ¿ or !", stats.spm));
             }
             if stats.fix > 0 {
                 log(writer, &format!(", {} problem{} fixed", stats.fix, s(stats.fix)));
@@ -578,6 +585,19 @@ fn check_basename(
         // Normalize it for the rest to avoid complaining on combining accents as invalid characters
         file = file.nfc().collect();
     }
+
+    // Check for space before ¿ or !
+    static SPACE_BEFORE_MARK: LazyLock<Regex> = LazyLock::new(|| Regex::new(r" +([?!‽¡])").unwrap());
+    if SPACE_BEFORE_MARK.is_match(&file) {
+        let mark = SPACE_BEFORE_MARK.captures(&file).unwrap().get(1).unwrap().as_str();
+        if options.yaml_output {
+            add_problem(&mut problems, format!("Space before {mark}").as_str());
+        } else {
+            logln(writer, &format!("Space before {mark} in {pt} {fp}"));
+        }
+        stats.spm += 1;
+        file = SPACE_BEFORE_MARK.replace_all(&file, "$1").to_string();
+    } 
 
     let mut vc: Vec<char> = file.chars().collect();
 
