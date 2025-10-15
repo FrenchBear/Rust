@@ -12,6 +12,8 @@
 // 2025-09-26	PV      2.0.0 Option -y for yaml output, option -F <file> to apply chages from a yaml file
 // 2025-10-01	PV      2.1.0 Option -e to count extensions
 // 2025-10-15	PV      2.2.0 Space before ? or !
+// 2025-10-15	PV      2.2.1 Refactoring, separated options module
+
 
 // Standard library imports
 use std::collections::{HashMap, HashSet};
@@ -26,7 +28,6 @@ use std::time::Instant;
 // External crates imports
 use getopt::Opt;
 use logging::{LogWriter, log, logln};
-use mymarkup::MyMarkup;
 use regex::Regex;
 use serde::Deserialize;
 use unicode_normalization::{UnicodeNormalization, is_nfc};
@@ -34,7 +35,10 @@ use unicode_normalization::{UnicodeNormalization, is_nfc};
 // -----------------------------------
 // Submodules
 
-pub mod tests;
+mod options;
+mod tests;
+
+use options::*;
 
 // -----------------------------------
 // Globals
@@ -123,140 +127,6 @@ struct RenameItem {
 }
 
 // ==============================================================================================
-// Options processing
-
-// Dedicated struct to store command line arguments
-#[derive(Debug, Default)]
-pub struct Options {
-    sources: Vec<String>,
-    fixit: bool,
-    yaml_output: bool,
-    yaml_file: String,
-    count_extensions: bool,
-}
-
-/// Checks if a path exists and is a file.
-/// Returns `true` only if the path points to an existing file.
-/// Returns `false` for directories, symlinks, or if the path doesn't exist.
-fn file_exists(path: &str) -> bool {
-    fs::metadata(path).map(|metadata| metadata.is_file()).unwrap_or(false)
-}
-
-/// Checks if a path exists and is a directory.
-/// Returns `true` only if the path points to an existing directory.
-/// Returns `false` for files, symlinks, or if the path doesn't exist.
-fn dir_exists(path: &str) -> bool {
-    fs::metadata(path).map(|metadata| metadata.is_dir()).unwrap_or(false)
-}
-
-impl Options {
-    fn header() {
-        println!(
-            "{APP_NAME} {APP_VERSION}\n\
-             {APP_DESCRIPTION}"
-        );
-    }
-
-    fn usage() {
-        Options::header();
-        println!();
-        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄] [⦃-f⦄] [⦃-y⦄] [⦃-F⦄ ⟨yamlfile⟩] [⦃-e⦄] ⟨source⟩...
-⦃?⦄|⦃-?⦄|⦃-h⦄     ¬Show this message
-⦃-f⦄          ¬Automatic problems fixing
-⦃-y⦄          ¬Yaml output
-⦃-F⦄ ⟨yamlfile⟩ ¬Rename files using old/new fields of provided yaml file
-⦃-e⦄          ¬Count extensions
-⟨source⟩      ¬File or directory to analyze (note: glob pattern is not supported)";
-
-        MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
-    }
-
-    /// Build a new struct Options analyzing command line parameters.<br/>
-    /// Some invalid/inconsistent options or missing arguments return an error.
-    fn new() -> Result<Options, Box<dyn Error>> {
-        let mut args: Vec<String> = std::env::args().collect();
-        if args.len() > 1 && args[1].to_lowercase() == "help" {
-            Self::usage();
-            return Err("".into());
-        }
-
-        let mut options = Options { ..Default::default() };
-        let mut opts = getopt::Parser::new(&args, "h?fyF:e");
-
-        loop {
-            match opts.next().transpose()? {
-                None => break,
-                Some(opt) => match opt {
-                    Opt('h', None) | Opt('?', None) => {
-                        Self::usage();
-                        return Err("".into());
-                    }
-
-                    Opt('f', None) => {
-                        options.fixit = true;
-                    }
-
-                    Opt('e', None) => {
-                        options.count_extensions = true;
-                    }
-
-                    Opt('y', None) => {
-                        options.yaml_output = true;
-                    }
-
-                    Opt('F', yamlfile) => {
-                        if yamlfile.is_none() {
-                            return Err("Option -f requires about yaml file as an argument".into());
-                        }
-                        options.yaml_file = yamlfile.unwrap();
-                        if !file_exists(&options.yaml_file) {
-                            return Err(format!("Can't find yaml file {}", options.yaml_file).into());
-                        }
-                    }
-
-                    _ => unreachable!(),
-                },
-            }
-        }
-
-        // Check for extra argument
-        for arg in args.split_off(opts.index()) {
-            if arg == "?" || arg == "help" {
-                Self::usage();
-                return Err("".into());
-            }
-
-            if arg.starts_with("-") {
-                return Err(format!("Invalid/unsupported option {}", arg).into());
-            }
-
-            options.sources.push(arg);
-        }
-
-        // Validate options
-        let count_true = (options.yaml_output as u8) + (options.fixit as u8) + (!options.yaml_file.is_empty() as u8);
-        if count_true > 1 {
-            return Err("Options -y, -f and -F are exclusive".into());
-        }
-        if options.count_extensions && !options.yaml_file.is_empty() {
-            return Err("Options -F and -e are exclusive".into());
-        }
-
-        if options.yaml_file.is_empty() {
-            if options.sources.is_empty() {
-                return Err("Without option -F, at least one source is required".into());
-            }
-        } else {
-            if !options.sources.is_empty() {
-                return Err("With option -F, no source is allowed".into());
-            }
-        }
-
-        Ok(options)
-    }
-}
-
-// -----------------------------------
 // Main
 
 #[derive(Default)]
