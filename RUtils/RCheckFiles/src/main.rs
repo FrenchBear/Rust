@@ -12,8 +12,11 @@
 // 2025-09-26	PV      2.0.0 Option -y for yaml output, option -F <file> to apply chages from a yaml file
 // 2025-10-01	PV      2.1.0 Option -e to count extensions
 // 2025-10-15	PV      2.2.0 Space before ? or !
-// 2025-10-15	PV      2.2.1 Refactoring, separated options module
+// 2025-10-15	PV      2.3.0 Refactoring, separated options module, ligatures
 
+// Note: Can't use MyGlob crate since directories names can be updated during recursive enumeration, this is not a supported use case
+
+// ToDo: opening parenthesis + space(s), space(s) + closing parenthesis, possibly extended to [ ], « », ‹ › (and others used by MyMarkup), maybe < > (but no " in a file name, and ' is used as apostrophe)
 
 // Standard library imports
 use std::collections::{HashMap, HashSet};
@@ -103,6 +106,33 @@ const CONF_APO: [char; 33] = [
     '\u{FF40}', // ｀ U+FF40	FULLWIDTH GRAVE ACCENT
 ];
 
+macro_rules! hashmap {
+    ($( $key:expr => $val:expr ),* $(,)?) => {{
+        let mut map = HashMap::new();
+        $( map.insert($key, $val); )*
+        map
+    }};
+}
+
+// Ligatures are nice, but not in a file or directory name
+static LIGATURES: LazyLock<HashMap<char, &str>> = LazyLock::new(|| {
+    hashmap! {
+        'Æ' => "AE",
+        'æ' => "ae",
+        'Ĳ' => "IJ",
+        'ĳ' => "ij",
+        'Œ' => "OE",
+        'œ' => "oe",
+        'ﬀ' => "ff",
+        'ﬁ' => "fi",
+        'ﬂ' => "fl",
+        'ﬃ' => "ffi",
+        'ﬄ' => "ffl",
+        'ﬅ' => "st",
+        'ﬆ' => "st",
+    }
+});
+
 // ==============================================================================================
 // Structures for deserialization of yaml file
 
@@ -139,6 +169,7 @@ struct Statistics {
     car: i32,                          // Maybe incorrect char
     sp2: i32,                          // Double space
     spm: i32,                          // Space before ¿ or !
+    lig: i32,                          // Ligatures
     fix: i32,                          // Number of path fixed
     err: i32,                          // Number of errors
     ext_counter: HashMap<String, u32>, // Count of extensions (lowercase)
@@ -149,6 +180,7 @@ impl Statistics {}
 struct Confusables {
     space: HashSet<char>,
     apostrophe: HashSet<char>,
+    ligatures: HashMap<char, &'static str>,
 }
 
 fn main() {
@@ -165,6 +197,7 @@ fn main() {
     let confusables = Confusables {
         space: HashSet::from_iter(CONF_SPC),
         apostrophe: HashSet::from_iter(CONF_APO),
+        ligatures: LIGATURES.clone(),
     };
 
     // Prepare log writer
@@ -207,13 +240,16 @@ fn main() {
                 log(writer, &format!(", {} wrong space", stats.spc));
             }
             if stats.sp2 > 0 {
-                log(writer, &format!(", {} multiple space", stats.sp2));
+                log(writer, &format!(", {} multiple spaces", stats.sp2));
             }
             if stats.car > 0 {
-                log(writer, &format!(", {} wrong character", stats.car));
+                log(writer, &format!(", {} wrong character{}", stats.car, s(stats.car)));
             }
             if stats.spm > 0 {
-                log(writer, &format!(", {} space before ¿ or !", stats.spm));
+                log(writer, &format!(", {} space{} before ¿ or !", stats.spm, s(stats.spm)));
+            }
+            if stats.lig > 0 {
+                log(writer, &format!(", {} ligature{}", stats.lig, s(stats.lig)));
             }
             if stats.fix > 0 {
                 log(writer, &format!(", {} problem{} fixed", stats.fix, s(stats.fix)));
@@ -231,7 +267,7 @@ fn main() {
         if options.count_extensions {
             // Print extensions counter by decreasing order of count
             let mut extensions: Vec<_> = files_stats.ext_counter.iter().collect();
-            extensions.sort_by(|a, b| b.1.cmp(a.1));    
+            extensions.sort_by(|a, b| b.1.cmp(a.1));
 
             logln(&mut writer, "Extensions:");
             for (ext, cnt) in extensions {
@@ -457,8 +493,9 @@ fn check_basename(
     }
 
     // Check for space before ¿ or !
-    static SPACE_BEFORE_MARK: LazyLock<Regex> = LazyLock::new(|| Regex::new(r" +([?!‽¡])").unwrap());
+    static SPACE_BEFORE_MARK: LazyLock<Regex> = LazyLock::new(|| Regex::new(r" +([?!‽¡,])").unwrap());
     if SPACE_BEFORE_MARK.is_match(&file) {
+        // We report only the first issue
         let mark = SPACE_BEFORE_MARK.captures(&file).unwrap().get(1).unwrap().as_str();
         if options.yaml_output {
             add_problem(&mut problems, format!("Space before {mark}").as_str());
@@ -466,14 +503,19 @@ fn check_basename(
             logln(writer, &format!("Space before {mark} in {pt} {fp}"));
         }
         stats.spm += 1;
+        // But we fix all issues
         file = SPACE_BEFORE_MARK.replace_all(&file, "$1").to_string();
-    } 
+    }
 
-    let mut vc: Vec<char> = file.chars().collect();
+    let vc: Vec<char> = file.chars().collect();
+    file = String::new();
 
-    // Check apostrophes
     let mut pbapo = false;
-    for c in &mut vc {
+    let mut pbspc = false;
+    let mut pblig = false;
+    
+    for c in &vc {
+        // Check apostrophes
         if pconfusables.apostrophe.contains(c) {
             if options.yaml_output {
                 if !pbapo {
@@ -486,15 +528,8 @@ fn check_basename(
                 pbapo = true;
                 stats.apo += 1;
             }
-            *c = '\'';
-        }
-    }
-
-    // Check spaces
-    let mut pbspc = false;
-    for c in &mut vc {
-        //if CONF_SPC.contains(c) {
-        if pconfusables.space.contains(c) {
+            file.push('\'');
+        } else if pconfusables.space.contains(c) {
             if options.yaml_output {
                 if !pbspc {
                     add_problem(&mut problems, "Invalid space");
@@ -506,12 +541,23 @@ fn check_basename(
                 pbspc = true;
                 stats.spc += 1;
             }
-            *c = ' ';
+            file.push(' ');
+        } else if pconfusables.ligatures.contains_key(c) {
+            if options.yaml_output {
+                if !pblig {
+                    add_problem(&mut problems, "Ligature found");
+                }
+            } else {
+                logln(writer, &format!("Ligature found in {pt} name {fp} -> {c} {:04X}", *c as i32));
+            }
+            if !pblig {
+                pblig = true;
+                stats.lig += 1;
+            }
+            file.push_str(pconfusables.ligatures[c]);
+        } else {
+            file.push(*c);
         }
-    }
-
-    if pbapo || pbspc {
-        file = vc.into_iter().collect();
     }
 
     // Check multiple spaces (and space before extension)
