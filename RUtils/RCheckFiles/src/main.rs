@@ -15,10 +15,9 @@
 // 2025-10-15	PV      2.3.0 Refactoring, separated options module, ligatures, no space before/after bracket
 
 // Note: Can't use MyGlob crate since directories names can be updated during recursive enumeration, this is not a
-// supported use case
+// supported use case of MyGlob, so hierarchical exploration is handled directly
 
-// ToDo: opening parenthesis + space(s), space(s) + closing parenthesis, possibly extended to [ ], « », ‹ › (and others
-// used by MyMarkup), maybe < > (but no " in a file name, and ' is used as apostrophe)
+// ToDo: Add more tests for all detection and transformation rules
 
 // Standard library imports
 use std::collections::{HashMap, HashSet};
@@ -55,7 +54,7 @@ const APP_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 const SPECIAL_CHARS: &str = "€®™©–—…×·•∶⧹⧸／⚹†‽¿🎜🎝♫♪“”‹›⚡♥";
 
 // Confusables for space
-const CONF_SPC: [char; 13] = [
+const SPACE_CONFUSABLES: [char; 13] = [
     '\u{2000}', // U+2000	EN QUAD
     '\u{2001}', // U+2001	EM QUAD
     '\u{2002}', // U+2002	EN SPACE
@@ -72,7 +71,7 @@ const CONF_SPC: [char; 13] = [
 ];
 
 // Confusables for apostrophe
-const CONF_APO: [char; 33] = [
+const APOSTROPHE_CONFUSABLES: [char; 33] = [
     '\u{00B4}', // ´ U+00B4	ACUTE ACCENT
     '\u{02B9}', // ʹ U+02B9	MODIFIER LETTER PRIME
     '\u{02BB}', // ʻ U+02BB	MODIFIER LETTER TURNED COMMA
@@ -183,12 +182,32 @@ struct Statistics {
 
 impl Statistics {}
 
-struct Confusables {
-    space: HashSet<char>,
-    apostrophe: HashSet<char>,
+struct TransformationData {
+    space_confusables: HashSet<char>,
+    apostrophe_confusables: HashSet<char>,
     ligatures: HashMap<char, &'static str>,
     no_space_after: HashMap<char, Regex>,
     no_space_before: HashMap<char, Regex>,
+}
+
+fn get_transformation_data() -> TransformationData {
+    // Transform "simple" constant and static variables defined at the beginning of the file into more elaborate
+    // structures, adapted for processing
+    let transformation_data = TransformationData {
+        space_confusables: HashSet::from_iter(SPACE_CONFUSABLES),
+        apostrophe_confusables: HashSet::from_iter(APOSTROPHE_CONFUSABLES),
+        ligatures: LIGATURES.clone(),
+        no_space_after: CHARS_NO_SPACE_AFTER
+            .chars()
+            .map(|ch| (ch, Regex::new(format!("{} +", regex::escape(ch.to_string().as_str())).as_str()).unwrap()))
+            .collect::<HashMap<char, Regex>>(),
+        no_space_before: CHARS_NO_SPACE_BEFORE
+            .chars()
+            .map(|ch| (ch, Regex::new(format!(" +{}", regex::escape(ch.to_string().as_str())).as_str()).unwrap()))
+            .collect::<HashMap<char, Regex>>(),
+    };
+
+    transformation_data
 }
 
 fn main() {
@@ -202,19 +221,7 @@ fn main() {
         process::exit(1);
     });
 
-    let confusables = Confusables {
-        space: HashSet::from_iter(CONF_SPC),
-        apostrophe: HashSet::from_iter(CONF_APO),
-        ligatures: LIGATURES.clone(),
-        no_space_after: CHARS_NO_SPACE_AFTER
-            .chars()
-            .map(|ch| (ch, Regex::new(format!("{} +", regex::escape(ch.to_string().as_str())).as_str()).unwrap()))
-            .collect::<HashMap<char, Regex>>(),
-        no_space_before: CHARS_NO_SPACE_BEFORE
-            .chars()
-            .map(|ch| (ch, Regex::new(format!(" +{}", regex::escape(ch.to_string().as_str())).as_str()).unwrap()))
-            .collect::<HashMap<char, Regex>>(),
-    };
+    let transformation_data = get_transformation_data();
 
     // Prepare log writer
     let mut writer = logging::new(APP_NAME, APP_VERSION, true);
@@ -229,9 +236,9 @@ fn main() {
             logln(&mut writer, &format!("Analyzing {}", source));
             let p = Path::new(&source);
             if p.is_file() {
-                process_file(p, &mut files_stats, &options, &mut writer, &confusables);
+                process_file(p, &mut files_stats, &options, &mut writer, &transformation_data);
             } else {
-                process_directory(p, &mut dirs_stats, &mut files_stats, &options, &mut writer, &confusables);
+                process_directory(p, &mut dirs_stats, &mut files_stats, &options, &mut writer, &transformation_data);
             }
         }
 
@@ -377,7 +384,7 @@ fn process_directory(
     files_stats: &mut Statistics,
     options: &Options,
     writer: &mut LogWriter,
-    pconfusables: &Confusables,
+    transformation_data: &TransformationData,
 ) {
     let mut pb = pa.to_path_buf();
 
@@ -398,7 +405,7 @@ fn process_directory(
 
     // First check directoru basename
     dirs_stats.total += 1;
-    if let Some(new_name) = check_basename(pa, "dir", dirs_stats, options, writer, pconfusables) {
+    if let Some(new_name) = check_basename(pa, "dir", dirs_stats, options, writer, transformation_data) {
         if options.fixit {
             logln(writer, &format!("  --> rename directory \"{new_name}\""));
             let newpath = pb.parent().unwrap().join(Path::new(&new_name));
@@ -427,14 +434,14 @@ fn process_directory(
         let pb = entry.path();
         let ft = entry.file_type().unwrap();
         if ft.is_file() {
-            process_file(&pb, files_stats, options, writer, pconfusables);
+            process_file(&pb, files_stats, options, writer, transformation_data);
         } else if ft.is_dir() {
-            process_directory(&pb, dirs_stats, files_stats, options, writer, pconfusables);
+            process_directory(&pb, dirs_stats, files_stats, options, writer, transformation_data);
         }
     }
 }
 
-fn process_file(p: &Path, files_stats: &mut Statistics, options: &Options, writer: &mut LogWriter, pconfusables: &Confusables) {
+fn process_file(p: &Path, files_stats: &mut Statistics, options: &Options, writer: &mut LogWriter, transformation_data: &TransformationData) {
     files_stats.total += 1;
 
     // Count extension
@@ -447,7 +454,7 @@ fn process_file(p: &Path, files_stats: &mut Statistics, options: &Options, write
         *e += 1;
     }
 
-    if let Some(new_name) = check_basename(p, "file", files_stats, options, writer, pconfusables) {
+    if let Some(new_name) = check_basename(p, "file", files_stats, options, writer, transformation_data) {
         if options.fixit {
             logln(writer, &format!("  --> rename file \"{new_name}\""));
             let newpath = p.parent().unwrap().join(Path::new(&new_name));
@@ -465,7 +472,7 @@ fn check_basename(
     stats: &mut Statistics,
     options: &Options,
     writer: &mut LogWriter,
-    pconfusables: &Confusables,
+    transformation_data: &TransformationData,
 ) -> Option<String> {
     let fp = p.display();
     let file = p.file_name();
@@ -528,7 +535,7 @@ fn check_basename(
 
     // Check for space after opening bracket
     let mut pbnsa = false;
-    for nsa in &pconfusables.no_space_after {
+    for nsa in &transformation_data.no_space_after {
         if nsa.1.is_match(&file) {
             if !pbnsa {
                 if options.yaml_output {
@@ -545,7 +552,7 @@ fn check_basename(
 
     // Check for space before closing bracket
     let mut pbnsb = false;
-    for nsb in &pconfusables.no_space_before {
+    for nsb in &transformation_data.no_space_before {
         if nsb.1.is_match(&file) {
             if !pbnsb {
                 if options.yaml_output {
@@ -569,7 +576,7 @@ fn check_basename(
 
     for c in &vc {
         // Check apostrophes
-        if pconfusables.apostrophe.contains(c) {
+        if transformation_data.apostrophe_confusables.contains(c) {
             if options.yaml_output {
                 if !pbapo {
                     add_problem(&mut problems, "Invalid apostrophe");
@@ -582,7 +589,7 @@ fn check_basename(
                 stats.apo += 1;
             }
             file.push('\'');
-        } else if pconfusables.space.contains(c) {
+        } else if transformation_data.space_confusables.contains(c) {
             if options.yaml_output {
                 if !pbspc {
                     add_problem(&mut problems, "Invalid space");
@@ -595,7 +602,7 @@ fn check_basename(
                 stats.spc += 1;
             }
             file.push(' ');
-        } else if pconfusables.ligatures.contains_key(c) {
+        } else if transformation_data.ligatures.contains_key(c) {
             if options.yaml_output {
                 if !pblig {
                     add_problem(&mut problems, "Ligature found");
@@ -607,7 +614,7 @@ fn check_basename(
                 pblig = true;
                 stats.lig += 1;
             }
-            file.push_str(pconfusables.ligatures[c]);
+            file.push_str(transformation_data.ligatures[c]);
         } else {
             file.push(*c);
         }
