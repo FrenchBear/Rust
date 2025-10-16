@@ -12,11 +12,13 @@
 // 2025-09-26	PV      2.0.0 Option -y for yaml output, option -F <file> to apply chages from a yaml file
 // 2025-10-01	PV      2.1.0 Option -e to count extensions
 // 2025-10-15	PV      2.2.0 Space before ? or !
-// 2025-10-15	PV      2.3.0 Refactoring, separated options module, ligatures
+// 2025-10-15	PV      2.3.0 Refactoring, separated options module, ligatures, no space before/after bracket
 
-// Note: Can't use MyGlob crate since directories names can be updated during recursive enumeration, this is not a supported use case
+// Note: Can't use MyGlob crate since directories names can be updated during recursive enumeration, this is not a
+// supported use case
 
-// ToDo: opening parenthesis + space(s), space(s) + closing parenthesis, possibly extended to [ ], « », ‹ › (and others used by MyMarkup), maybe < > (but no " in a file name, and ' is used as apostrophe)
+// ToDo: opening parenthesis + space(s), space(s) + closing parenthesis, possibly extended to [ ], « », ‹ › (and others
+// used by MyMarkup), maybe < > (but no " in a file name, and ' is used as apostrophe)
 
 // Standard library imports
 use std::collections::{HashMap, HashSet};
@@ -50,7 +52,7 @@ const APP_NAME: &str = env!("CARGO_PKG_NAME");
 const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 const APP_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 
-const SPECIAL_CHARS: &str = "€®™©–—…×·•∶⧹⧸／⚹†‽¿🎜🎝♫♪“”⚡♥";
+const SPECIAL_CHARS: &str = "€®™©–—…×·•∶⧹⧸／⚹†‽¿🎜🎝♫♪“”‹›⚡♥";
 
 // Confusables for space
 const CONF_SPC: [char; 13] = [
@@ -133,6 +135,9 @@ static LIGATURES: LazyLock<HashMap<char, &str>> = LazyLock::new(|| {
     }
 });
 
+const CHARS_NO_SPACE_AFTER: &str = "([{«‹";
+const CHARS_NO_SPACE_BEFORE: &str = ")]}»›";
+
 // ==============================================================================================
 // Structures for deserialization of yaml file
 
@@ -170,6 +175,7 @@ struct Statistics {
     sp2: i32,                          // Double space
     spm: i32,                          // Space before ¿ or !
     lig: i32,                          // Ligatures
+    sba: i32,                          // Space after opening bracket or before closing bracket
     fix: i32,                          // Number of path fixed
     err: i32,                          // Number of errors
     ext_counter: HashMap<String, u32>, // Count of extensions (lowercase)
@@ -181,6 +187,8 @@ struct Confusables {
     space: HashSet<char>,
     apostrophe: HashSet<char>,
     ligatures: HashMap<char, &'static str>,
+    no_space_after: HashMap<char, Regex>,
+    no_space_before: HashMap<char, Regex>,
 }
 
 fn main() {
@@ -198,6 +206,14 @@ fn main() {
         space: HashSet::from_iter(CONF_SPC),
         apostrophe: HashSet::from_iter(CONF_APO),
         ligatures: LIGATURES.clone(),
+        no_space_after: CHARS_NO_SPACE_AFTER
+            .chars()
+            .map(|ch| (ch, Regex::new(format!("{} +", regex::escape(ch.to_string().as_str())).as_str()).unwrap()))
+            .collect::<HashMap<char, Regex>>(),
+        no_space_before: CHARS_NO_SPACE_BEFORE
+            .chars()
+            .map(|ch| (ch, Regex::new(format!(" +{}", regex::escape(ch.to_string().as_str())).as_str()).unwrap()))
+            .collect::<HashMap<char, Regex>>(),
     };
 
     // Prepare log writer
@@ -250,6 +266,9 @@ fn main() {
             }
             if stats.lig > 0 {
                 log(writer, &format!(", {} ligature{}", stats.lig, s(stats.lig)));
+            }
+            if stats.sba > 0 {
+                log(writer, &format!(", {} space{} before/after bracket", stats.sba, s(stats.sba)));
             }
             if stats.fix > 0 {
                 log(writer, &format!(", {} problem{} fixed", stats.fix, s(stats.fix)));
@@ -507,13 +526,47 @@ fn check_basename(
         file = SPACE_BEFORE_MARK.replace_all(&file, "$1").to_string();
     }
 
+    // Check for space after opening bracket
+    let mut pbnsa = false;
+    for nsa in &pconfusables.no_space_after {
+        if nsa.1.is_match(&file) {
+            if !pbnsa {
+                if options.yaml_output {
+                    add_problem(&mut problems, "Space after opening bracket");
+                } else {
+                    logln(writer, &format!("Space after {} in {pt} name {fp}", nsa.0));
+                }
+                pbnsa = true;
+            }
+            stats.sba += 1;
+            file = nsa.1.replace_all(&file, nsa.0.to_string()).to_string();
+        }
+    }
+
+    // Check for space before closing bracket
+    let mut pbnsb = false;
+    for nsb in &pconfusables.no_space_before {
+        if nsb.1.is_match(&file) {
+            if !pbnsb {
+                if options.yaml_output {
+                    add_problem(&mut problems, "Space before closing bracket");
+                } else {
+                    logln(writer, &format!("Space before {} in {pt} name {fp}", nsb.0));
+                }
+                pbnsb = true;
+            }
+            stats.sba += 1;
+            file = nsb.1.replace_all(&file, nsb.0.to_string()).to_string();
+        }
+    }
+
     let vc: Vec<char> = file.chars().collect();
     file = String::new();
 
     let mut pbapo = false;
     let mut pbspc = false;
     let mut pblig = false;
-    
+
     for c in &vc {
         // Check apostrophes
         if pconfusables.apostrophe.contains(c) {
