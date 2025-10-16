@@ -13,11 +13,10 @@
 // 2025-10-01	PV      2.1.0 Option -e to count extensions
 // 2025-10-15	PV      2.2.0 Space before ? or !
 // 2025-10-15	PV      2.3.0 Refactoring, separated options module, ligatures, no space before/after bracket
+// 2025-10-16	PV      2.4.0 Complete set of tests for check_basename
 
 // Note: Can't use MyGlob crate since directories names can be updated during recursive enumeration, this is not a
 // supported use case of MyGlob, so hierarchical exploration is handled directly
-
-// ToDo: Add more tests for all detection and transformation rules
 
 // Standard library imports
 use std::collections::{HashMap, HashSet};
@@ -51,12 +50,19 @@ const APP_NAME: &str = env!("CARGO_PKG_NAME");
 const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 const APP_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 
+// ---------
+
+// Non-ANSI characters not reported as invalid chars
 const SPECIAL_CHARS: &str = "€®™©–—…×·•∶⧹⧸／⚹†‽¿🎜🎝♫♪“”‹›⚡♥";
 
+const CHARS_NO_SPACE_AFTER: &str = "([{«‹";
+const CHARS_NO_SPACE_BEFORE: &str = ")]}»›¿!‽¡.,…";
+
 // Confusables for space
-const SPACE_CONFUSABLES: [char; 13] = [
-    '\u{2000}', // U+2000	EN QUAD
-    '\u{2001}', // U+2001	EM QUAD
+const SPACE_CONFUSABLES: [char; 14] = [
+    '\u{00A0}', // U+00A0	NO-BREAK SPACE
+    '\u{2000}', // U+2000	EN QUAD                         Not normalized
+    '\u{2001}', // U+2001	EM QUAD                         Not normalized
     '\u{2002}', // U+2002	EN SPACE
     '\u{2003}', // U+2003	EM SPACE
     '\u{2004}', // U+2004	THREE-PER-EM SPACE
@@ -134,9 +140,6 @@ static LIGATURES: LazyLock<HashMap<char, &str>> = LazyLock::new(|| {
     }
 });
 
-const CHARS_NO_SPACE_AFTER: &str = "([{«‹";
-const CHARS_NO_SPACE_BEFORE: &str = ")]}»›";
-
 // ==============================================================================================
 // Structures for deserialization of yaml file
 
@@ -165,14 +168,14 @@ struct RenameItem {
 
 #[derive(Default)]
 struct Statistics {
-    total: i32,                        // Total files/dirs processed
-    nnn: i32,                          // Non-normalized names
-    bra: i32,                          // Bracket issue
-    apo: i32,                          // Incorrect apostrophe
-    spc: i32,                          // Incorrect space
-    car: i32,                          // Maybe incorrect char
-    sp2: i32,                          // Double space
-    spm: i32,                          // Space before ¿ or !
+    total: i32, // Total files/dirs processed
+    nnn: i32,   // Non-normalized names
+    bra: i32,   // Bracket issue
+    apo: i32,   // Incorrect apostrophe
+    spc: i32,   // Incorrect space
+    car: i32,   // Maybe incorrect char
+    sp2: i32,   // Double space
+    //spm: i32,                          // Space before ¿ or !
     lig: i32,                          // Ligatures
     sba: i32,                          // Space after opening bracket or before closing bracket
     fix: i32,                          // Number of path fixed
@@ -268,9 +271,9 @@ fn main() {
             if stats.car > 0 {
                 log(writer, &format!(", {} wrong character{}", stats.car, s(stats.car)));
             }
-            if stats.spm > 0 {
-                log(writer, &format!(", {} space{} before ¿ or !", stats.spm, s(stats.spm)));
-            }
+            // if stats.spm > 0 {
+            //     log(writer, &format!(", {} space{} before ¿ or !", stats.spm, s(stats.spm)));
+            // }
             if stats.lig > 0 {
                 log(writer, &format!(", {} ligature{}", stats.lig, s(stats.lig)));
             }
@@ -405,7 +408,7 @@ fn process_directory(
 
     // First check directoru basename
     dirs_stats.total += 1;
-    if let Some(new_name) = check_basename(pa, "dir", dirs_stats, options, writer, transformation_data) {
+    if let Some(new_name) = check_basename(pa, "dir", dirs_stats, options, writer, transformation_data, false) {
         if options.fixit {
             logln(writer, &format!("  --> rename directory \"{new_name}\""));
             let newpath = pb.parent().unwrap().join(Path::new(&new_name));
@@ -454,7 +457,7 @@ fn process_file(p: &Path, files_stats: &mut Statistics, options: &Options, write
         *e += 1;
     }
 
-    if let Some(new_name) = check_basename(p, "file", files_stats, options, writer, transformation_data) {
+    if let Some(new_name) = check_basename(p, "file", files_stats, options, writer, transformation_data, false) {
         if options.fixit {
             logln(writer, &format!("  --> rename file \"{new_name}\""));
             let newpath = p.parent().unwrap().join(Path::new(&new_name));
@@ -473,6 +476,7 @@ fn check_basename(
     options: &Options,
     writer: &mut LogWriter,
     transformation_data: &TransformationData,
+    test_mode: bool,
 ) -> Option<String> {
     let fp = p.display();
     let file = p.file_name();
@@ -481,7 +485,9 @@ fn check_basename(
     let file = file.unwrap().to_str();
     if file.is_none() {
         stats.err += 1;
-        logln(writer, &format!("*** Invalid {pt} name {fp}, ignored"));
+        if !test_mode {
+            logln(writer, &format!("*** Invalid {pt} name {fp}, ignored"));
+        }
         return None;
     }
 
@@ -498,50 +504,56 @@ fn check_basename(
 
     // Check for balanced brackets, but don't attempt a correction
     if !is_balanced(&file) {
-        if options.yaml_output {
-            add_problem(&mut problems, "Non-balanced brackets");
-        } else {
-            logln(writer, &format!("Non-balanced brackets {pt} name {fp}"));
+        if !test_mode {
+            if options.yaml_output {
+                add_problem(&mut problems, "Non-balanced brackets");
+            } else {
+                logln(writer, &format!("Non-balanced brackets {pt} name {fp}"));
+            }
         }
         stats.bra += 1;
     }
 
     // Check normalization
     if !is_nfc(&file) {
-        if options.yaml_output {
-            add_problem(&mut problems, "Non-normalized");
-        } else {
-            logln(writer, &format!("Non-normalized {pt} name {fp}"));
+        if !test_mode {
+            if options.yaml_output {
+                add_problem(&mut problems, "Non-normalized");
+            } else {
+                logln(writer, &format!("Non-normalized {pt} name {fp}"));
+            }
         }
         stats.nnn += 1;
         // Normalize it for the rest to avoid complaining on combining accents as invalid characters
         file = file.nfc().collect();
     }
 
-    // Check for space before ¿ or !
-    static SPACE_BEFORE_MARK: LazyLock<Regex> = LazyLock::new(|| Regex::new(r" +([?!‽¡,])").unwrap());
-    if SPACE_BEFORE_MARK.is_match(&file) {
-        // We report only the first issue
-        let mark = SPACE_BEFORE_MARK.captures(&file).unwrap().get(1).unwrap().as_str();
-        if options.yaml_output {
-            add_problem(&mut problems, format!("Space before {mark}").as_str());
-        } else {
-            logln(writer, &format!("Space before {mark} in {pt} {fp}"));
-        }
-        stats.spm += 1;
-        // But we fix all issues
-        file = SPACE_BEFORE_MARK.replace_all(&file, "$1").to_string();
-    }
+    // // Check for space before ¿ or !
+    // static SPACE_BEFORE_MARK: LazyLock<Regex> = LazyLock::new(|| Regex::new(r" +([?!‽¡,…])").unwrap());
+    // if SPACE_BEFORE_MARK.is_match(&file) {
+    //     // We report only the first issue
+    //     let mark = SPACE_BEFORE_MARK.captures(&file).unwrap().get(1).unwrap().as_str();
+    //     if options.yaml_output {
+    //         add_problem(&mut problems, format!("Space before {mark}").as_str());
+    //     } else {
+    //         logln(writer, &format!("Space before {mark} in {pt} {fp}"));
+    //     }
+    //     stats.spm += 1;
+    //     // But we fix all issues
+    //     file = SPACE_BEFORE_MARK.replace_all(&file, "$1").to_string();
+    // }
 
     // Check for space after opening bracket
     let mut pbnsa = false;
     for nsa in &transformation_data.no_space_after {
         if nsa.1.is_match(&file) {
             if !pbnsa {
-                if options.yaml_output {
-                    add_problem(&mut problems, "Space after opening bracket");
-                } else {
-                    logln(writer, &format!("Space after {} in {pt} name {fp}", nsa.0));
+                if !test_mode {
+                    if options.yaml_output {
+                        add_problem(&mut problems, "Space after opening bracket");
+                    } else {
+                        logln(writer, &format!("Space after {} in {pt} name {fp}", nsa.0));
+                    }
                 }
                 pbnsa = true;
             }
@@ -550,15 +562,17 @@ fn check_basename(
         }
     }
 
-    // Check for space before closing bracket
+    // Check for space before characters such as closing bracket, !, …
     let mut pbnsb = false;
     for nsb in &transformation_data.no_space_before {
         if nsb.1.is_match(&file) {
             if !pbnsb {
-                if options.yaml_output {
-                    add_problem(&mut problems, "Space before closing bracket");
-                } else {
-                    logln(writer, &format!("Space before {} in {pt} name {fp}", nsb.0));
+                if !test_mode {
+                    if options.yaml_output {
+                        add_problem(&mut problems, "Invalid space before character");
+                    } else {
+                        logln(writer, &format!("Space before {} in {pt} name {fp}", nsb.0));
+                    }
                 }
                 pbnsb = true;
             }
@@ -577,12 +591,14 @@ fn check_basename(
     for c in &vc {
         // Check apostrophes
         if transformation_data.apostrophe_confusables.contains(c) {
-            if options.yaml_output {
-                if !pbapo {
-                    add_problem(&mut problems, "Invalid apostrophe");
+            if !test_mode {
+                if options.yaml_output {
+                    if !pbapo {
+                        add_problem(&mut problems, "Invalid apostrophe");
+                    }
+                } else {
+                    logln(writer, &format!("Invalid apostrophe in {pt} name {fp} -> {c} {:04X}", *c as i32));
                 }
-            } else {
-                logln(writer, &format!("Invalid apostrophe in {pt} name {fp} -> {c} {:04X}", *c as i32));
             }
             if !pbapo {
                 pbapo = true;
@@ -590,12 +606,14 @@ fn check_basename(
             }
             file.push('\'');
         } else if transformation_data.space_confusables.contains(c) {
-            if options.yaml_output {
-                if !pbspc {
-                    add_problem(&mut problems, "Invalid space");
+            if !test_mode {
+                if options.yaml_output {
+                    if !pbspc {
+                        add_problem(&mut problems, "Invalid space");
+                    }
+                } else {
+                    logln(writer, &format!("Invalid space in {pt} name {fp} -> {:04X}", *c as i32));
                 }
-            } else {
-                logln(writer, &format!("Invalid space in {pt} name {fp} -> {:04X}", *c as i32));
             }
             if !pbspc {
                 pbspc = true;
@@ -603,12 +621,14 @@ fn check_basename(
             }
             file.push(' ');
         } else if transformation_data.ligatures.contains_key(c) {
-            if options.yaml_output {
-                if !pblig {
-                    add_problem(&mut problems, "Ligature found");
+            if !test_mode {
+                if options.yaml_output {
+                    if !pblig {
+                        add_problem(&mut problems, "Ligature found");
+                    }
+                } else {
+                    logln(writer, &format!("Ligature found in {pt} name {fp} -> {c} {:04X}", *c as i32));
                 }
-            } else {
-                logln(writer, &format!("Ligature found in {pt} name {fp} -> {c} {:04X}", *c as i32));
             }
             if !pblig {
                 pblig = true;
@@ -628,10 +648,12 @@ fn check_basename(
         if c == ' ' {
             if lastc == ' ' {
                 if !pbsp2 {
-                    if options.yaml_output {
-                        add_problem(&mut problems, "Multiple spaces");
-                    } else {
-                        logln(writer, &format!("Multiple spaces in {pt} name {fp}"));
+                    if !test_mode {
+                        if options.yaml_output {
+                            add_problem(&mut problems, "Multiple spaces");
+                        } else {
+                            logln(writer, &format!("Multiple spaces in {pt} name {fp}"));
+                        }
                     }
                     pbsp2 = true;
                     stats.sp2 += 1;
@@ -662,10 +684,12 @@ fn check_basename(
                 pbchr = true;
                 stats.car += 1;
             }
-            if options.yaml_output {
-                add_problem(&mut problems, &format!("Invalid char {:04X}", c as i32));
-            } else {
-                logln(writer, &format!("Invalid char in {pt} name {fp} -> {c} {:04X}", c as i32));
+            if !test_mode {
+                if options.yaml_output {
+                    add_problem(&mut problems, &format!("Invalid char {:04X}", c as i32));
+                } else {
+                    logln(writer, &format!("Invalid char in {pt} name {fp} -> {c} {:04X}", c as i32));
+                }
             }
             // Special case, fix U+200E by removing it (LEFT-TO-RIGHT MARK)
             if c == '\u{200E}' {
@@ -677,7 +701,7 @@ fn check_basename(
         file = file.replace("\u{200E}", "");
     }
 
-    if options.yaml_output && !problems.is_empty() {
+    if !test_mode && options.yaml_output && !problems.is_empty() {
         logln(writer, &format!("- typ: {pt}"));
         logln(writer, &format!("  prb: {problems}"));
         logln(writer, &format!("  old: {fp}"));
