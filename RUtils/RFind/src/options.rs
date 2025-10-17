@@ -9,6 +9,7 @@
 // 2025-09-06 	PV 		Option -maxdepth n
 // 2025-09-15 	PV 		Option -dbg for debugging and -log to write log file
 // 2025-10-13 	PV 		Option -exec, -xargs and struct CommandToRun
+// 2025-10-17   PV      Option -yaml
 
 // Application imports
 use crate::*;
@@ -81,7 +82,8 @@ impl Options {
 ⦃-delete⦄          ¬Delete matching files
 ⦃-rmdir⦄           ¬Delete matching directories, whether empty or not
 ⦃-exec⦄ ⟨cmd⟩ [⦃;⦄]    ¬Execute command ⟨cmd⟩ for each path found, {} replaced by the path. A single semicolon marks the end of the command
-⦃-xargs⦄ ⟨cmd⟩ [⦃;⦄]   ¬Execute command ⟨cmd⟩ at the end, {} replaced by all the paths found. A single semicolon marks the end of the command";
+⦃-xargs⦄ ⟨cmd⟩ [⦃;⦄]   ¬Execute command ⟨cmd⟩ at the end, {} replaced by all the paths found. A single semicolon marks the end of the command
+⦃-yaml⦄            ¬Generate old/new yaml data for matching files names and dir names, to be edited and used by rcheckfiles -F";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }
@@ -207,6 +209,9 @@ impl Options {
                     }
                     "dir" => {
                         options.actions_names.insert("dir");
+                    }
+                    "yaml" => {
+                        options.actions_names.insert("yaml");
                     }
                     "nop" | "noprint" => {
                         options.actions_names.insert("nop");

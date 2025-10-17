@@ -6,6 +6,7 @@
 // 2025-05-05	PV      Linux compatibility
 // 2025-07-12	PV      Bug name inverted (recycle/permanent delete) for action delete
 // 2025-10-13   PV      ActionExec, ActionXargs
+// 2025-10-17   PV      ActionYaml
 
 use super::*;
 
@@ -302,4 +303,34 @@ impl Action for ActionXargs {
             let _status = Command::new(self.ctr.command.as_str()).args(&args).spawn();
         }
     }
+}
+
+// ===============================================================
+// Yaml action
+
+#[derive(Debug)]
+pub struct ActionYaml {}
+
+impl ActionYaml {
+    pub fn new() -> Self {
+        ActionYaml {}
+    }
+}
+
+impl Action for ActionYaml {
+    fn name(&self) -> String {
+        "Yaml".into()
+    }
+
+    fn action(&mut self, lw: &mut LogWriter, path: &Path, _noaction: bool, _verbose: bool) {
+        if path.is_file() {
+            logln(lw, &format!("- typ: file"));
+        } else {
+            logln(lw, &format!("- typ: dir"));
+        }
+        logln(lw, &format!("  old: {}", path.display()));
+        logln(lw, &format!("  new: {}\n", path.display()));
+    }
+
+    fn conclusion(&mut self, _lw: &mut LogWriter, _noaction: bool, _verbose: bool) {}
 }

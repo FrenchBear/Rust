@@ -15,6 +15,7 @@
 // 2025-10-15	PV      2.3.0 Refactoring, separated options module, ligatures, no space before/after bracket
 // 2025-10-16	PV      2.4.0 Complete set of tests for check_basename
 // 2025-10-17	PV      2.4.1 Remove U+FEFF ZERO WIDTH NO-BREAK SPACE
+// 2025-10-17	PV      2.4.2 Field prb: is optional when deserializing yaml file (we don't use it, and it's not renerated by rfind -yaml)
 
 // Note: Can't use MyGlob crate since directories names can be updated during recursive enumeration, this is not a
 // supported use case of MyGlob, so hierarchical exploration is handled directly
@@ -158,8 +159,8 @@ enum ItemType {
 #[derive(Debug, Deserialize)]
 #[allow(dead_code)]
 struct RenameItem {
-    typ: ItemType,
-    prb: String, // The 'prb' field is parsed but we won't use it
+    typ: ItemType,  // dir|file
+    prb: Option<String>, // The 'prb' field is optional
     old: String,
     new: String,
 }

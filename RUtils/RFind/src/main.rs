@@ -19,13 +19,17 @@
 // 2025-09-06 	PV 		1.9.0 Option -maxdepth n
 // 2025-09-08 	PV 		1.9.1 Use MyGlobSearch 1.9.0 with breadth-first search for a more natural order
 // 2025-09-15 	PV 		1.10.0 Do not write log file by default, use option -log for that. Option -dbg for debugging; logwriter_none
-// 2025-10-13 	PV 		2.0.0 option -exec cmd ;
-// 2025-10-13 	PV 		2.0.1 option -xargs cmd ;
+// 2025-10-13 	PV 		2.0.0 Option -exec cmd ;
+// 2025-10-13 	PV 		2.0.1 Option -xargs cmd ;
+// 2025-10-17   PV      2.1.0 Option -yaml
+
+// Notes:
+// - Finding denormalized paths is handled by rcheckfiles
 
 // ToDo:
-// - Not normalized paths -findnnn (-fixnnn ot pipe into another app?)
 // - Case sensitive search option (-cs C:\PicturesODMist\**\*.JPG)
 // - Accent insensitive search (actually maybe not useful, but everything does it)
+// - Option -rename with a simplified sed 
 
 //#![allow(unused)]
 
@@ -164,6 +168,7 @@ fn main() {
                     actions.push(Box::new(actions::ActionPrint::new(false)))
                 }
             }
+            "yaml" => actions.push(Box::new(actions::ActionYaml::new())),
             "dir" => actions.push(Box::new(actions::ActionPrint::new(true))),
             "delete" => actions.push(Box::new(actions::ActionDelete::new(options.recycle))),
             "rmdir" => actions.push(Box::new(actions::ActionRmdir::new(options.recycle))),
