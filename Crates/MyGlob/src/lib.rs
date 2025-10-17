@@ -25,8 +25,9 @@
 // 2025-09-08   PV      1.9.0 Use queue instead of stack to have a breadth-first search instead of depth-first, and return results in a more natural order
 // 2025-09-13   PV      1.9.1 Check for unclosed brackets in glob expressions such as "C:\[a-z"
 // 2025-10-01   PV      1.10  Macro !SOURCES to represent common (for me) source files extensions. d is not in the list (also rust temp build files extension)
+// 2025-10-17   PV      1.11  Case sensitive option
 
-#![allow(unused_variables, dead_code, unused_imports)]
+//#![allow(unused_variables, dead_code, unused_imports)]
 
 // Standard library imports
 use regex::Regex;
@@ -71,6 +72,7 @@ pub struct MyGlobBuilder {
     glob_pattern: String,
     ignore_dirs: Vec<String>, // just plain lowercase dir name, no path, no *
     maxdepth: usize,          // Counted from ** segment, 0 means no limit
+    case_sensitive: bool,     // Filters are case-sensitive? false by default
     autorecurse: bool,        // Apply optional autorecurse transformation
 }
 
@@ -123,6 +125,9 @@ impl MyGlobSearch {
 ⌊Autorecurse glob pattern transformation⌋:
 - ¬⟪Constant pattern⟫ (no filter, no ⟦**⟧) pointing to a directory: ⟦/**/*⟧ is appended at the end to search all files of all subdirectories.
 - ¬⟪Patterns without ⟦**⟧ and ending with a filter⟫: ⟦/**⟧ is inserted before the final filter to find all matching files of all subdirectories.
+
+⌊Case sensitive option⌋:
+Case-sensitive option only apply to filters such as ⟦*.JPG⟧ or ⟦*Eric*⟧, ⟦**⟧ ignore folders case, and constant parts such as ⟦C:\\Development⟧ depend on the OS and the filesystem: typically case-insensitive on Windows, and case-sensitive on Linux, MacOS or case-sensitive volumes on Windows (Cryptomator, WSL volummes, ...).
 "
     }
 
@@ -195,6 +200,12 @@ impl MyGlobBuilder {
         self
     }
 
+    /// Set case_sensitive option (for filters only), false by default
+    pub fn case_sensitive(mut self, case_sensitive: bool) -> Self {
+        self.case_sensitive = case_sensitive;
+        self
+    }
+
     /// Set autorecurse flag. There is no mechanism to clear it, since it's clear by default.
     pub fn autorecurse(mut self, active: bool) -> Self {
         self.autorecurse = active;
@@ -250,7 +261,7 @@ impl MyGlobBuilder {
         let (root, rem) = MyGlobBuilder::get_root(&self.glob_pattern);
 
         // Then build segments
-        let mut segments = if rem.is_empty() { Vec::new() } else { Self::glob_to_segments(&rem)? };
+        let mut segments = if rem.is_empty() { Vec::new() } else { Self::glob_to_segments(&rem, self.case_sensitive)? };
 
         // Process autorecurse transformation if required
         if self.autorecurse {
@@ -259,7 +270,7 @@ impl MyGlobBuilder {
                 let rootp = PathBuf::from(&root);
                 if rootp.is_dir() {
                     segments.push(Segment::Recurse);
-                    segments.push(Segment::Filter(Regex::new("(?i)^.*$").unwrap()));
+                    segments.push(Segment::Filter(Regex::new("^.*$").unwrap()));
                 }
             } else {
                 // Case of non-recursive pattern ending with a filter; insert ** before last segment
@@ -278,7 +289,7 @@ impl MyGlobBuilder {
     }
 
     // Conversion of a glob string into a Vec<Segment>, or an error if glob syntax is invalid
-    pub fn glob_to_segments(glob_pattern_arg: &str) -> Result<Vec<Segment>, MyGlobError> {
+    pub fn glob_to_segments(glob_pattern_arg: &str, case_sensitive: bool) -> Result<Vec<Segment>, MyGlobError> {
         // glob_pattern ends with \ so no duplicate code to process last segment
         let dir_sep = if cfg!(target_os = "windows") { '\\' } else { '/' };
         let mut glob_pattern = glob_pattern_arg.to_string();
@@ -330,17 +341,8 @@ impl MyGlobBuilder {
                         if brace_depth > 0 {
                             return Err(MyGlobError::GlobError("Unclosed {".to_string()));
                         }
-
-                        let repat = format!("(?i)^{}$", regex_buffer);
-                        // let resre = Regex::new(&repat);
-                        // match resre {
-                        //     Ok(re) => segments.push(Segment::Filter(re)),
-                        //     Err(e) => {
-                        //         return Err(MyGlobError::RegexError(e));
-                        //     }
-                        // }
-
-                        // Shorter thanks to impl From<regex::Error> for MyGlobError
+                        let opt = if case_sensitive { "" } else { "(?i)" };
+                        let repat = format!("{opt}^{regex_buffer}$");
                         segments.push(Segment::Filter(Regex::new(&repat)?));
                     } else {
                         segments.push(Segment::Constant(constant_buffer.clone()));
@@ -394,9 +396,9 @@ impl MyGlobBuilder {
             return Err(MyGlobError::GlobError("Invalid glob pattern".to_string()));
         }
 
-        // If last segment is a **, append a Filter * to find everything
+        // If last segment is a **, append a Filter * to find everything (doesn't have to be case insensitive)
         if let Segment::Recurse = &segments[segments.len() - 1] {
-            segments.push(Segment::Filter(Regex::new("(?i)^.*$").unwrap()));
+            segments.push(Segment::Filter(Regex::new("^.*$").unwrap()));
         }
 
         Ok(segments)

@@ -1,7 +1,8 @@
 // my_glob
 // Attempt to implement an efficient glob in Rust - Main program, for testing/debugging during dev
 //
-// 2025-03-25   PV  First version
+// 2025-03-25   PV      First version
+// 2025-10-17   PV      Case sensitive
 
 #![allow(unused)]
 
@@ -20,22 +21,24 @@ fn main() {
     //test_myglob(r"S:\**\*Intel*", true, &["d2"], 0, 1);
     //test_myglob(r"C:\Temp\search1\info", false, &[], 0, 1);
     //test_myglob(r"S:\MaxDepth", true, &[], 1, 1);
-    test_myglob(r"C:\Development\GitVSTS\DevForFun\**\*.{!SOURCES}", true, &[], 2, 1);
+    //test_myglob(r"C:\Development\GitVSTS\DevForFun\**\*.{!SOURCES}", true, &[], 2, 1);
+    test_myglob(r"C:\MusicOD\Humour\**\*Eric*", true, &[], 0, true, 1);
 }
 
 // Entry point for testing
-pub fn test_myglob(pattern: &str, autorecurse: bool, ignore_dirs: &[&str], maxdepth: usize, loops: usize) {
+pub fn test_myglob(pattern: &str, autorecurse: bool, ignore_dirs: &[&str], maxdepth: usize, case_senstitive: bool, loops: usize) {
     let mut durations: Vec<f64> = Vec::new();
     for pass in 0..loops {
         println!("\nTest #{pass}");
 
         let start = Instant::now();
-        let mut builder = MyGlobSearch::new(pattern).autorecurse(autorecurse).maxdepth(maxdepth);
+        let mut builder = MyGlobSearch::new(pattern).autorecurse(autorecurse).maxdepth(maxdepth).case_sensitive(case_senstitive);
         for ignore_dir in ignore_dirs {
             builder = builder.add_ignore_dir(ignore_dir);
         }
-        let resgs = builder.compile();
+        println!("builder: {:?}", builder);
 
+        let resgs = builder.compile();
         match resgs {
             Ok(gs) => {
                 println!("gs: {:?}", gs);
@@ -84,4 +87,3 @@ fn median(v: &[f64]) -> f64 {
     v2.sort_by(|a, b| a.partial_cmp(b).unwrap());
     if l % 2 == 0 { (v2[l >> 1] + v2[(l >> 1) - 1]) / 2.0 } else { v2[l >> 1] }
 }
-

@@ -21,13 +21,12 @@
 // 2025-09-15 	PV 		1.10.0 Do not write log file by default, use option -log for that. Option -dbg for debugging; logwriter_none
 // 2025-10-13 	PV 		2.0.0 Option -exec cmd ;
 // 2025-10-13 	PV 		2.0.1 Option -xargs cmd ;
-// 2025-10-17   PV      2.1.0 Option -yaml
+// 2025-10-17   PV      2.1.0 Options -yaml and -cs
 
 // Notes:
-// - Finding denormalized paths is handled by rcheckfiles
+// - Finding denormalized paths is handled by rcheckfiles and checknnn, no need for a third version :-)
 
 // ToDo:
-// - Case sensitive search option (-cs C:\PicturesODMist\**\*.JPG)
 // - Accent insensitive search (actually maybe not useful, but everything does it)
 // - Option -rename with a simplified sed 
 
@@ -125,6 +124,7 @@ fn main() {
         let resgs = MyGlobSearch::new(source)
             .autorecurse(options.autorecurse)
             .maxdepth(options.maxdepth)
+            .case_sensitive(options.case_sensitive)
             .compile();
         match resgs {
             Ok(gs) => {

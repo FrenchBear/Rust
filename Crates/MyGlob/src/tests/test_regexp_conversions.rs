@@ -4,6 +4,7 @@
 // 2025-03-29   PV
 // 2025-04-08   PV      relative_blob test
 // 2025-10-01   PV      Added tests of macro !SOURCES
+// 2025-10-17   PV      Case-sensitive tests
 
 #![cfg(test)]
 use crate::*;
@@ -16,9 +17,9 @@ enum ConvResult {
     Filter,
 }
 
-fn glob_one_segment_test(glob_pattern: &str, cr: ConvResult, test_string: &str, is_match: bool) {
+fn glob_one_segment_test(glob_pattern: &str, cr: ConvResult, test_string: &str, is_match: bool, case_sensitive: bool) {
     let dir_sep = if cfg!(target_os = "windows") { '\\' } else { '/' };
-    let res = MyGlobBuilder::glob_to_segments((format!("{glob_pattern}{dir_sep}")).as_str());
+    let res = MyGlobBuilder::glob_to_segments((format!("{glob_pattern}{dir_sep}")).as_str(), case_sensitive);
     match res {
         Err(e) => {
             assert!(
@@ -87,69 +88,69 @@ fn glob_one_segment_test(glob_pattern: &str, cr: ConvResult, test_string: &str, 
 #[test]
 fn conversions_tests() {
     // Simple constant string, case insensitive
-    glob_one_segment_test("Pomme", ConvResult::Constant, "pomme", true);
-    glob_one_segment_test("Pomme", ConvResult::Constant, "pommerol", false);
+    glob_one_segment_test("Pomme", ConvResult::Constant, "pomme", true, false);
+    glob_one_segment_test("Pomme", ConvResult::Constant, "pommerol", false, false);
 
     // * pattern, matches everything (except \)
-    glob_one_segment_test("*", ConvResult::Filter, "rsgresp.d", true);
-    glob_one_segment_test("*", ConvResult::Filter, "rsgresp.d.e.f", true);
-    glob_one_segment_test("*.d", ConvResult::Filter, "rsgresp.d", true);
-    glob_one_segment_test("*.*", ConvResult::Filter, "rsgresp", false);
+    glob_one_segment_test("*", ConvResult::Filter, "rsgresp.d", true, false);
+    glob_one_segment_test("*", ConvResult::Filter, "rsgresp.d.e.f", true, false);
+    glob_one_segment_test("*.d", ConvResult::Filter, "rsgresp.d", true, false);
+    glob_one_segment_test("*.*", ConvResult::Filter, "rsgresp", false, false);
 
     // ** pattern must be alone, and matches anything, including \
-    glob_one_segment_test("**.d", ConvResult::CRError, "", false);
-    glob_one_segment_test("**", ConvResult::Recurse, "", true);
+    glob_one_segment_test("**.d", ConvResult::CRError, "", false, false);
+    glob_one_segment_test("**", ConvResult::Recurse, "", true, false);
 
     // Alternations
-    glob_one_segment_test("a{b,c}d", ConvResult::Filter, "abd", true);
-    glob_one_segment_test("a{b,c}d", ConvResult::Filter, "ad", false);
-    glob_one_segment_test("a{{b,c},{d,e}}f", ConvResult::Filter, "acf", true);
-    glob_one_segment_test("a{{b,c},{d,e}}f", ConvResult::Filter, "adf", true);
-    glob_one_segment_test("a{{b,c},{d,e}}f", ConvResult::Filter, "acdf", false);
-    glob_one_segment_test("a{b,c}{d,e}f", ConvResult::Filter, "acdf", true);
-    glob_one_segment_test("file.{cs,py,rs,vb}", ConvResult::Filter, "file.bat", false);
-    glob_one_segment_test("file.{cs,py,rs,vb}", ConvResult::Filter, "file.rs", true);
-    glob_one_segment_test("file.{!SOURCES}", ConvResult::Filter, "file.rs", true);
-    glob_one_segment_test("file.{!SOURCES}", ConvResult::Filter, "file.d", false);
+    glob_one_segment_test("a{b,c}d", ConvResult::Filter, "abd", true, false);
+    glob_one_segment_test("a{b,c}d", ConvResult::Filter, "ad", false, false);
+    glob_one_segment_test("a{{b,c},{d,e}}f", ConvResult::Filter, "acf", true, false);
+    glob_one_segment_test("a{{b,c},{d,e}}f", ConvResult::Filter, "adf", true, false);
+    glob_one_segment_test("a{{b,c},{d,e}}f", ConvResult::Filter, "acdf", false, false);
+    glob_one_segment_test("a{b,c}{d,e}f", ConvResult::Filter, "acdf", true, false);
+    glob_one_segment_test("file.{cs,py,rs,vb}", ConvResult::Filter, "file.bat", false, false);
+    glob_one_segment_test("file.{cs,py,rs,vb}", ConvResult::Filter, "file.rs", true, false);
+    glob_one_segment_test("file.{!SOURCES}", ConvResult::Filter, "file.rs", true, false);
+    glob_one_segment_test("file.{!SOURCES}", ConvResult::Filter, "file.d", false, false);
 
     // ? replace exactly one character
-    glob_one_segment_test("file.?s", ConvResult::Filter, "file.rs", true);
-    glob_one_segment_test("file.?s", ConvResult::Filter, "file.cds", false);
-    glob_one_segment_test("file.?s", ConvResult::Filter, "file.py", false);
+    glob_one_segment_test("file.?s", ConvResult::Filter, "file.rs", true, false);
+    glob_one_segment_test("file.?s", ConvResult::Filter, "file.cds", false, false);
+    glob_one_segment_test("file.?s", ConvResult::Filter, "file.py", false, false);
 
     // * replace 0 or more characters
-    glob_one_segment_test("file.*s", ConvResult::Filter, "file.s", true);
-    glob_one_segment_test("file.*s", ConvResult::Filter, "file.rs", true);
-    glob_one_segment_test("file.*s", ConvResult::Filter, "file.chamallows", true);
-    glob_one_segment_test("file.*s", ConvResult::Filter, "file.py", false);
+    glob_one_segment_test("file.*s", ConvResult::Filter, "file.s", true, false);
+    glob_one_segment_test("file.*s", ConvResult::Filter, "file.rs", true, false);
+    glob_one_segment_test("file.*s", ConvResult::Filter, "file.chamallows", true, false);
+    glob_one_segment_test("file.*s", ConvResult::Filter, "file.py", false, false);
 
     // [abc] matches any characters of the set
-    glob_one_segment_test("file.[cr]s", ConvResult::Filter, "file.rs", true);
-    glob_one_segment_test("file.[cr]s", ConvResult::Filter, "file.cs", true);
-    glob_one_segment_test("file.[cr]s", ConvResult::Filter, "file.py", false);
+    glob_one_segment_test("file.[cr]s", ConvResult::Filter, "file.rs", true, false);
+    glob_one_segment_test("file.[cr]s", ConvResult::Filter, "file.cs", true, false);
+    glob_one_segment_test("file.[cr]s", ConvResult::Filter, "file.py", false, false);
 
     // [a-z] matches any character of the range
-    glob_one_segment_test("file.[a-r]s", ConvResult::Filter, "file.rs", true);
-    glob_one_segment_test("file.[a-r]s", ConvResult::Filter, "file.cs", true);
-    glob_one_segment_test("file.[a-r]s", ConvResult::Filter, "file.zs", false);
+    glob_one_segment_test("file.[a-r]s", ConvResult::Filter, "file.rs", true, false);
+    glob_one_segment_test("file.[a-r]s", ConvResult::Filter, "file.cs", true, false);
+    glob_one_segment_test("file.[a-r]s", ConvResult::Filter, "file.zs", false, false);
 
     // a - at the beginning or end of a class actually matches a minus
-    glob_one_segment_test("file.[-+]s", ConvResult::Filter, "file.-s", true);
-    glob_one_segment_test("file.[+-]s", ConvResult::Filter, "file.-s", true);
-    glob_one_segment_test("file.[-+]s", ConvResult::Filter, "file.+s", true);
-    glob_one_segment_test("file.[-]s", ConvResult::Filter, "file.-s", true);
+    glob_one_segment_test("file.[-+]s", ConvResult::Filter, "file.-s", true, false);
+    glob_one_segment_test("file.[+-]s", ConvResult::Filter, "file.-s", true, false);
+    glob_one_segment_test("file.[-+]s", ConvResult::Filter, "file.+s", true, false);
+    glob_one_segment_test("file.[-]s", ConvResult::Filter, "file.-s", true, false);
 
     // A ! (or a ^) at the beginning of a class inverts filtering
-    glob_one_segment_test("file.[!abc]s", ConvResult::Filter, "file.rs", true);
-    glob_one_segment_test("file.[!abc]s", ConvResult::Filter, "file.cs", false);
-    glob_one_segment_test("file.[!0-9]s", ConvResult::Filter, "file.3s", false);
-    glob_one_segment_test("file.[!0-9]s", ConvResult::Filter, "file.cs", true);
+    glob_one_segment_test("file.[!abc]s", ConvResult::Filter, "file.rs", true, false);
+    glob_one_segment_test("file.[!abc]s", ConvResult::Filter, "file.cs", false, false);
+    glob_one_segment_test("file.[!0-9]s", ConvResult::Filter, "file.3s", false, false);
+    glob_one_segment_test("file.[!0-9]s", ConvResult::Filter, "file.cs", true, false);
 
     // A ] at the beginning of a class matches a ]
-    glob_one_segment_test("file.[]]s", ConvResult::Filter, "file.]s", true);
-    glob_one_segment_test("file.[]]s", ConvResult::Filter, "file.[s", false);
-    glob_one_segment_test("file.[!]]s", ConvResult::Filter, "file.]s", false);
-    glob_one_segment_test("file.[!]]s", ConvResult::Filter, "file.[s", true);
+    glob_one_segment_test("file.[]]s", ConvResult::Filter, "file.]s", true, false);
+    glob_one_segment_test("file.[]]s", ConvResult::Filter, "file.[s", false, false);
+    glob_one_segment_test("file.[!]]s", ConvResult::Filter, "file.]s", false, false);
+    glob_one_segment_test("file.[!]]s", ConvResult::Filter, "file.[s", true, false);
 
     // Some characters classes are supported, see regex character classes
     //   \d         digit (\p{Nd})
@@ -160,10 +161,10 @@ fn conversions_tests() {
     //   \P{Greek}  negated Unicode character class (general category or script)
     //   [[:alpha:]]   ASCII character class ([A-Za-z])
     //   [[:^alpha:]]  Negated ASCII character class ([^A-Za-z])
-    glob_one_segment_test(r"file[\d].cs", ConvResult::Filter, "file1.cs", true);
-    glob_one_segment_test(r"file[\D].cs", ConvResult::Filter, "file2.cs", false);
-    glob_one_segment_test(r"file[\D].cs", ConvResult::Filter, "filed.cs", true);
-    glob_one_segment_test(r"file[\p{Greek}].cs", ConvResult::Filter, "fileζ.cs", true);
+    glob_one_segment_test(r"file[\d].cs", ConvResult::Filter, "file1.cs", true, false);
+    glob_one_segment_test(r"file[\D].cs", ConvResult::Filter, "file2.cs", false, false);
+    glob_one_segment_test(r"file[\D].cs", ConvResult::Filter, "filed.cs", true, false);
+    glob_one_segment_test(r"file[\p{Greek}].cs", ConvResult::Filter, "fileζ.cs", true, false);
 
     // Actually, stuff between [ ] is directly passed into regex (only a ! at the beginning is replaced by ^), so it accepts other regex classes constructs
     //   [x[^xyz]]     Nested/grouping character class (matching any character except y and z)
@@ -236,5 +237,12 @@ fn conversions_tests() {
     //   [[:upper:]]    upper case ([A-Z])
     //   [[:word:]]     word characters ([0-9A-Za-z_])
     //   [[:xdigit:]]   hex digit ([0-9A-Fa-f])
+
+    // Case-sensitive tests
+    glob_one_segment_test("Pomme", ConvResult::Constant, "pomme", true, false);
+    glob_one_segment_test("Pomme", ConvResult::Constant, "pomme", true, false);         // Constant segments ignore case
+    glob_one_segment_test("*.jpg", ConvResult::Filter, "Image.JPG", true, false);
+    glob_one_segment_test("*.jpg", ConvResult::Filter, "Image.JPG", false, true);       // But a filter respect case_sensitive option
+
 }
 

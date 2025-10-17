@@ -41,6 +41,7 @@ pub struct Options {
     pub maxdepth: usize,
     pub isempty: bool,
     pub recycle: bool,
+    pub case_sensitive: bool,
     pub autorecurse: bool,
     pub noaction: bool,
     pub verbose: bool,
@@ -59,7 +60,7 @@ impl Options {
     fn usage() {
         Options::header();
         println!();
-        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄] [⦃-v⦄] [⦃-n⦄] [⦃-f⦄|⦃-type f⦄|⦃-d⦄|⦃-type d⦄] [⦃-e⦄|⦃-empty⦄] [⦃-r+⦄|⦃-r-⦄] [⦃-a+⦄|⦃-a-⦄] [⟨action⟩...] [⦃-name⦄ ⟨name⟩] [⦃-maxdepth⦄ ⟨n⟩] ⟨source⟩...
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄] [⦃-v⦄] [⦃-n⦄] [⦃-f⦄|⦃-type f⦄|⦃-d⦄|⦃-type d⦄] [⦃-e⦄|⦃-empty⦄] [⦃-r+⦄|⦃-r-⦄] [⦃-a+⦄|⦃-a-⦄] [⦃-cs⦄] [⟨action⟩...] [⦃-name⦄ ⟨name⟩] [⦃-maxdepth⦄ ⟨n⟩] ⟨source⟩...
 
 ⌊Options⌋:
 ⦃?⦄|⦃-?⦄|⦃-h⦄          ¬Show this message
@@ -71,7 +72,8 @@ impl Options {
 ⦃-e⦄|⦃-empty⦄        ¬Only find empty files or directories
 ⦃-r+⦄|⦃-r-⦄          ¬Delete to recycle bin (default) or delete forever; Recycle bin is not allowed on network sources
 ⦃-a+⦄|⦃-a-⦄          ¬Enable (default) or disable glob autorecurse mode (see extended usage)
-⦃-name⦄ ⟨name⟩       ¬Append ⟦**/⟧⟨name⟩ to each source directory (compatibility with XFind/Search)
+⦃-cs⦄              ¬Case-sensitive search (default is case insensitive)
+⦃-name⦄ ⟨name⟩       ¬Append ⟦/**/⟧⟨name⟩ to each source directory (compatibility with XFind/Search)
 ⦃-maxdepth⦄ ⟨n⟩      ¬Limit the recursion depth of ** segments, 1=One directory only, ... Default=0 is unlimited depth
 ⟨source⟩           ¬File or directory to search
 
@@ -195,6 +197,9 @@ impl Options {
                             return Err("Option -maxdepth requires an argument".into());
                         }
                     }
+
+                    "cs" | "cs+" => options.case_sensitive = true,
+                    "cs-" => options.case_sensitive = false,
 
                     "e" | "empty" => options.isempty = true,
 

@@ -16,14 +16,14 @@ fn break1() {
 #[test]
 fn glob_ending_with_recurse() {
     // Special case, when a glob pattern ends with **, then \* is automatically added
-    let res = MyGlobBuilder::glob_to_segments("**\\").unwrap();
+    let res = MyGlobBuilder::glob_to_segments("**\\", false).unwrap();
     assert_eq!(res.len(), 2);
     match &res[0] {
         Segment::Recurse => {}
         _ => panic!(),
     }
     match &res[1] {
-        Segment::Filter(re) => assert_eq!(re.as_str(), "(?i)^.*$"),
+        Segment::Filter(re) => assert_eq!(re.as_str(), "^.*$"),
         _ => panic!(),
     }
 }
@@ -31,7 +31,7 @@ fn glob_ending_with_recurse() {
 #[test]
 fn relative_glob() {
     // glob_to_segments parameter must end with \\
-    let res = MyGlobBuilder::glob_to_segments("*\\target\\").unwrap();
+    let res = MyGlobBuilder::glob_to_segments("*\\target\\", false).unwrap();
     assert_eq!(res.len(), 2);
     match &res[0] {
         Segment::Filter(_) => {}
