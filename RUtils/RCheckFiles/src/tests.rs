@@ -2,6 +2,7 @@
 //
 // 2025-04-08   PV
 // 2025-10-16	PV      Complete set of tests for check_basename
+// 2025-10-17	PV      test_check_basename_characters_to_remove
 
 #[cfg(test)]
 pub mod balanced_tests {
@@ -288,5 +289,33 @@ pub mod check_basename_tests {
         );
         assert_eq!(files_stats.sba, 6);
         assert_eq!(res.unwrap(), "file with (spaces) before [and] after «brackets»");
+    }
+
+    #[test]
+    fn test_check_basename_characters_to_remove() {
+        let mut files_stats = Statistics { ..Default::default() };
+
+        let res = check_basename(
+            Path::new("A\u{FEFF}\u{FEFF}B\u{200E}C"),
+            "file",
+            &mut files_stats,
+            &SHARED_DATA.options,
+            &mut logwriter_none(),
+            &SHARED_DATA.transformation_data, true
+        );
+        assert!(res.is_some());
+        assert_eq!(
+            files_stats.nnn
+                + files_stats.bra
+                + files_stats.apo
+                + files_stats.spc
+                + files_stats.car
+                + files_stats.sp2
+                + files_stats.lig
+                + files_stats.sba,
+            1
+        );
+        assert_eq!(files_stats.car, 1);
+        assert_eq!(res.unwrap(), "ABC");
     }
 }

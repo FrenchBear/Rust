@@ -14,6 +14,7 @@
 // 2025-10-15	PV      2.2.0 Space before ? or !
 // 2025-10-15	PV      2.3.0 Refactoring, separated options module, ligatures, no space before/after bracket
 // 2025-10-16	PV      2.4.0 Complete set of tests for check_basename
+// 2025-10-17	PV      2.4.1 Remove U+FEFF ZERO WIDTH NO-BREAK SPACE
 
 // Note: Can't use MyGlob crate since directories names can be updated during recursive enumeration, this is not a
 // supported use case of MyGlob, so hierarchical exploration is handled directly
@@ -58,7 +59,7 @@ const SPECIAL_CHARS: &str = "€®™©–—…×·•∶⧹⧸／⚹†‽¿�
 const CHARS_NO_SPACE_AFTER: &str = "([{«‹";
 const CHARS_NO_SPACE_BEFORE: &str = ")]}»›¿!‽¡.,…";
 
-// Confusables for space
+// Confusables for space (note that U+FEFF ZERO WIDTH NO-BREAK SPACE is always removed)
 const SPACE_CONFUSABLES: [char; 14] = [
     '\u{00A0}', // U+00A0	NO-BREAK SPACE
     '\u{2000}', // U+2000	EN QUAD                         Not normalized
@@ -692,13 +693,15 @@ fn check_basename(
                 }
             }
             // Special case, fix U+200E by removing it (LEFT-TO-RIGHT MARK)
-            if c == '\u{200E}' {
+            if c == '\u{200E}' || c == '\u{FEFF}'{
                 to_fix = true;
             }
         }
     }
+    // Some characters are always removed, will only cause problems in paths/files names
     if to_fix {
-        file = file.replace("\u{200E}", "");
+        file = file.replace("\u{200E}", "");        // LEFT-TO-RIGHT MARK
+        file = file.replace("\u{FEFF}", "");        // ZERO WIDTH NO-BREAK SPACE
     }
 
     if !test_mode && options.yaml_output && !problems.is_empty() {
