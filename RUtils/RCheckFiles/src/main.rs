@@ -16,6 +16,7 @@
 // 2025-10-16	PV      2.4.0 Complete set of tests for check_basename
 // 2025-10-17	PV      2.4.1 Remove U+FEFF ZERO WIDTH NO-BREAK SPACE
 // 2025-10-17	PV      2.4.2 Field prb: is optional when deserializing yaml file (we don't use it, and it's not renerated by rfind -yaml)
+// 2025-10-17	PV      2.4.3 With option -y, only output yaml, no header or footer; Don't report space before dot in .NET and .Net
 
 // Note: Can't use MyGlob crate since directories names can be updated during recursive enumeration, this is not a
 // supported use case of MyGlob, so hierarchical exploration is handled directly
@@ -159,7 +160,7 @@ enum ItemType {
 #[derive(Debug, Deserialize)]
 #[allow(dead_code)]
 struct RenameItem {
-    typ: ItemType,  // dir|file
+    typ: ItemType,       // dir|file
     prb: Option<String>, // The 'prb' field is optional
     old: String,
     new: String,
@@ -177,7 +178,6 @@ struct Statistics {
     spc: i32,   // Incorrect space
     car: i32,   // Maybe incorrect char
     sp2: i32,   // Double space
-    //spm: i32,                          // Space before ¿ or !
     lig: i32,                          // Ligatures
     sba: i32,                          // Space after opening bracket or before closing bracket
     fix: i32,                          // Number of path fixed
@@ -229,7 +229,7 @@ fn main() {
     let transformation_data = get_transformation_data();
 
     // Prepare log writer
-    let mut writer = logging::new(APP_NAME, APP_VERSION, true);
+    let mut writer = logging::new(APP_NAME, APP_VERSION, options.yaml_output == false);
 
     let start = Instant::now();
 
@@ -238,7 +238,9 @@ fn main() {
         let mut dirs_stats = Statistics { ..Default::default() };
 
         for source in &options.sources {
-            logln(&mut writer, &format!("Analyzing {}", source));
+            if !options.yaml_output {
+                logln(&mut writer, &format!("Analyzing {}", source));
+            }
             let p = Path::new(&source);
             if p.is_file() {
                 process_file(p, &mut files_stats, &options, &mut writer, &transformation_data);
@@ -291,23 +293,25 @@ fn main() {
             logln(writer, "");
         }
 
-        logln(&mut writer, "");
-        final_status(&mut writer, &dirs_stats, "dir");
-        final_status(&mut writer, &files_stats, "file");
-
-        if options.count_extensions {
-            // Print extensions counter by decreasing order of count
-            let mut extensions: Vec<_> = files_stats.ext_counter.iter().collect();
-            extensions.sort_by(|a, b| b.1.cmp(a.1));
-
-            logln(&mut writer, "Extensions:");
-            for (ext, cnt) in extensions {
-                logln(&mut writer, format!("  {ext}: {cnt}").as_str());
-            }
+        if !options.yaml_output {
             logln(&mut writer, "");
-        }
+            final_status(&mut writer, &dirs_stats, "dir");
+            final_status(&mut writer, &files_stats, "file");
 
-        logln(&mut writer, &format!("Total duration: {:.3}s", duration.as_secs_f64()));
+            if options.count_extensions {
+                // Print extensions counter by decreasing order of count
+                let mut extensions: Vec<_> = files_stats.ext_counter.iter().collect();
+                extensions.sort_by(|a, b| b.1.cmp(a.1));
+
+                logln(&mut writer, "Extensions:");
+                for (ext, cnt) in extensions {
+                    logln(&mut writer, format!("  {ext}: {cnt}").as_str());
+                }
+                logln(&mut writer, "");
+            }
+
+            logln(&mut writer, &format!("Total duration: {:.3}s", duration.as_secs_f64()));
+        }
     } else {
         let res = process_yaml_file(&mut writer, &options);
 
@@ -530,21 +534,6 @@ fn check_basename(
         file = file.nfc().collect();
     }
 
-    // // Check for space before ¿ or !
-    // static SPACE_BEFORE_MARK: LazyLock<Regex> = LazyLock::new(|| Regex::new(r" +([?!‽¡,…])").unwrap());
-    // if SPACE_BEFORE_MARK.is_match(&file) {
-    //     // We report only the first issue
-    //     let mark = SPACE_BEFORE_MARK.captures(&file).unwrap().get(1).unwrap().as_str();
-    //     if options.yaml_output {
-    //         add_problem(&mut problems, format!("Space before {mark}").as_str());
-    //     } else {
-    //         logln(writer, &format!("Space before {mark} in {pt} {fp}"));
-    //     }
-    //     stats.spm += 1;
-    //     // But we fix all issues
-    //     file = SPACE_BEFORE_MARK.replace_all(&file, "$1").to_string();
-    // }
-
     // Check for space after opening bracket
     let mut pbnsa = false;
     for nsa in &transformation_data.no_space_after {
@@ -565,6 +554,10 @@ fn check_basename(
     }
 
     // Check for space before characters such as closing bracket, !, …
+    // Problem, a space if valid before .Net or .NET, so we protect these sequences (* is guaranteed not to be part of a file name)
+    file = file.replace(" .NET", "*.NET").replace(" .Net", "*.Net");
+
+    // Check for space before closing bracket
     let mut pbnsb = false;
     for nsb in &transformation_data.no_space_before {
         if nsb.1.is_match(&file) {
@@ -582,6 +575,9 @@ fn check_basename(
             file = nsb.1.replace_all(&file, nsb.0.to_string()).to_string();
         }
     }
+
+    // Unprotect (space).Net
+    file = file.replace("*.", " .");
 
     let vc: Vec<char> = file.chars().collect();
     file = String::new();
@@ -694,15 +690,15 @@ fn check_basename(
                 }
             }
             // Special case, fix U+200E by removing it (LEFT-TO-RIGHT MARK)
-            if c == '\u{200E}' || c == '\u{FEFF}'{
+            if c == '\u{200E}' || c == '\u{FEFF}' {
                 to_fix = true;
             }
         }
     }
     // Some characters are always removed, will only cause problems in paths/files names
     if to_fix {
-        file = file.replace("\u{200E}", "");        // LEFT-TO-RIGHT MARK
-        file = file.replace("\u{FEFF}", "");        // ZERO WIDTH NO-BREAK SPACE
+        file = file.replace("\u{200E}", ""); // LEFT-TO-RIGHT MARK
+        file = file.replace("\u{FEFF}", ""); // ZERO WIDTH NO-BREAK SPACE
     }
 
     if !test_mode && options.yaml_output && !problems.is_empty() {
