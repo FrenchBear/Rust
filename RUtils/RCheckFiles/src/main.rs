@@ -17,6 +17,7 @@
 // 2025-10-17	PV      2.4.1 Remove U+FEFF ZERO WIDTH NO-BREAK SPACE
 // 2025-10-17	PV      2.4.2 Field prb: is optional when deserializing yaml file (we don't use it, and it's not renerated by rfind -yaml)
 // 2025-10-17	PV      2.4.3 With option -y, only output yaml, no header or footer; Don't report space before dot in .NET and .Net
+// 2025-10-17	PV      2.5.0 Ends with dot(s) ... -> …, other counts just reported, not fixed
 
 // Note: Can't use MyGlob crate since directories names can be updated during recursive enumeration, this is not a
 // supported use case of MyGlob, so hierarchical exploration is handled directly
@@ -178,10 +179,12 @@ struct Statistics {
     spc: i32,   // Incorrect space
     car: i32,   // Maybe incorrect char
     sp2: i32,   // Double space
-    lig: i32,                          // Ligatures
-    sba: i32,                          // Space after opening bracket or before closing bracket
-    fix: i32,                          // Number of path fixed
-    err: i32,                          // Number of errors
+    lig: i32,   // Ligatures
+    sba: i32,   // Space after opening bracket or before closing bracket
+    ewd: i32,   // Ends with dots
+    fix: i32,   // Number of path fixed
+    err: i32,   // Number of errors
+
     ext_counter: HashMap<String, u32>, // Count of extensions (lowercase)
 }
 
@@ -251,10 +254,6 @@ fn main() {
 
         let duration = start.elapsed();
 
-        fn s(n: i32) -> &'static str {
-            if n > 1 { "s" } else { "" }
-        }
-
         fn final_status(writer: &mut LogWriter, stats: &Statistics, typename: &str) {
             log(writer, &format!("{} {}{} checked", stats.total, typename, s(stats.total)));
             if stats.nnn > 0 {
@@ -275,14 +274,14 @@ fn main() {
             if stats.car > 0 {
                 log(writer, &format!(", {} wrong character{}", stats.car, s(stats.car)));
             }
-            // if stats.spm > 0 {
-            //     log(writer, &format!(", {} space{} before ¿ or !", stats.spm, s(stats.spm)));
-            // }
             if stats.lig > 0 {
                 log(writer, &format!(", {} ligature{}", stats.lig, s(stats.lig)));
             }
             if stats.sba > 0 {
                 log(writer, &format!(", {} space{} before/after bracket", stats.sba, s(stats.sba)));
+            }
+            if stats.ewd > 0 {
+                log(writer, &format!(", {} end with 3 dots", stats.ewd));
             }
             if stats.fix > 0 {
                 log(writer, &format!(", {} problem{} fixed", stats.fix, s(stats.fix)));
@@ -325,6 +324,11 @@ fn main() {
         let duration = start.elapsed();
         logln(&mut writer, &format!("Total duration: {:.3}s", duration.as_secs_f64()));
     }
+}
+
+// Helper
+fn s(n: i32) -> &'static str {
+    if n > 1 { "s" } else { "" }
 }
 
 fn process_yaml_file(writer: &mut LogWriter, options: &Options) -> Result<(), Box<dyn Error>> {
@@ -414,7 +418,7 @@ fn process_directory(
 
     // First check directoru basename
     dirs_stats.total += 1;
-    if let Some(new_name) = check_basename(pa, "dir", dirs_stats, options, writer, transformation_data, false) {
+    if let Some(new_name) = check_name(pa, "dir", dirs_stats, options, writer, transformation_data, false) {
         if options.fixit {
             logln(writer, &format!("  --> rename directory \"{new_name}\""));
             let newpath = pb.parent().unwrap().join(Path::new(&new_name));
@@ -463,7 +467,7 @@ fn process_file(p: &Path, files_stats: &mut Statistics, options: &Options, write
         *e += 1;
     }
 
-    if let Some(new_name) = check_basename(p, "file", files_stats, options, writer, transformation_data, false) {
+    if let Some(new_name) = check_name(p, "file", files_stats, options, writer, transformation_data, false) {
         if options.fixit {
             logln(writer, &format!("  --> rename file \"{new_name}\""));
             let newpath = p.parent().unwrap().join(Path::new(&new_name));
@@ -475,7 +479,8 @@ fn process_file(p: &Path, files_stats: &mut Statistics, options: &Options, write
     }
 }
 
-fn check_basename(
+// Either a directly name, or a file name with extension
+fn check_name(
     p: &Path,
     pt: &str,
     stats: &mut Statistics,
@@ -635,6 +640,40 @@ fn check_basename(
             file.push_str(transformation_data.ligatures[c]);
         } else {
             file.push(*c);
+        }
+    }
+
+    // Check if ends by 3 dots (but not 4), replace by single char …
+    // But if file ends with 1, 2, 4 or + dots, just report it, don't fix it
+    // Use path methits to split into basename/extension, even if it's probably overkill
+    let path = Path::new(&file);
+    let basename = path.file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or(&file); // Fallback to the full name if no stem
+    let extension = path.extension()
+        .and_then(|s| s.to_str())
+        .unwrap_or("");
+
+    let mut end_dots_count = 0;
+    for c in basename.chars().rev() {
+        if c == '.' {
+            end_dots_count += 1;
+        } else {
+            break;
+        }
+    }
+    if end_dots_count > 0 {
+        if !test_mode {
+            if options.yaml_output {
+                add_problem(&mut problems, format!("Ends with {end_dots_count} dot{}", s(end_dots_count)).as_str());
+            } else {
+                logln(writer, &format!("{pt} ends with {end_dots_count} dot{} in {fp}", s(end_dots_count)));
+            }
+        }
+        stats.ewd += 1;
+        // replace ... by …
+        if end_dots_count == 3 {
+            file = basename[..basename.len() - 3].to_string() + "…" + "." + extension;
         }
     }
 
