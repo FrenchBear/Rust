@@ -18,6 +18,7 @@
 // 2025-10-17	PV      2.4.2 Field prb: is optional when deserializing yaml file (we don't use it, and it's not renerated by rfind -yaml)
 // 2025-10-17	PV      2.4.3 With option -y, only output yaml, no header or footer; Don't report space before dot in .NET and .Net
 // 2025-10-17	PV      2.5.0 Ends with dot(s) ... -> …, other counts just reported, not fixed
+// 2025-10-19	PV      2.5.1 Do not separate basename from extension when processing a directory name
 
 // Note: Can't use MyGlob crate since directories names can be updated during recursive enumeration, this is not a
 // supported use case of MyGlob, so hierarchical exploration is handled directly
@@ -646,13 +647,15 @@ fn check_name(
     // Check if ends by 3 dots (but not 4), replace by single char …
     // But if file ends with 1, 2, 4 or + dots, just report it, don't fix it
     // Use path methits to split into basename/extension, even if it's probably overkill
-    let path = Path::new(&file);
-    let basename = path.file_stem()
-        .and_then(|s| s.to_str())
-        .unwrap_or(&file); // Fallback to the full name if no stem
-    let extension = path.extension()
-        .and_then(|s| s.to_str())
-        .unwrap_or("");
+    // Note: for file name analysis, we only focus on basename, while for directory name, just use the whole name as is
+    let (basename, extension) = if pt == "dir" {
+        (file.as_str(), "")
+    } else {
+        let path = Path::new(&file);
+        let b = path.file_stem().and_then(|s| s.to_str()).unwrap_or(&file); // Fallback to the full name if no stem
+        let e = path.extension().and_then(|s| s.to_str()).unwrap_or("");
+        (b, e)
+    };
 
     let mut end_dots_count = 0;
     for c in basename.chars().rev() {
