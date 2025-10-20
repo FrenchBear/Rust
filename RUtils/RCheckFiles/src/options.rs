@@ -2,6 +2,7 @@
 // Processing command line arguments
 //
 // 2025-10-15	PV       Refactoring, separated options module. Added extended options
+// 2025-10-21	PV       Filtering on problem types
 
 // Application imports
 use crate::*;
@@ -21,6 +22,7 @@ pub struct Options {
     pub yaml_output: bool,
     pub yaml_file: String,
     pub count_extensions: bool,
+    pub report_types: HashSet<String>,
 }
 
 /// Checks if a path exists and is a file.
@@ -48,14 +50,26 @@ impl Options {
     fn usage() {
         Options::header();
         println!();
-        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄|⦃-??⦄] [⦃-f⦄] [⦃-y⦄] [⦃-F⦄ ⟨yamlfile⟩] [⦃-e⦄] ⟨source⟩...
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄|⦃-??⦄] [⦃-p type[,type]...⦄] [⦃-f⦄] [⦃-y⦄] [⦃-F⦄ ⟨yamlfile⟩] [⦃-e⦄] ⟨source⟩...
 ⦃?⦄|⦃-?⦄|⦃-h⦄     ¬Show this message
 ⦃??⦄|⦃-??⦄      ¬Show advanced usage notes
+⦃-p type[,type]...⦄ ¬Only report specific types. type: nnn|bra|apo|spc|car|sp2|lig|sba|ewd
 ⦃-f⦄          ¬Automatic problems fixing
 ⦃-y⦄          ¬Yaml output
 ⦃-F⦄ ⟨yamlfile⟩ ¬Rename files using old/new fields of provided yaml file
 ⦃-e⦄          ¬Count extensions
-⟨source⟩      ¬File or directory to analyze (note: glob pattern is not supported)";
+⟨source⟩      ¬File or directory to analyze (note: glob pattern is not supported)
+
+⌊Types⌋⟫:
+nnn   ¬Non-normalized names
+bra   ¬Bracket issue
+apo   ¬Incorrect apostrophe
+spc   ¬Incorrect space
+car   ¬Maybe incorrect char
+sp2   ¬Double space
+lig   ¬Ligatures
+sba   ¬Space after opening bracket or before closing bracket
+ewd   ¬Ends with dots";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }
@@ -103,7 +117,7 @@ Option ⦃-y⦄ generates yaml output, including extra non-yaml header and foote
         }
 
         let mut options = Options { ..Default::default() };
-        let mut opts = getopt::Parser::new(&args, "h?fyF:e");
+        let mut opts = getopt::Parser::new(&args, "h?p:fyF:e");
 
         loop {
             match opts.next().transpose()? {
@@ -112,6 +126,30 @@ Option ⦃-y⦄ generates yaml output, including extra non-yaml header and foote
                     Opt('h', None) | Opt('?', None) => {
                         Self::usage();
                         return Err("".into());
+                    }
+
+                    Opt('p', problems) => {
+                        if problems.is_none() {
+                            return Err("Option -p requires a list of problems as an argument".into());
+                        }
+                        for problem in problems.unwrap().split(',') {
+                            let pb = problem.trim().to_lowercase();
+                            if pb != "nnn"
+                                && pb != "bra"
+                                && pb != "apo"
+                                && pb != "spc"
+                                && pb != "car"
+                                && pb != "sp2"
+                                && pb != "lig"
+                                && pb != "sba"
+                                && pb != "ewd"
+                            {
+                                return Err(format!("Invalid problem type {}, must be one of nnn|bra|apo|spc|car|sp2|lig|sba|ewd", problem).into());
+                            }
+                            if !options.report_types.contains(&pb) {
+                                options.report_types.insert(pb);
+                            }
+                        }
                     }
 
                     Opt('f', None) => {

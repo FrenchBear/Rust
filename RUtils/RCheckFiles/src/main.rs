@@ -19,6 +19,7 @@
 // 2025-10-17	PV      2.4.3 With option -y, only output yaml, no header or footer; Don't report space before dot in .NET and .Net
 // 2025-10-17	PV      2.5.0 Ends with dot(s) ... -> …, other counts just reported, not fixed
 // 2025-10-19	PV      2.5.1 Do not separate basename from extension when processing a directory name
+// 2025-10-21	PV      3.0.0 Filtering on specific problems
 
 // Note: Can't use MyGlob crate since directories names can be updated during recursive enumeration, this is not a
 // supported use case of MyGlob, so hierarchical exploration is handled directly
@@ -515,7 +516,7 @@ fn check_name(
     }
 
     // Check for balanced brackets, but don't attempt a correction
-    if !is_balanced(&file) {
+    if (options.report_types.is_empty() || options.report_types.contains("bra")) && !is_balanced(&file) {
         if !test_mode {
             if options.yaml_output {
                 add_problem(&mut problems, "Non-balanced brackets");
@@ -527,7 +528,7 @@ fn check_name(
     }
 
     // Check normalization
-    if !is_nfc(&file) {
+    if (options.report_types.is_empty() || options.report_types.contains("nnn")) && !is_nfc(&file) {
         if !test_mode {
             if options.yaml_output {
                 add_problem(&mut problems, "Non-normalized");
@@ -542,20 +543,22 @@ fn check_name(
 
     // Check for space after opening bracket
     let mut pbnsa = false;
-    for nsa in &transformation_data.no_space_after {
-        if nsa.1.is_match(&file) {
-            if !pbnsa {
-                if !test_mode {
-                    if options.yaml_output {
-                        add_problem(&mut problems, "Space after opening bracket");
-                    } else {
-                        logln(writer, &format!("Space after {} in {pt} name {fp}", nsa.0));
+    if options.report_types.is_empty() || options.report_types.contains("sba") {
+        for nsa in &transformation_data.no_space_after {
+            if nsa.1.is_match(&file) {
+                if !pbnsa {
+                    if !test_mode {
+                        if options.yaml_output {
+                            add_problem(&mut problems, "Space after opening bracket");
+                        } else {
+                            logln(writer, &format!("Space after {} in {pt} name {fp}", nsa.0));
+                        }
                     }
+                    pbnsa = true;
                 }
-                pbnsa = true;
+                stats.sba += 1;
+                file = nsa.1.replace_all(&file, nsa.0.to_string()).to_string();
             }
-            stats.sba += 1;
-            file = nsa.1.replace_all(&file, nsa.0.to_string()).to_string();
         }
     }
 
@@ -565,20 +568,22 @@ fn check_name(
 
     // Check for space before closing bracket
     let mut pbnsb = false;
-    for nsb in &transformation_data.no_space_before {
-        if nsb.1.is_match(&file) {
-            if !pbnsb {
-                if !test_mode {
-                    if options.yaml_output {
-                        add_problem(&mut problems, "Invalid space before character");
-                    } else {
-                        logln(writer, &format!("Space before {} in {pt} name {fp}", nsb.0));
+    if options.report_types.is_empty() || options.report_types.contains("sba") {
+        for nsb in &transformation_data.no_space_before {
+            if nsb.1.is_match(&file) {
+                if !pbnsb {
+                    if !test_mode {
+                        if options.yaml_output {
+                            add_problem(&mut problems, "Invalid space before character");
+                        } else {
+                            logln(writer, &format!("Space before {} in {pt} name {fp}", nsb.0));
+                        }
                     }
+                    pbnsb = true;
                 }
-                pbnsb = true;
+                stats.sba += 1;
+                file = nsb.1.replace_all(&file, nsb.0.to_string()).to_string();
             }
-            stats.sba += 1;
-            file = nsb.1.replace_all(&file, nsb.0.to_string()).to_string();
         }
     }
 
@@ -593,8 +598,10 @@ fn check_name(
     let mut pblig = false;
 
     for c in &vc {
+        let mut pushed: bool = false;
+
         // Check apostrophes
-        if transformation_data.apostrophe_confusables.contains(c) {
+        if (options.report_types.is_empty() || options.report_types.contains("apo")) && transformation_data.apostrophe_confusables.contains(c) {
             if !test_mode {
                 if options.yaml_output {
                     if !pbapo {
@@ -609,7 +616,10 @@ fn check_name(
                 stats.apo += 1;
             }
             file.push('\'');
-        } else if transformation_data.space_confusables.contains(c) {
+            pushed = true;
+        }
+
+        if (options.report_types.is_empty() || options.report_types.contains("spc")) && transformation_data.space_confusables.contains(c) {
             if !test_mode {
                 if options.yaml_output {
                     if !pbspc {
@@ -624,7 +634,10 @@ fn check_name(
                 stats.spc += 1;
             }
             file.push(' ');
-        } else if transformation_data.ligatures.contains_key(c) {
+            pushed = true;
+        }
+
+        if (options.report_types.is_empty() || options.report_types.contains("lig")) && transformation_data.ligatures.contains_key(c) {
             if !test_mode {
                 if options.yaml_output {
                     if !pblig {
@@ -639,7 +652,10 @@ fn check_name(
                 stats.lig += 1;
             }
             file.push_str(transformation_data.ligatures[c]);
-        } else {
+            pushed = true;
+        }
+
+        if !pushed {
             file.push(*c);
         }
     }
@@ -648,99 +664,105 @@ fn check_name(
     // But if file ends with 1, 2, 4 or + dots, just report it, don't fix it
     // Use path methits to split into basename/extension, even if it's probably overkill
     // Note: for file name analysis, we only focus on basename, while for directory name, just use the whole name as is
-    let (basename, extension) = if pt == "dir" {
-        (file.as_str(), "")
-    } else {
-        let path = Path::new(&file);
-        let b = path.file_stem().and_then(|s| s.to_str()).unwrap_or(&file); // Fallback to the full name if no stem
-        let e = path.extension().and_then(|s| s.to_str()).unwrap_or("");
-        (b, e)
-    };
-
-    let mut end_dots_count = 0;
-    for c in basename.chars().rev() {
-        if c == '.' {
-            end_dots_count += 1;
+    if options.report_types.is_empty() || options.report_types.contains("ewd") {
+        let (basename, extension) = if pt == "dir" {
+            (file.as_str(), "")
         } else {
-            break;
-        }
-    }
-    if end_dots_count > 0 {
-        if !test_mode {
-            if options.yaml_output {
-                add_problem(&mut problems, format!("Ends with {end_dots_count} dot{}", s(end_dots_count)).as_str());
+            let path = Path::new(&file);
+            let b = path.file_stem().and_then(|s| s.to_str()).unwrap_or(&file); // Fallback to the full name if no stem
+            let e = path.extension().and_then(|s| s.to_str()).unwrap_or("");
+            (b, e)
+        };
+
+        let mut end_dots_count = 0;
+        for c in basename.chars().rev() {
+            if c == '.' {
+                end_dots_count += 1;
             } else {
-                logln(writer, &format!("{pt} ends with {end_dots_count} dot{} in {fp}", s(end_dots_count)));
+                break;
             }
         }
-        stats.ewd += 1;
-        // replace ... by …
-        if end_dots_count == 3 {
-            file = basename[..basename.len() - 3].to_string() + "…" + "." + extension;
+        if end_dots_count > 0 {
+            if !test_mode {
+                if options.yaml_output {
+                    add_problem(&mut problems, format!("Ends with {end_dots_count} dot{}", s(end_dots_count)).as_str());
+                } else {
+                    logln(writer, &format!("{pt} ends with {end_dots_count} dot{} in {fp}", s(end_dots_count)));
+                }
+            }
+            stats.ewd += 1;
+            // replace ... by …
+            if end_dots_count == 3 {
+                file = basename[..basename.len() - 3].to_string() + "…" + "." + extension;
+            }
         }
     }
 
     // Check multiple spaces (and space before extension)
-    let mut pbsp2 = false;
-    let mut vc: Vec<char> = Vec::new();
-    let mut lastc = '_';
-    for c in file.chars() {
-        if c == ' ' {
-            if lastc == ' ' {
-                if !pbsp2 {
-                    if !test_mode {
-                        if options.yaml_output {
-                            add_problem(&mut problems, "Multiple spaces");
-                        } else {
-                            logln(writer, &format!("Multiple spaces in {pt} name {fp}"));
+    if options.report_types.is_empty() || options.report_types.contains("sp2") {
+        let mut pbsp2 = false;
+        let mut vc: Vec<char> = Vec::new();
+        let mut lastc = '_';
+        for c in file.chars() {
+            if c == ' ' {
+                if lastc == ' ' {
+                    if !pbsp2 {
+                        if !test_mode {
+                            if options.yaml_output {
+                                add_problem(&mut problems, "Multiple spaces");
+                            } else {
+                                logln(writer, &format!("Multiple spaces in {pt} name {fp}"));
+                            }
                         }
+                        pbsp2 = true;
+                        stats.sp2 += 1;
                     }
-                    pbsp2 = true;
-                    stats.sp2 += 1;
+                } else {
+                    vc.push(c);
                 }
+            } else if c == '.' {
+                if lastc == ' ' {
+                    vc.pop();
+                }
+                vc.push(c);
             } else {
                 vc.push(c);
             }
-        } else if c == '.' {
-            if lastc == ' ' {
-                vc.pop();
-            }
-            vc.push(c);
-        } else {
-            vc.push(c);
+            lastc = c;
         }
-        lastc = c;
-    }
-    if pbsp2 {
-        file = vc.iter().collect();
+        if pbsp2 {
+            file = vc.iter().collect();
+        }
     }
 
     // Check characters
-    let mut pbchr = false;
-    let mut to_fix = false;
-    for c in file.chars() {
-        if !(c.is_alphanumeric() || (32..127).contains(&(c as i32)) || (160..256).contains(&(c as i32)) || SPECIAL_CHARS.contains(c)) {
-            if !pbchr {
-                pbchr = true;
-                stats.car += 1;
-            }
-            if !test_mode {
-                if options.yaml_output {
-                    add_problem(&mut problems, &format!("Invalid char {:04X}", c as i32));
-                } else {
-                    logln(writer, &format!("Invalid char in {pt} name {fp} -> {c} {:04X}", c as i32));
+    if options.report_types.is_empty() || options.report_types.contains("car") {
+        let mut pbchr = false;
+        let mut to_fix = false;
+        for c in file.chars() {
+            if !(c.is_alphanumeric() || (32..127).contains(&(c as i32)) || (160..256).contains(&(c as i32)) || SPECIAL_CHARS.contains(c)) {
+                if !pbchr {
+                    pbchr = true;
+                    stats.car += 1;
+                }
+                if !test_mode {
+                    if options.yaml_output {
+                        add_problem(&mut problems, &format!("Invalid char {:04X}", c as i32));
+                    } else {
+                        logln(writer, &format!("Invalid char in {pt} name {fp} -> {c} {:04X}", c as i32));
+                    }
+                }
+                // Special case, fix U+200E by removing it (LEFT-TO-RIGHT MARK)
+                if c == '\u{200E}' || c == '\u{FEFF}' {
+                    to_fix = true;
                 }
             }
-            // Special case, fix U+200E by removing it (LEFT-TO-RIGHT MARK)
-            if c == '\u{200E}' || c == '\u{FEFF}' {
-                to_fix = true;
-            }
         }
-    }
-    // Some characters are always removed, will only cause problems in paths/files names
-    if to_fix {
-        file = file.replace("\u{200E}", ""); // LEFT-TO-RIGHT MARK
-        file = file.replace("\u{FEFF}", ""); // ZERO WIDTH NO-BREAK SPACE
+        // Some characters are always removed, will only cause problems in paths/files names
+        if to_fix {
+            file = file.replace("\u{200E}", ""); // LEFT-TO-RIGHT MARK
+            file = file.replace("\u{FEFF}", ""); // ZERO WIDTH NO-BREAK SPACE
+        }
     }
 
     if !test_mode && options.yaml_output && !problems.is_empty() {
