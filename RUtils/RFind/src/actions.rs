@@ -7,6 +7,7 @@
 // 2025-07-12	PV      Bug name inverted (recycle/permanent delete) for action delete
 // 2025-10-13   PV      ActionExec, ActionXargs
 // 2025-10-17   PV      ActionYaml
+// 2025-10-22   PV      to_yaml_single_quoted for Yaml action
 
 use super::*;
 
@@ -328,9 +329,37 @@ impl Action for ActionYaml {
         } else {
             logln(lw, &format!("- typ: dir"));
         }
-        logln(lw, &format!("  old: {}", path.display()));
-        logln(lw, &format!("  new: {}\n", path.display()));
+        let qp = to_yaml_single_quoted(path.as_os_str().to_str().unwrap());
+        logln(lw, &format!("  old: {}", qp));
+        logln(lw, &format!("  new: {}\n", qp));
     }
 
     fn conclusion(&mut self, _lw: &mut LogWriter, _noaction: bool, _verbose: bool) {}
+}
+
+/// Wraps a string in single quotes for safe inclusion in a YAML file.
+///
+/// In YAML, single-quoted strings handle most special characters literally,
+/// including '#' and '\'. The only character that must be escaped is the
+/// single quote itself, which is done by doubling it (e.g., 'It''s').
+///
+/// This function always returns a quoted string, which is always valid.
+///
+/// You must use quotes (like this function provides) if your string:
+/// - Contains a # (comment character)
+/// - Contains a colon followed by a space (: )
+/// - Contains a hyphen followed by a space (- ) at the beginning
+/// - Contains a single quote (')
+/// - Starts or ends with whitespace
+/// - Is empty
+/// - Is the word true, false, yes, no, on, off, null, or ~
+/// - Looks like a number (e.g., 123, 45.6)
+///
+/// Writing a function checking all these cases would be very complex
+fn to_yaml_single_quoted(s: &str) -> String {
+    // 1. Escape any single quotes by replacing them with two single quotes.
+    let escaped = s.replace('\'', "''");
+
+    // 2. Wrap the escaped string in single quotes.
+    format!("'{}'", escaped)
 }

@@ -22,7 +22,7 @@
 // 2025-10-13 	PV 		2.0.0 Option -exec cmd ;
 // 2025-10-13 	PV 		2.0.1 Option -xargs cmd ;
 // 2025-10-17   PV      2.1.0 Options -yaml and -cs
-
+// 2025-10-22   PV      2.1.1 to_yaml_single_quoted for ActionYaml to avoid problems with filenames containing special yaml values/characters
 // Notes:
 // - Finding denormalized paths is handled by rcheckfiles and checknnn, no need for a third version :-)
 
