@@ -20,7 +20,7 @@
 // 2025-10-17	PV      2.5.0 Ends with dot(s) ... -> …, other counts just reported, not fixed
 // 2025-10-19	PV      2.5.1 Do not separate basename from extension when processing a directory name
 // 2025-10-21	PV      3.0.0 Filtering on specific problems
-// 2025-10-21	PV      3.1.0 Detect double extensions
+// 2025-10-21	PV      3.1.0 Detect double extensions; Protect strings in yaml output
 
 // Note: Can't use MyGlob crate since directories names can be updated during recursive enumeration, this is not a
 // supported use case of MyGlob, so hierarchical exploration is handled directly
@@ -467,7 +467,7 @@ fn process_file(p: &Path, files_stats: &mut Statistics, options: &Options, write
     // Count extension
     if options.count_extensions {
         let ext = match p.extension() {
-            Some(ext) => ext.to_str().unwrap().to_lowercase(),      // Note that extension() returns "txt" without dot, while python returns ".txt"
+            Some(ext) => ext.to_str().unwrap().to_lowercase(), // Note that extension() returns "txt" without dot, while python returns ".txt"
             None => "(none)".to_string(),
         };
         let e = files_stats.ext_counter.entry(ext).or_insert(0);
@@ -677,7 +677,7 @@ fn check_name(
     };
 
     // Check for file.txt.txt (only for files)
-    if pt=="file" && (options.report_types.is_empty() || options.report_types.contains("dex")) && extension.len() > 0{
+    if pt == "file" && (options.report_types.is_empty() || options.report_types.contains("dex")) && extension.len() > 0 {
         let ext2 = Path::new(basename).extension().and_then(|s| s.to_str()).unwrap_or("");
         if extension.to_lowercase() == ext2.to_lowercase() {
             if !test_mode {
@@ -690,17 +690,16 @@ fn check_name(
             stats.dex += 1;
             file = basename[..basename.len() - extension.len() - 1].to_string() + "." + extension;
             let path = Path::new(&file);
-            basename = path.file_stem().and_then(|s| s.to_str()).unwrap();  // No need for a default, we know there is an extension in this block
+            basename = path.file_stem().and_then(|s| s.to_str()).unwrap(); // No need for a default, we know there is an extension in this block
         }
     }
-
 
     // Check if ends by 3 dots (but not 4), replace by single char …
     // But if file ends with 1, 2, 4 or + dots, just report it, don't fix it
     // Use path methits to split into basename/extension, even if it's probably overkill
     // Note: for file name analysis, we only focus on basename, while for directory name, just use the whole name as is
     if options.report_types.is_empty() || options.report_types.contains("ewd") {
-    let mut end_dots_count = 0;
+        let mut end_dots_count = 0;
         for c in basename.chars().rev() {
             if c == '.' {
                 end_dots_count += 1;
@@ -794,11 +793,38 @@ fn check_name(
     if !test_mode && options.yaml_output && !problems.is_empty() {
         logln(writer, &format!("- typ: {pt}"));
         logln(writer, &format!("  prb: {problems}"));
-        logln(writer, &format!("  old: {fp}"));
-        logln(writer, &format!("  new: {fp}\n"));
+        logln(writer, &format!("  old: {}", to_yaml_single_quoted(format!("{fp}").as_str())));
+        logln(writer, &format!("  new: {}\n", to_yaml_single_quoted(format!("{fp}").as_str())));
     }
 
     if file == original_file { None } else { Some(file) }
+}
+
+/// Wraps a string in single quotes for safe inclusion in a YAML file.
+///
+/// In YAML, single-quoted strings handle most special characters literally,
+/// including '#' and '\'. The only character that must be escaped is the
+/// single quote itself, which is done by doubling it (e.g., 'It''s').
+///
+/// This function always returns a quoted string, which is always valid.
+///
+/// You must use quotes (like this function provides) if your string:
+/// - Contains a # (comment character)
+/// - Contains a colon followed by a space (: )
+/// - Contains a hyphen followed by a space (- ) at the beginning
+/// - Contains a single quote (')
+/// - Starts or ends with whitespace
+/// - Is empty
+/// - Is the word true, false, yes, no, on, off, null, or ~
+/// - Looks like a number (e.g., 123, 45.6)
+///
+/// Writing a function checking all these cases would be very complex
+fn to_yaml_single_quoted(s: &str) -> String {
+    // 1. Escape any single quotes by replacing them with two single quotes.
+    let escaped = s.replace('\'', "''");
+
+    // 2. Wrap the escaped string in single quotes.
+    format!("'{}'", escaped)
 }
 
 /// Checks that () [] {} «» ‹› pairs are correctly embedded and closed in a string
