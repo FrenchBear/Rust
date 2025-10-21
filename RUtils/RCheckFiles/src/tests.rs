@@ -4,6 +4,7 @@
 // 2025-10-16	PV      Complete set of tests for check_basename
 // 2025-10-17	PV      test_check_basename_characters_to_remove
 // 2025-10-18	PV      test_check_basename_ends_with_one/three/four_dots
+// 2025-10-21	PV      test_double_extension
 
 #[cfg(test)]
 pub mod balanced_tests {
@@ -68,6 +69,19 @@ pub mod check_basename_tests {
         transformation_data: crate::get_transformation_data(),
     });
 
+    fn get_sum(files_stats: &Statistics) -> u32 {
+        files_stats.nnn
+            + files_stats.bra
+            + files_stats.apo
+            + files_stats.spc
+            + files_stats.car
+            + files_stats.sp2
+            + files_stats.lig
+            + files_stats.sba
+            + files_stats.ewd
+            + files_stats.dex
+    }
+
     #[test]
     fn test_check_basename_non_normalized() {
         let mut files_stats = Statistics { ..Default::default() };
@@ -82,18 +96,7 @@ pub mod check_basename_tests {
             true,
         );
         assert!(res.is_some());
-        assert_eq!(
-            files_stats.nnn
-                + files_stats.bra
-                + files_stats.apo
-                + files_stats.spc
-                + files_stats.car
-                + files_stats.sp2
-                + files_stats.lig
-                + files_stats.sba
-                + files_stats.ewd,
-            1
-        );
+        assert_eq!(get_sum(&files_stats), 1);
         assert_eq!(files_stats.nnn, 1);
         assert_eq!(res.unwrap(), "État de siège à Katmandou");
     }
@@ -112,18 +115,7 @@ pub mod check_basename_tests {
             true,
         );
         assert!(res.is_some());
-        assert_eq!(
-            files_stats.nnn
-                + files_stats.bra
-                + files_stats.apo
-                + files_stats.spc
-                + files_stats.car
-                + files_stats.sp2
-                + files_stats.lig
-                + files_stats.sba
-                + files_stats.ewd,
-            1
-        );
+        assert_eq!(get_sum(&files_stats), 1);
         assert_eq!(files_stats.apo, 1);
         assert_eq!(res.unwrap(), "A'B'C'D'E'F'G");
     }
@@ -142,18 +134,7 @@ pub mod check_basename_tests {
             true,
         );
         assert!(res.is_some());
-        assert_eq!(
-            files_stats.nnn
-                + files_stats.bra
-                + files_stats.apo
-                + files_stats.spc
-                + files_stats.car
-                + files_stats.sp2
-                + files_stats.lig
-                + files_stats.sba
-                + files_stats.ewd,
-            1
-        );
+        assert_eq!(get_sum(&files_stats), 1);
         assert_eq!(files_stats.spc, 1);
         assert_eq!(res.unwrap(), "A B C D E F");
     }
@@ -172,18 +153,7 @@ pub mod check_basename_tests {
             true,
         );
         assert!(res.is_none()); // invalid chars are not automatically fixed, there is no fixed name
-        assert_eq!(
-            files_stats.nnn
-                + files_stats.bra
-                + files_stats.apo
-                + files_stats.spc
-                + files_stats.car
-                + files_stats.sp2
-                + files_stats.lig
-                + files_stats.sba
-                + files_stats.ewd,
-            1
-        );
+        assert_eq!(get_sum(&files_stats), 1);
         assert_eq!(files_stats.car, 1);
     }
 
@@ -201,18 +171,7 @@ pub mod check_basename_tests {
             true,
         );
         assert!(res.is_some());
-        assert_eq!(
-            files_stats.nnn
-                + files_stats.bra
-                + files_stats.apo
-                + files_stats.spc
-                + files_stats.car
-                + files_stats.sp2
-                + files_stats.lig
-                + files_stats.sba
-                + files_stats.ewd,
-            1
-        );
+        assert_eq!(get_sum(&files_stats), 1);
         assert_eq!(files_stats.lig, 1);
         assert_eq!(res.unwrap(), "office file coeur star");
     }
@@ -231,18 +190,7 @@ pub mod check_basename_tests {
             true,
         );
         assert!(res.is_some());
-        assert_eq!(
-            files_stats.nnn
-                + files_stats.bra
-                + files_stats.apo
-                + files_stats.spc
-                + files_stats.car
-                + files_stats.sp2
-                + files_stats.lig
-                + files_stats.sba
-                + files_stats.ewd,
-            2
-        );
+        assert_eq!(get_sum(&files_stats), 2);
         assert_eq!(files_stats.spc, 1);
         assert_eq!(files_stats.sp2, 1);
         assert_eq!(res.unwrap(), "Il était une fois");
@@ -262,18 +210,7 @@ pub mod check_basename_tests {
             true,
         );
         assert!(res.is_some());
-        assert_eq!(
-            files_stats.nnn
-                + files_stats.bra
-                + files_stats.apo
-                + files_stats.spc
-                + files_stats.car
-                + files_stats.sp2
-                + files_stats.lig
-                + files_stats.sba
-                + files_stats.ewd,
-            6
-        );
+        assert_eq!(get_sum(&files_stats), 6);
         assert_eq!(files_stats.sba, 6);
         assert_eq!(res.unwrap(), "A!B,C¿D…[E]F(G)");
     }
@@ -292,18 +229,7 @@ pub mod check_basename_tests {
             true,
         );
         assert!(res.is_some());
-        assert_eq!(
-            files_stats.nnn
-                + files_stats.bra
-                + files_stats.apo
-                + files_stats.spc
-                + files_stats.car
-                + files_stats.sp2
-                + files_stats.lig
-                + files_stats.sba
-                + files_stats.ewd,
-            6
-        );
+        assert_eq!(get_sum(&files_stats), 6);
         assert_eq!(files_stats.sba, 6);
         assert_eq!(res.unwrap(), "file with (spaces) before [and] after «brackets»");
     }
@@ -322,18 +248,7 @@ pub mod check_basename_tests {
             true,
         );
         assert!(res.is_some());
-        assert_eq!(
-            files_stats.nnn
-                + files_stats.bra
-                + files_stats.apo
-                + files_stats.spc
-                + files_stats.car
-                + files_stats.sp2
-                + files_stats.lig
-                + files_stats.sba
-                + files_stats.ewd,
-            1
-        );
+        assert_eq!(get_sum(&files_stats), 1);
         assert_eq!(files_stats.car, 1);
         assert_eq!(res.unwrap(), "ABC");
     }
@@ -352,18 +267,7 @@ pub mod check_basename_tests {
             true,
         );
         assert!(res.is_some());
-        assert_eq!(
-            files_stats.nnn
-                + files_stats.bra
-                + files_stats.apo
-                + files_stats.spc
-                + files_stats.car
-                + files_stats.sp2
-                + files_stats.lig
-                + files_stats.sba
-                + files_stats.ewd,
-            1
-        );
+        assert_eq!(get_sum(&files_stats), 1);
         assert_eq!(files_stats.ewd, 1);
         assert_eq!(res.unwrap(), "Once upon a time….txt");
     }
@@ -382,18 +286,7 @@ pub mod check_basename_tests {
             true,
         );
         assert!(res.is_none()); // Not fixed
-        assert_eq!(
-            files_stats.nnn
-                + files_stats.bra
-                + files_stats.apo
-                + files_stats.spc
-                + files_stats.car
-                + files_stats.sp2
-                + files_stats.lig
-                + files_stats.sba
-                + files_stats.ewd,
-            1
-        );
+        assert_eq!(get_sum(&files_stats), 1);
         assert_eq!(files_stats.ewd, 1);
     }
 
@@ -411,18 +304,27 @@ pub mod check_basename_tests {
             true,
         );
         assert!(res.is_none()); // Not fixed
-        assert_eq!(
-            files_stats.nnn
-                + files_stats.bra
-                + files_stats.apo
-                + files_stats.spc
-                + files_stats.car
-                + files_stats.sp2
-                + files_stats.lig
-                + files_stats.sba
-                + files_stats.ewd,
-            1
-        );
+        assert_eq!(get_sum(&files_stats), 1);
         assert_eq!(files_stats.ewd, 1);
+    }
+
+
+    #[test]
+    fn test_check_basename_double_extension() {
+        let mut files_stats = Statistics { ..Default::default() };
+
+        let res = check_name(
+            Path::new("My document.pdf.pdf"),
+            "file",
+            &mut files_stats,
+            &SHARED_DATA.options,
+            &mut logwriter_none(),
+            &SHARED_DATA.transformation_data,
+            true,
+        );
+        assert!(res.is_some());
+        assert_eq!(get_sum(&files_stats), 1);
+        assert_eq!(files_stats.dex, 1);
+        assert_eq!(res.unwrap(), "My document.pdf");
     }
 }

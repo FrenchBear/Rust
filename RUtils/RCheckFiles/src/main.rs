@@ -20,6 +20,7 @@
 // 2025-10-17	PV      2.5.0 Ends with dot(s) ... -> …, other counts just reported, not fixed
 // 2025-10-19	PV      2.5.1 Do not separate basename from extension when processing a directory name
 // 2025-10-21	PV      3.0.0 Filtering on specific problems
+// 2025-10-21	PV      3.1.0 Detect double extensions
 
 // Note: Can't use MyGlob crate since directories names can be updated during recursive enumeration, this is not a
 // supported use case of MyGlob, so hierarchical exploration is handled directly
@@ -174,18 +175,19 @@ struct RenameItem {
 
 #[derive(Default)]
 struct Statistics {
-    total: i32, // Total files/dirs processed
-    nnn: i32,   // Non-normalized names
-    bra: i32,   // Bracket issue
-    apo: i32,   // Incorrect apostrophe
-    spc: i32,   // Incorrect space
-    car: i32,   // Maybe incorrect char
-    sp2: i32,   // Double space
-    lig: i32,   // Ligatures
-    sba: i32,   // Space after opening bracket or before closing bracket
-    ewd: i32,   // Ends with dots
-    fix: i32,   // Number of path fixed
-    err: i32,   // Number of errors
+    total: u32, // Total files/dirs processed
+    nnn: u32,   // Non-normalized names
+    bra: u32,   // Bracket issue
+    apo: u32,   // Incorrect apostrophe
+    spc: u32,   // Incorrect space
+    car: u32,   // Maybe incorrect char
+    sp2: u32,   // Double space
+    lig: u32,   // Ligatures
+    sba: u32,   // Space after opening bracket or before closing bracket
+    ewd: u32,   // Ends with dots
+    dex: u32,   // Double extension
+    fix: u32,   // Number of path fixed
+    err: u32,   // Number of errors
 
     ext_counter: HashMap<String, u32>, // Count of extensions (lowercase)
 }
@@ -285,6 +287,9 @@ fn main() {
             if stats.ewd > 0 {
                 log(writer, &format!(", {} end with 3 dots", stats.ewd));
             }
+            if stats.dex > 0 {
+                log(writer, &format!(", {} double extension", stats.dex));
+            }
             if stats.fix > 0 {
                 log(writer, &format!(", {} problem{} fixed", stats.fix, s(stats.fix)));
             }
@@ -329,7 +334,7 @@ fn main() {
 }
 
 // Helper
-fn s(n: i32) -> &'static str {
+fn s(n: u32) -> &'static str {
     if n > 1 { "s" } else { "" }
 }
 
@@ -462,7 +467,7 @@ fn process_file(p: &Path, files_stats: &mut Statistics, options: &Options, write
     // Count extension
     if options.count_extensions {
         let ext = match p.extension() {
-            Some(ext) => ext.to_str().unwrap().to_lowercase(),
+            Some(ext) => ext.to_str().unwrap().to_lowercase(),      // Note that extension() returns "txt" without dot, while python returns ".txt"
             None => "(none)".to_string(),
         };
         let e = files_stats.ext_counter.entry(ext).or_insert(0);
@@ -660,21 +665,42 @@ fn check_name(
         }
     }
 
+    // Extract basename and extension, moved out "ends with dot" block since it's alsp used by double extension check
+    let fc = file.clone();
+    let (mut basename, extension) = if pt == "dir" {
+        (fc.as_str(), "")
+    } else {
+        let path = Path::new(&fc);
+        let b = path.file_stem().and_then(|s| s.to_str()).unwrap_or(&fc); // Fallback to the full name if no stem
+        let e = path.extension().and_then(|s| s.to_str()).unwrap_or("");
+        (b, e)
+    };
+
+    // Check for file.txt.txt (only for files)
+    if pt=="file" && (options.report_types.is_empty() || options.report_types.contains("dex")) && extension.len() > 0{
+        let ext2 = Path::new(basename).extension().and_then(|s| s.to_str()).unwrap_or("");
+        if extension.to_lowercase() == ext2.to_lowercase() {
+            if !test_mode {
+                if options.yaml_output {
+                    add_problem(&mut problems, "Double extension");
+                } else {
+                    logln(writer, &format!("Double extension {ext2} in file {fp}"));
+                }
+            }
+            stats.dex += 1;
+            file = basename[..basename.len() - extension.len() - 1].to_string() + "." + extension;
+            let path = Path::new(&file);
+            basename = path.file_stem().and_then(|s| s.to_str()).unwrap();  // No need for a default, we know there is an extension in this block
+        }
+    }
+
+
     // Check if ends by 3 dots (but not 4), replace by single char …
     // But if file ends with 1, 2, 4 or + dots, just report it, don't fix it
     // Use path methits to split into basename/extension, even if it's probably overkill
     // Note: for file name analysis, we only focus on basename, while for directory name, just use the whole name as is
     if options.report_types.is_empty() || options.report_types.contains("ewd") {
-        let (basename, extension) = if pt == "dir" {
-            (file.as_str(), "")
-        } else {
-            let path = Path::new(&file);
-            let b = path.file_stem().and_then(|s| s.to_str()).unwrap_or(&file); // Fallback to the full name if no stem
-            let e = path.extension().and_then(|s| s.to_str()).unwrap_or("");
-            (b, e)
-        };
-
-        let mut end_dots_count = 0;
+    let mut end_dots_count = 0;
         for c in basename.chars().rev() {
             if c == '.' {
                 end_dots_count += 1;

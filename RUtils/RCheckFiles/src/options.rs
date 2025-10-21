@@ -3,6 +3,7 @@
 //
 // 2025-10-15	PV       Refactoring, separated options module. Added extended options
 // 2025-10-21	PV       Filtering on problem types
+// 2025-10-21	PV       specific type dex for double extension
 
 // Application imports
 use crate::*;
@@ -53,7 +54,7 @@ impl Options {
         let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄|⦃-??⦄] [⦃-p type[,type]...⦄] [⦃-f⦄] [⦃-y⦄] [⦃-F⦄ ⟨yamlfile⟩] [⦃-e⦄] ⟨source⟩...
 ⦃?⦄|⦃-?⦄|⦃-h⦄     ¬Show this message
 ⦃??⦄|⦃-??⦄      ¬Show advanced usage notes
-⦃-p type[,type]...⦄ ¬Only report specific types. type: nnn|bra|apo|spc|car|sp2|lig|sba|ewd
+⦃-p type[,type]...⦄ ¬Only report specific types. type: nnn|bra|apo|spc|car|sp2|lig|sba|ewd|dex
 ⦃-f⦄          ¬Automatic problems fixing
 ⦃-y⦄          ¬Yaml output
 ⦃-F⦄ ⟨yamlfile⟩ ¬Rename files using old/new fields of provided yaml file
@@ -69,7 +70,8 @@ car   ¬Maybe incorrect char
 sp2   ¬Double space
 lig   ¬Ligatures
 sba   ¬Space after opening bracket or before closing bracket
-ewd   ¬Ends with dots";
+ewd   ¬Ends with dots
+dex   ¬Double extension";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }
@@ -143,8 +145,9 @@ Option ⦃-y⦄ generates yaml output, including extra non-yaml header and foote
                                 && pb != "lig"
                                 && pb != "sba"
                                 && pb != "ewd"
+                                && pb != "dex"
                             {
-                                return Err(format!("Invalid problem type {}, must be one of nnn|bra|apo|spc|car|sp2|lig|sba|ewd", problem).into());
+                                return Err(format!("Invalid problem type {}, must be one of nnn|bra|apo|spc|car|sp2|lig|sba|ewd|dex", problem).into());
                             }
                             if !options.report_types.contains(&pb) {
                                 options.report_types.insert(pb);
