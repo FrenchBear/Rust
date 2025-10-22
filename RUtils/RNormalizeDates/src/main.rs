@@ -38,6 +38,7 @@ use re::*;
 
 const APP_NAME: &str = "rnormalizedates";
 const APP_VERSION: &str = "1.1.5";
+const APP_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 
 // -----------------------------------
 // Main

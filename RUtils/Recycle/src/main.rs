@@ -5,28 +5,28 @@
 // 2025-05-05   PV      1.1.2 Use MyMarkup crate to format usage and extended help
 // 2025-05-05	PV      1.1.3 Logging crate
 // 2025-09-15	PV      1.1.4 logwriter_none
+// 2025-20-22   PV      1.2.0 Clippy review, separated options processing in options.rs, use build.rs and dependencies variables
 
 //#![allow(unused)]
 
 // Standard library imports
-use std::error::Error;
 use std::path::Path;
 use std::process;
 use std::time::Instant;
 
 // External crates imports
-use getopt::Opt;
 use myglob::{MyGlobMatch, MyGlobSearch};
-use mymarkup::MyMarkup;
 use logging::{LogWriter, log, logln, logwriter_none};
 
 // -----------------------------------
 // Submodules
 
+mod options;
 mod drive_type;
 mod reparse;
 mod tests;
 
+use options::*;
 use drive_type::*;
 use reparse::*;
 
@@ -35,117 +35,7 @@ use reparse::*;
 
 const APP_NAME: &str = "recycle";
 const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
-
-// ==============================================================================================
-// Options processing
-
-// Dedicated struct to store command line arguments
-#[derive(Debug, Default)]
-pub struct Options {
-    sources: Vec<String>,
-    no_action: bool,
-    verbose: bool,
-    silent: bool,
-}
-
-impl Options {
-    fn header() {
-        println!(
-            "{APP_NAME} {APP_VERSION}\n\
-            Delete files and directories to trash"
-        );
-    }
-
-    fn usage() {
-        Options::header();
-        println!();
-        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄] [⦃-v⦄] [⦃-s⦄] [⦃-n⦄] ⟨source⟩...
-
-⌊Options⌋:
-⦃?⦄|⦃-?⦄|⦃-h⦄  ¬Show this message
-⦃??⦄       ¬Show advanced usage notes
-⦃-v⦄       ¬Verbose output
-⦃-s⦄       ¬Silent mode, silently ignore files/dirs not found
-⦃-n⦄       ¬No action (nothing deleted)
-⟨source⟩   ¬File or directory to delete, or file glob pattern";
-
-        MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
-    }
-
-    fn extended_usage() {
-        Options::header();
-        let text =
-"Copyright ©2025 Pierre Violent
-
-⟪⌊Advanced usage notes⌋⟫
-
-Only local files (local drive or attached USB drive) support trash.
-Network files can't be deleted to recycle bin, so they can't be removed with this command (contrary to PDEL that will remove remote files permanently).";
-
-        MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
-        MyMarkup::render_markup(MyGlobSearch::glob_syntax());
-    }
-
-    /// Build a new struct Options analyzing command line parameters.<br/>
-    /// Some invalid/inconsistent options or missing arguments return an error.
-    fn new() -> Result<Options, Box<dyn Error>> {
-        let mut args: Vec<String> = std::env::args().collect();
-        if args.len() > 1 && args[1].to_lowercase() == "help" {
-            Self::usage();
-            return Err("".into());
-        }
-
-        if args[1] == "??" || args[1] == "-??" {
-            Self::extended_usage();
-            return Err("".into());
-        }
-
-        let mut options = Options { ..Default::default() };
-        let mut opts = getopt::Parser::new(&args, "h?vsn");
-
-        loop {
-            match opts.next().transpose()? {
-                None => break,
-                Some(opt) => match opt {
-                    Opt('h', None) | Opt('?', None) => {
-                        Self::usage();
-                        return Err("".into());
-                    }
-
-                    Opt('v', None) => {
-                        options.verbose = true;
-                    }
-
-                    Opt('s', None) => {
-                        options.silent = true;
-                    }
-
-                    Opt('n', None) => {
-                        options.no_action = true;
-                    }
-
-                    _ => unreachable!(),
-                },
-            }
-        }
-
-        // Check for extra argument
-        for arg in args.split_off(opts.index()) {
-            if arg == "?" || arg == "help" {
-                Self::usage();
-                return Err("".into());
-            }
-
-            if arg.starts_with("-") {
-                return Err(format!("Invalid/unsupported option {}", arg).into());
-            }
-
-            options.sources.push(arg);
-        }
-
-        Ok(options)
-    }
-}
+const APP_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 
 // -----------------------------------
 // Main
@@ -157,7 +47,10 @@ fn main() {
         if msg.is_empty() {
             process::exit(0);
         }
-        logln(&mut logwriter_none(), format!("*** {APP_NAME}: Problem parsing arguments: {}", err).as_str());
+        logln(
+            &mut logwriter_none(),
+            format!("*** {APP_NAME}: Problem parsing arguments: {}", err).as_str(),
+        );
         process::exit(1);
     });
 
@@ -253,39 +146,39 @@ fn recycle_dir(writer: &mut LogWriter, path: &Path, dirs_count: &mut i32, option
     }
 
     // We don't recycle dirs located on a remote drive
-    if let Ok(dt) = drive_type(path) {
-        if dt == DriveType::DRIVE_REMOTE {
-            if !options.silent {
-                logln(
-                    writer,
-                    format!("*** Can't recycle dir {} located on a remote drive", quoted_path(path)).as_str(),
-                );
-            }
-            return true; // Block glob processing, since all other dirs are on remote drive
+    if let Ok(dt) = drive_type(path)
+        && dt == DriveType::DRIVE_REMOTE
+    {
+        if !options.silent {
+            logln(
+                writer,
+                format!("*** Can't recycle dir {} located on a remote drive", quoted_path(path)).as_str(),
+            );
         }
+        return true; // Block glob processing, since all other dirs are on remote drive
     }
 
-    if let Ok(rt) = reparse_type(path) {
-        if rt == ReparseType::Junction || rt == ReparseType::SymLink || rt == ReparseType::Stub {
-            if !options.silent {
-                logln(
-                    writer,
-                    format!(
-                        "*** Can't recycle dir {} reparse point {}",
-                        if rt == ReparseType::Junction {
-                            "JUNCTION"
-                        } else if rt == ReparseType::SymLink {
-                            "SYMLINK"
-                        } else {
-                            "STUB"
-                        },
-                        quoted_path(path)
-                    )
-                    .as_str(),
-                );
-            }
-            return false; // Don't block glob processing
+    if let Ok(rt) = reparse_type(path)
+        && (rt == ReparseType::Junction || rt == ReparseType::SymLink || rt == ReparseType::Stub)
+    {
+        if !options.silent {
+            logln(
+                writer,
+                format!(
+                    "*** Can't recycle dir {} reparse point {}",
+                    if rt == ReparseType::Junction {
+                        "JUNCTION"
+                    } else if rt == ReparseType::SymLink {
+                        "SYMLINK"
+                    } else {
+                        "STUB"
+                    },
+                    quoted_path(path)
+                )
+                .as_str(),
+            );
         }
+        return false; // Don't block glob processing
     }
 
     match trash::delete(path) {
@@ -318,28 +211,28 @@ fn recycle_file(writer: &mut LogWriter, path: &Path, files_count: &mut i32, opti
     }
 
     // We don't recycle files located on a remote drive
-    if let Ok(dt) = drive_type(path) {
-        if dt == DriveType::DRIVE_REMOTE {
-            if !options.silent {
-                logln(
-                    writer,
-                    format!("*** Can't recycle file {} located on a remote drive", quoted_path(path)).as_str(),
-                );
-            }
-            return true; // Block glob processing, since all other files are on remote drive
+    if let Ok(dt) = drive_type(path)
+        && dt == DriveType::DRIVE_REMOTE
+    {
+        if !options.silent {
+            logln(
+                writer,
+                format!("*** Can't recycle file {} located on a remote drive", quoted_path(path)).as_str(),
+            );
         }
+        return true; // Block glob processing, since all other files are on remote drive
     }
 
     // SYMLINK files can safely be sent to trash, no need to block them
     // OneDrive Stubs are deleted locally AND on OneDrive, they're not copied to local recycle.bin, but in
     // outlook recycle.bin.  For security, let refuse to delete them by default
-    if let Ok(rt) = reparse_type(path) {
-        if rt == ReparseType::Stub {
-            if !options.silent {
-                logln(writer, format!("*** Can't recycle file stub {}", quoted_path(path)).as_str());
-            }
-            return false; // Don't block glob processing
+    if let Ok(rt) = reparse_type(path)
+        && rt == ReparseType::Stub
+    {
+        if !options.silent {
+            logln(writer, format!("*** Can't recycle file stub {}", quoted_path(path)).as_str());
         }
+        return false; // Don't block glob processing
     }
 
     match trash::delete(path) {

@@ -220,7 +220,7 @@ fn print_tree(b: &mut DataBag, dir: &Path, prefix: &str, is_last: bool, options:
 	println!();
 
     for (i, entry) in entries.iter().enumerate() {
-        let (h, s) = is_hidden_or_system_dir(&entry);
+        let (h, s) = is_hidden_or_system_dir(entry);
         if s && !options.show_hidden_and_system || h && !options.show_hidden {
             continue;
         }

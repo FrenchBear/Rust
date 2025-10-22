@@ -2,6 +2,7 @@
 // be retrieved at compile-time in main app with env!() macro
 //
 // 2025-07-05   PV      First version, with the help of Gemini
+// 2025-20-22   PV      Clippy review
 
 use std::env;
 use std::fs;
@@ -20,7 +21,7 @@ fn main() {
     // Find the package entry
     let packages = lockfile.get("package").and_then(|p| p.as_array()).expect("Could not find [[package]] in Cargo.lock");
 
-    generate_variable(&packages, "getopt");
+    generate_variable(packages, "getopt");
 
     // Tell cargo to re-run the build script if Cargo.lock changes.
     println!("cargo:rerun-if-changed=Cargo.lock");

@@ -27,10 +27,7 @@ pub struct Options {
 
 impl Options {
     fn header() {
-        println!(
-            "{APP_NAME} {APP_VERSION}\n\
-            {APP_DESCRIPTION}"
-        );
+        println!("{APP_NAME} {APP_VERSION}\n{APP_DESCRIPTION}");
     }
 
     fn usage() {
@@ -115,7 +112,7 @@ Option ⦃-v⦄ show small statistics at the end of tree.";
                             options.maxdepth = n;
                         }
                         Err(_) => {
-                            return Err(format!("maxdepth argument must be an integer >= 0").into());
+                            return Err("maxdepth argument must be an integer >= 0".into());
                         }
                     },
 

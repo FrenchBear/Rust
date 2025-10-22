@@ -4,4 +4,4 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-termimad = "0.31.3"
+termimad = "0.34"

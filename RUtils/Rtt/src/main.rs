@@ -3,6 +3,7 @@
 // 2025-05-03	PV      First version
 // 2025-05-04   PV      1.0.1 Use MyMarkup crate to format usage and extended help
 // 2025-10-01   PV      1.0.2 Updated list of text extensions
+// 2025-20-22   PV      Clippy review
 
 //#![allow(unused)]
 
@@ -200,7 +201,8 @@ fn main() {
                 let mut file_printed = false;
 
                 let ft = &b.counters[f][e].files_types;
-                if ft.utf8 > 0 && ft.utf16 > 0 || ft.utf8 > 0 && ft.eightbit > 0 || ft.utf16 > 0 && ft.ascii > 0 || ft.utf16 > 0 && ft.eightbit > 0 {
+                // if ft.utf8 > 0 && ft.utf16 > 0 || ft.utf8 > 0 && ft.eightbit > 0 || ft.utf16 > 0 && ft.ascii > 0 || ft.utf16 > 0 && ft.eightbit > 0 {
+                if (ft.eightbit > 0 || ft.utf16 > 0) && ft.utf8 > 0 || ft.utf16 > 0 && ft.ascii > 0 || ft.utf16 > 0 && ft.eightbit > 0 {
                     if !header_printed {
                         println!("\nMixed directory contents:");
                         header_printed = true;
@@ -212,21 +214,19 @@ fn main() {
                 }
 
                 let eol = &b.counters[f][e].eol_styles;
-                if eol.total > 1 {
-                    if eol.windows > 0 && eol.unix > 0 || eol.windows > 0 && eol.mac > 0 || eol.unix > 0 && eol.mac > 0 {
-                        if !header_printed {
-                            println!("\nMixed directory contents:");
-                            header_printed = true;
-                        }
-
-                        if file_printed {
-                            print!(", ");
-                        } else {
-                            file_printed = true;
-                            print!("{}, ext .{}: ", f, e);
-                        }
-                        print!("{}", "Mixed EOF styles".red().bold());
+                if eol.total > 1 && ((eol.mac > 0 || eol.unix > 0) && eol.windows > 0 || eol.unix > 0 && eol.mac > 0) {
+                    if !header_printed {
+                        println!("\nMixed directory contents:");
+                        header_printed = true;
                     }
+
+                    if file_printed {
+                        print!(", ");
+                    } else {
+                        file_printed = true;
+                        print!("{}, ext .{}: ", f, e);
+                    }
+                    print!("{}", "Mixed EOF styles".red().bold());
                 }
 
                 if file_printed {
@@ -269,7 +269,7 @@ fn process_stdin(b: &mut DataBag, options: &Options) -> Result<(), io::Error> {
     std::io::Write::write_all(&mut temp_file, &buffer)?;
     temp_file.flush()?; // Ensure all bytes are written to the file.
 
-    print_result(process_file(b, temp_file.path(), Path::new("(stdin)")).as_str(), &options);
+    print_result(process_file(b, temp_file.path(), Path::new("(stdin)")).as_str(), options);
     Ok(())
 }
 
@@ -323,7 +323,7 @@ fn print_result(msg: &str, options: &Options) {
 fn print_result_core(msg: &str) {
     let mut p0 = 0;
     loop {
-        let p1 = find_from_position(&msg, '«', p0);
+        let p1 = find_from_position(msg, '«', p0);
         if p1.is_none() {
             println!("{}", &msg[p0..]);
             return;
@@ -334,7 +334,7 @@ fn print_result_core(msg: &str) {
             print!("{}", &msg[p0..p1]);
         }
 
-        let p2 = find_from_position(&msg, '»', p1 + '»'.len_utf8()).expect(format!("Internal error, unbalanced « » in {msg}").as_str());
+        let p2 = find_from_position(msg, '»', p1 + '»'.len_utf8()).unwrap_or_else(|| panic!("Internal error, unbalanced « » in {msg}"));
         print!("{}", &msg[p1 + '«'.len_utf8()..p2].red().bold());
         p0 = p2 + '»'.len_utf8()
     }
@@ -387,7 +387,6 @@ fn process_file(b: &mut DataBag, path_for_read: &Path, path_for_name: &Path) -> 
                         );
                     }
                     return res;
-
                 }
                 TextFileEncoding::Empty => {
                     b.files_types.empty += 1;
@@ -459,7 +458,6 @@ fn process_file(b: &mut DataBag, path_for_read: &Path, path_for_name: &Path) -> 
             } else if eol.mac > 0 {
                 res.push_str("Mac");
             }
-
         }
         Err(e) => {
             eprintln!("*** Error reading file {}: {}", path_for_name.display(), e);
@@ -477,12 +475,12 @@ fn get_eol(txt: &str) -> EOLStyleCounts {
         match c {
             b'\n' => eol.unix |= 1,
             b'\r' => {
-                if let Some(&next_c) = iter.peek() {
-                    if *next_c == b'\n' {
-                        iter.next();
-                        eol.windows |= 1;
-                        continue;
-                    }
+                if let Some(&next_c) = iter.peek()
+                    && *next_c == b'\n'
+                {
+                    iter.next();
+                    eol.windows |= 1;
+                    continue;
                 }
                 eol.mac |= 1;
             }

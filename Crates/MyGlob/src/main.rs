@@ -3,6 +3,7 @@
 //
 // 2025-03-25   PV      First version
 // 2025-10-17   PV      Case sensitive
+// 2025-20-22   PV      Clippy review
 
 #![allow(unused)]
 
@@ -85,5 +86,5 @@ fn median(v: &[f64]) -> f64 {
     }
     let mut v2 = v.to_owned();
     v2.sort_by(|a, b| a.partial_cmp(b).unwrap());
-    if l % 2 == 0 { (v2[l >> 1] + v2[(l >> 1) - 1]) / 2.0 } else { v2[l >> 1] }
+    if l.is_multiple_of(2) { (v2[l >> 1] + v2[(l >> 1) - 1]) / 2.0 } else { v2[l >> 1] }
 }

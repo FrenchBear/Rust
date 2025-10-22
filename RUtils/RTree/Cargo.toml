@@ -6,9 +6,9 @@ authors = ["Pierre Violent"]
 edition = "2024"
 
 [dependencies]
-windows = { version = "0.58.0", features = ["Win32_Foundation", "Win32_System_LibraryLoader", "Win32_UI_Shell"] }
+windows = { version = "0.62", features = ["Win32_Foundation", "Win32_System_LibraryLoader", "Win32_UI_Shell"] }
 mymarkup = { path = "../../Crates/MyMarkup" }
 getopt = "1.1.7"
 
 [build-dependencies]
-toml = "0.8.23"
+toml = "0.9"

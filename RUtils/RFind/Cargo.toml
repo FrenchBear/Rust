@@ -14,4 +14,4 @@ chrono = "0.4.40"
 num-format = "0.4.4"
 
 [build-dependencies]
-toml = "0.8.23"
+toml = "0.9"

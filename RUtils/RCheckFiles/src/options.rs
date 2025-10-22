@@ -1,9 +1,10 @@
 // rcheckfiles options module
 // Processing command line arguments
 //
-// 2025-10-15	PV       Refactoring, separated options module. Added extended options
-// 2025-10-21	PV       Filtering on problem types
-// 2025-10-21	PV       specific type dex for double extension
+// 2025-10-15	PV      Refactoring, separated options module. Added extended options
+// 2025-10-21	PV      Filtering on problem types
+// 2025-10-21	PV      Specific type dex for double extension
+// 2025-20-22   PV      Clippy review
 
 // Application imports
 use crate::*;
@@ -42,10 +43,7 @@ pub fn dir_exists(path: &str) -> bool {
 
 impl Options {
     fn header() {
-        println!(
-            "{APP_NAME} {APP_VERSION}\n\
-             {APP_DESCRIPTION}"
-        );
+        println!("{APP_NAME} {APP_VERSION}\n{APP_DESCRIPTION}");
     }
 
     fn usage() {
@@ -82,7 +80,6 @@ dex   ¬Double extension";
         println!();
 
         MyMarkup::render_markup("⌊Dependencies⌋:");
-        //println!("- MyGlob: {}", MyGlobSearch::version());
         println!("- MyMarkup: {}", MyMarkup::version());
         println!("- Logging: {}", logging::version());
         println!("- getopt: {}", env!("DEP_GETOPT_VERSION"));
@@ -92,16 +89,11 @@ dex   ¬Double extension";
         println!("- unicode-normalization: {}", env!("DEP_UNICODE_NORMALIZATION_VERSION"));
         println!();
 
-        // ⌊Extended options⌋:
-        // ⦃-a+⦄|⦃-a-⦄  ¬Enable (default) or disable glob autorecurse mode
-
         let text = "⟪⌊Advanced usage notes⌋⟫
 
-Option ⦃-y⦄ generates yaml output, including extra non-yaml header and footer. If output is redirected to a file to be edited and later processed with -F option, don't forget to remove non-yaml parts.";
+Option ⦃-y⦄ generates yaml output, including extra non-yaml header and footer. If output is redirected to a file to be edited and later processed with -F option, don't forget to remove non-yaml parts.\n";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
-        //println!();
-        //MyMarkup::render_markup(MyGlobSearch::glob_syntax());
     }
 
     /// Build a new struct Options analyzing command line parameters.<br/>
@@ -147,7 +139,9 @@ Option ⦃-y⦄ generates yaml output, including extra non-yaml header and foote
                                 && pb != "ewd"
                                 && pb != "dex"
                             {
-                                return Err(format!("Invalid problem type {}, must be one of nnn|bra|apo|spc|car|sp2|lig|sba|ewd|dex", problem).into());
+                                return Err(
+                                    format!("Invalid problem type {}, must be one of nnn|bra|apo|spc|car|sp2|lig|sba|ewd|dex", problem).into(),
+                                );
                             }
                             if !options.report_types.contains(&pb) {
                                 options.report_types.insert(pb);
@@ -209,10 +203,8 @@ Option ⦃-y⦄ generates yaml output, including extra non-yaml header and foote
             if options.sources.is_empty() {
                 return Err("Without option -F, at least one source is required".into());
             }
-        } else {
-            if !options.sources.is_empty() {
-                return Err("With option -F, no source is allowed".into());
-            }
+        } else if !options.sources.is_empty() {
+            return Err("With option -F, no source is allowed".into());
         }
 
         Ok(options)

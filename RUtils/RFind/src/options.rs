@@ -10,6 +10,7 @@
 // 2025-09-15 	PV 		Option -dbg for debugging and -log to write log file
 // 2025-10-13 	PV 		Option -exec, -xargs and struct CommandToRun
 // 2025-10-17   PV      Option -yaml
+// 2025-20-22   PV      Clippy review
 
 // Application imports
 use crate::*;
@@ -230,13 +231,14 @@ impl Options {
 
                     "exec" | "xargs" => {
                         let mut args: Vec<String> = Vec::new();
-                        while let Some(arg) = args_iter.next() {
+                        // while let Some(arg) = args_iter.next() {     // Clippy suggested to replace this
+                        for arg in args_iter.by_ref() {
                             if arg == ";" {
                                 break;
                             }
                             args.push(arg.clone());
                         }
-                        if args.len() == 0 {
+                        if args.is_empty() {
                             return Err(format!("Option -{arglc} requires an argument").into());
                         }
 

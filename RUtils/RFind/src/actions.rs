@@ -8,6 +8,7 @@
 // 2025-10-13   PV      ActionExec, ActionXargs
 // 2025-10-17   PV      ActionYaml
 // 2025-10-22   PV      to_yaml_single_quoted for Yaml action
+// 2025-20-22   PV      Clippy review
 
 use super::*;
 
@@ -292,7 +293,7 @@ impl Action for ActionXargs {
         for arg in self.ctr.args.iter() {
             if arg.contains("{}") {
                 for pp in self.paths.iter() {
-                    args.push(arg.replace("{}", &pp));
+                    args.push(arg.replace("{}", pp));
                 }
             } else {
                 args.push(arg.clone());
@@ -325,9 +326,9 @@ impl Action for ActionYaml {
 
     fn action(&mut self, lw: &mut LogWriter, path: &Path, _noaction: bool, _verbose: bool) {
         if path.is_file() {
-            logln(lw, &format!("- typ: file"));
+            logln(lw, "- typ: file");
         } else {
-            logln(lw, &format!("- typ: dir"));
+            logln(lw, "- typ: dir");
         }
         let qp = to_yaml_single_quoted(path.as_os_str().to_str().unwrap());
         logln(lw, &format!("  old: {}", qp));

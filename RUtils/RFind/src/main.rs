@@ -23,12 +23,14 @@
 // 2025-10-13 	PV 		2.0.1 Option -xargs cmd ;
 // 2025-10-17   PV      2.1.0 Options -yaml and -cs
 // 2025-10-22   PV      2.1.1 to_yaml_single_quoted for ActionYaml to avoid problems with filenames containing special yaml values/characters
+// 2025-20-22   PV      Clippy review
+
 // Notes:
 // - Finding denormalized paths is handled by rcheckfiles and checknnn, no need for a third version :-)
 
 // ToDo:
 // - Accent insensitive search (actually maybe not useful, but everything does it)
-// - Option -rename with a simplified sed 
+// - Option -rename with a simplified sed syntax
 
 //#![allow(unused)]
 
@@ -77,7 +79,10 @@ fn main() {
         if msg.is_empty() {
             process::exit(0);
         }
-        logln(&mut logwriter_none(), format!("*** {APP_NAME}: Problem parsing arguments: {}", err).as_str());
+        logln(
+            &mut logwriter_none(),
+            format!("*** {APP_NAME}: Problem parsing arguments: {}", err).as_str(),
+        );
         process::exit(1);
     });
 
@@ -101,19 +106,19 @@ fn main() {
 
         for source in &mut options.sources {
             let p = Path::new(&source);
-            if let Ok(m) = p.metadata() {
-                if m.is_dir() {
-                    let dir_sep = if cfg!(target_os = "windows") { '\\' } else { '/' };
+            if let Ok(m) = p.metadata()
+                && m.is_dir()
+            {
+                let dir_sep = if cfg!(target_os = "windows") { '\\' } else { '/' };
 
-                    if !(source.ends_with('/') || source.ends_with('\\')) {
-                        (*source).push(dir_sep);
-                        (*source).push(dir_sep);
-                    }
-                    (*source).push_str("**");
+                if !(source.ends_with('/') || source.ends_with('\\')) {
                     (*source).push(dir_sep);
                     (*source).push(dir_sep);
-                    *source += name.as_str();
                 }
+                (*source).push_str("**");
+                (*source).push(dir_sep);
+                (*source).push(dir_sep);
+                *source += name.as_str();
             }
         }
     }
@@ -177,10 +182,10 @@ fn main() {
         }
     }
     for ctr in options.exec_commands.iter() {
-        actions.push(Box::new(actions::ActionExec::new(&ctr)));
+        actions.push(Box::new(actions::ActionExec::new(ctr)));
     }
     for ctr in options.xargs_commands.iter() {
-        actions.push(Box::new(actions::ActionXargs::new(&ctr)));
+        actions.push(Box::new(actions::ActionXargs::new(ctr)));
     }
 
     if options.verbose {
@@ -235,7 +240,6 @@ fn main() {
     for ba in actions.iter_mut() {
         (**ba).conclusion(&mut writer, options.noaction, options.verbose);
     }
-
 
     let duration = start.elapsed();
 

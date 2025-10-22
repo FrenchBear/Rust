@@ -5,6 +5,7 @@
 // 2025-04-30   PV      Use colored instead of termcolor
 // 2025-05-05   PV      Moved to a crate and added support for MacOS and Linux
 // 2025-09-15   PV      1.1: Debugging lines with prefix dbg: are shown in cyan; LogWriter now a struct with path field; logwriter_none()
+// 2025-20-22   PV      Clippy review
 
 //#[allow(unused)]
 
@@ -120,13 +121,13 @@ pub fn new(app_name: &str, app_version: &str, verbose: bool) -> LogWriter {
 }
 
 fn expand_tilde(path: &str) -> PathBuf {
-    if let Some(mut stripped) = path.strip_prefix("~") {
-        if let Some(home) = dirs::home_dir() {
-            if stripped.starts_with('/') || stripped.starts_with('\\') {
-                stripped = &stripped[1..];
-            }
-            return home.join(stripped.trim_start_matches('/'));
+    if let Some(mut stripped) = path.strip_prefix("~")
+        && let Some(home) = dirs::home_dir()
+    {
+        if stripped.starts_with('/') || stripped.starts_with('\\') {
+            stripped = &stripped[1..];
         }
+        return home.join(stripped.trim_start_matches('/'));
     }
     PathBuf::from(path)
 }

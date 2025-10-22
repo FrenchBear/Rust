@@ -21,6 +21,7 @@
 // 2025-10-19	PV      2.5.1 Do not separate basename from extension when processing a directory name
 // 2025-10-21	PV      3.0.0 Filtering on specific problems
 // 2025-10-21	PV      3.1.0 Detect double extensions; Protect strings in yaml output
+// 2025-20-22   PV      Clippy review
 
 // Note: Can't use MyGlob crate since directories names can be updated during recursive enumeration, this is not a
 // supported use case of MyGlob, so hierarchical exploration is handled directly
@@ -205,7 +206,7 @@ struct TransformationData {
 fn get_transformation_data() -> TransformationData {
     // Transform "simple" constant and static variables defined at the beginning of the file into more elaborate
     // structures, adapted for processing
-    let transformation_data = TransformationData {
+    TransformationData {
         space_confusables: HashSet::from_iter(SPACE_CONFUSABLES),
         apostrophe_confusables: HashSet::from_iter(APOSTROPHE_CONFUSABLES),
         ligatures: LIGATURES.clone(),
@@ -217,9 +218,7 @@ fn get_transformation_data() -> TransformationData {
             .chars()
             .map(|ch| (ch, Regex::new(format!(" +{}", regex::escape(ch.to_string().as_str())).as_str()).unwrap()))
             .collect::<HashMap<char, Regex>>(),
-    };
-
-    transformation_data
+    }
 }
 
 fn main() {
@@ -236,7 +235,7 @@ fn main() {
     let transformation_data = get_transformation_data();
 
     // Prepare log writer
-    let mut writer = logging::new(APP_NAME, APP_VERSION, options.yaml_output == false);
+    let mut writer = logging::new(APP_NAME, APP_VERSION, !options.yaml_output);
 
     let start = Instant::now();
 
@@ -425,17 +424,17 @@ fn process_directory(
 
     // First check directoru basename
     dirs_stats.total += 1;
-    if let Some(new_name) = check_name(pa, "dir", dirs_stats, options, writer, transformation_data, false) {
-        if options.fixit {
-            logln(writer, &format!("  --> rename directory \"{new_name}\""));
-            let newpath = pb.parent().unwrap().join(Path::new(&new_name));
-            match fs::rename(&pb, &newpath) {
-                Ok(_) => {
-                    dirs_stats.fix += 1;
-                    pb = newpath;
-                }
-                Err(e) => logln(writer, &format!("*** Error {e}")), // Rename failed, but we continue anyway, don't really know if it's Ok or not...
+    if let Some(new_name) = check_name(pa, "dir", dirs_stats, options, writer, transformation_data, false)
+        && options.fixit
+    {
+        logln(writer, &format!("  --> rename directory \"{new_name}\""));
+        let newpath = pb.parent().unwrap().join(Path::new(&new_name));
+        match fs::rename(&pb, &newpath) {
+            Ok(_) => {
+                dirs_stats.fix += 1;
+                pb = newpath;
             }
+            Err(e) => logln(writer, &format!("*** Error {e}")), // Rename failed, but we continue anyway, don't really know if it's Ok or not...
         }
     }
 
@@ -474,14 +473,14 @@ fn process_file(p: &Path, files_stats: &mut Statistics, options: &Options, write
         *e += 1;
     }
 
-    if let Some(new_name) = check_name(p, "file", files_stats, options, writer, transformation_data, false) {
-        if options.fixit {
-            logln(writer, &format!("  --> rename file \"{new_name}\""));
-            let newpath = p.parent().unwrap().join(Path::new(&new_name));
-            match fs::rename(p, &newpath) {
-                Ok(_) => files_stats.fix += 1,
-                Err(e) => logln(writer, &format!("*** Error {e}")), // Rename failed
-            }
+    if let Some(new_name) = check_name(p, "file", files_stats, options, writer, transformation_data, false)
+        && options.fixit
+    {
+        logln(writer, &format!("  --> rename file \"{new_name}\""));
+        let newpath = p.parent().unwrap().join(Path::new(&new_name));
+        match fs::rename(p, &newpath) {
+            Ok(_) => files_stats.fix += 1,
+            Err(e) => logln(writer, &format!("*** Error {e}")), // Rename failed
         }
     }
 }
@@ -677,7 +676,7 @@ fn check_name(
     };
 
     // Check for file.txt.txt (only for files)
-    if pt == "file" && (options.report_types.is_empty() || options.report_types.contains("dex")) && extension.len() > 0 {
+    if pt == "file" && (options.report_types.is_empty() || options.report_types.contains("dex")) && !extension.is_empty() {
         let ext2 = Path::new(basename).extension().and_then(|s| s.to_str()).unwrap_or("");
         if extension.to_lowercase() == ext2.to_lowercase() {
             if !test_mode {

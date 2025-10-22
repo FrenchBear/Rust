@@ -1,8 +1,7 @@
-// RNormalizeDates: module options
+// recycle options module
+// Processing command line arguments
 //
-// 2025-04-14   PV      Extracted to a separate file
-// 2025-05-04   PV      Use MyMarkup crate to format usage and extended help
-// 2025-20-22   PV      Clippy review
+// 2025-10-22   PV      Extracted from main.rs; Added dependencies info in extended help
 
 // Application imports
 use crate::*;
@@ -11,16 +10,16 @@ use crate::*;
 use std::error::Error;
 
 // External crates imports
+use getopt::Opt;
 use mymarkup::MyMarkup;
 
 // Dedicated struct to store command line arguments
 #[derive(Debug, Default)]
 pub struct Options {
     pub sources: Vec<String>,
-    pub segment: usize,
-    pub final_pause: bool,
     pub no_action: bool,
     pub verbose: bool,
+    pub silent: bool,
 }
 
 impl Options {
@@ -31,37 +30,38 @@ impl Options {
     fn usage() {
         Options::header();
         println!();
-        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄] [⦃-n⦄] [⦃-p⦄] [⦃-v⦄] [⦃-s #⦄] ⟨source⟩...
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄] [⦃-v⦄] [⦃-s⦄] [⦃-n⦄] ⟨source⟩...
 
 ⌊Options⌋:
 ⦃?⦄|⦃-?⦄|⦃-h⦄  ¬Show this message
 ⦃??⦄       ¬Show advanced usage notes
-⦃-n⦄       ¬Do not actually rename (no action)
-⦃-p⦄       ¬Final pause
 ⦃-v⦄       ¬Verbose output
-⦃-s #⦄     ¬Only process segment # (starting at 1) delimited by ' - '
-⟨source⟩   ¬Directory containing PDF files (and recurse) or simple file";
+⦃-s⦄       ¬Silent mode, silently ignore files/dirs not found
+⦃-n⦄       ¬No action (nothing deleted)
+⟨source⟩   ¬File or directory to delete, or file glob pattern";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }
 
     fn extended_usage() {
-        Options::header();
+                Options::header();
         println!("Copyright ©2025 Pierre Violent");
         println!();
 
         MyMarkup::render_markup("⌊Dependencies⌋:");
+        //println!("- MyGlob: {}", MyGlobSearch::version());
         println!("- MyGlob: {}", MyGlobSearch::version());
         println!("- MyMarkup: {}", MyMarkup::version());
         println!("- Logging: {}", logging::version());
         println!("- getopt: {}", env!("DEP_GETOPT_VERSION"));
-        println!("- regex: {}", env!("DEP_REGEX_VERSION"));
-        println!("- unicode-normalization: {}", env!("DEP_UNICODE_NORMALIZATION_VERSION"));
+        println!("- trash: {}", env!("DEP_TRASH_VERSION"));
+        println!("- windows: {}", env!("DEP_WINDOWS_VERSION"));
         println!();
 
         let text = "⟪⌊Advanced usage notes⌋⟫
 
-Without ⟨source⟩ argument, default directory is ⟦C:\\Downloads\\A_Trier\\!A_Trier_Revues\\**\\*.pdf⟧\n";
+Only local files (local drive or attached USB drive) support trash.
+Network files can't be deleted to recycle bin, so they can't be removed with this command (contrary to PDEL that will remove remote files permanently).\n";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
         MyMarkup::render_markup(MyGlobSearch::glob_syntax());
@@ -71,20 +71,18 @@ Without ⟨source⟩ argument, default directory is ⟦C:\\Downloads\\A_Trier\\!
     /// Some invalid/inconsistent options or missing arguments return an error.
     pub fn new() -> Result<Options, Box<dyn Error>> {
         let mut args: Vec<String> = std::env::args().collect();
-        if args.len() > 1 {
-            if args[1].to_lowercase() == "help" {
-                Self::usage();
-                return Err("".into());
-            }
+        if args.len() > 1 && args[1].to_lowercase() == "help" {
+            Self::usage();
+            return Err("".into());
+        }
 
-            if args[1] == "??" || args[1] == "-??" {
-                Self::extended_usage();
-                return Err("".into());
-            }
+        if args[1] == "??" || args[1] == "-??" {
+            Self::extended_usage();
+            return Err("".into());
         }
 
         let mut options = Options { ..Default::default() };
-        let mut opts = getopt::Parser::new(&args, "h?npvs:");
+        let mut opts = getopt::Parser::new(&args, "h?vsn");
 
         loop {
             match opts.next().transpose()? {
@@ -95,31 +93,16 @@ Without ⟨source⟩ argument, default directory is ⟦C:\\Downloads\\A_Trier\\!
                         return Err("".into());
                     }
 
-                    Opt('n', None) => {
-                        options.no_action = true;
-                    }
-
-                    Opt('p', None) => {
-                        options.final_pause = true;
-                    }
-
                     Opt('v', None) => {
                         options.verbose = true;
                     }
 
-                    Opt('s', Some(arg)) => {
-                        if options.segment > 0 {
-                            return Err("Option -s # can only be used once".into());
-                        }
-                        let segres = arg.parse::<usize>();
-                        if let Ok(s) = segres
-                            && (1..=5).contains(&s)
-                        {
-                            options.segment = s;
-                            continue;
-                        }
+                    Opt('s', None) => {
+                        options.silent = true;
+                    }
 
-                        return Err("Option -s requires a numerical argument in [1..5]".into());
+                    Opt('n', None) => {
+                        options.no_action = true;
                     }
 
                     _ => unreachable!(),
@@ -139,10 +122,6 @@ Without ⟨source⟩ argument, default directory is ⟦C:\\Downloads\\A_Trier\\!
             }
 
             options.sources.push(arg);
-        }
-
-        if options.sources.is_empty() {
-            options.sources.push(r"C:\Downloads\A_Trier\!A_Trier_Revues\*.pdf".into());
         }
 
         Ok(options)

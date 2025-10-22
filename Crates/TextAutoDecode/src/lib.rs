@@ -6,6 +6,7 @@
 // 2025-05-06   PV      1.1.0 is_75percent_ascii is only for 8-bit files, use no_binary for other encodings
 // 2025-05-06   PV      1.2.0 check_eightbit fixed (was converting the whole buffer_1000 regardless of actual length)
 // 2025-06-24   PV      1.3.0 check_utf8 checks correctly for a possibly truncated UTF-8 sequence at the end of a 1000 bytes buffer
+// 2025-20-22   PV      1.3.1 Clippy review; fixed check_75percent_text bool variable bug
 
 #![allow(unused_variables, dead_code, unused_imports)]
 
@@ -27,7 +28,7 @@ mod tests;
 // -----------------------------------
 // Globals
 
-const LIB_VERSION: &str = "1.3.0";
+const LIB_VERSION: &str = "1.3.1";
 
 // -----------------------------------
 // Structures
@@ -97,7 +98,13 @@ impl TextAutoDecode {
                         encoding: TextFileEncoding::UTF8BOM,
                     });
                 } else {
-                    return Self::final_read(&mut is_buffer_full_read, &mut buffer_full, &mut file, UTF_8, Some(TextFileEncoding::UTF8BOM));
+                    return Self::final_read(
+                        &mut is_buffer_full_read,
+                        &mut buffer_full,
+                        &mut file,
+                        UTF_8,
+                        Some(TextFileEncoding::UTF8BOM),
+                    );
                 }
             } else {
                 return Ok(TextAutoDecode {
@@ -158,7 +165,7 @@ impl TextAutoDecode {
         }
 
         // Then check encodings without BOM
-        
+
         // UTF-8 without BOM?
         // Note that if string is only ASCII text, then type is assumed ASCII instead of UTF-8
         if let Some(cow) = Self::check_utf8(&buffer_1000, n) {
@@ -251,10 +258,10 @@ impl TextAutoDecode {
         }
 
         // None of the encodings worked without error
-        return Ok(TextAutoDecode {
+        Ok(TextAutoDecode {
             text: None,
             encoding: TextFileEncoding::NotText,
-        });
+        })
     }
 
     // The 75% ASCII test is too restrictive, some valid UTF-8 files are rejected (ex: output of tree command)
@@ -268,7 +275,7 @@ impl TextAutoDecode {
                 return true;
             }
             // If requested, no characters of C1 is accepted (for all encodings but 8-bit)
-            if also_check_block_c1 && b >= 128 && b < 160 {
+            if also_check_block_c1 && (128..160).contains(&b) {
                 return true;
             }
         }
@@ -286,7 +293,7 @@ impl TextAutoDecode {
             let b = c as i32;
             // For 8-bit files, we only exclude non-comon elements of C0 block, and DEL (127) char
             // Anything in [128..255] is accepted
-            if b==127 || b < 32 && (b != 9 && b != 10 && b != 13) {
+            if b == 127 || b < 32 && (b != 9 && b != 10 && b != 13) {
                 return false;
             }
             if (32..127).contains(&b) || b == 9 || b == 10 || b == 13 {
@@ -298,7 +305,6 @@ impl TextAutoDecode {
         if len < 10 { true } else { acount as f64 / len as f64 >= 0.75 }
     }
 
-    
     fn final_read(
         is_buffer_full_read: &mut bool,
         buffer_full: &mut Vec<u8>,
@@ -339,7 +345,7 @@ impl TextAutoDecode {
 
         let check_ascii = my_encoding == TextFileEncoding::UTF8;
         let check_75percent_text =
-            my_encoding == TextFileEncoding::EightBit || my_encoding == TextFileEncoding::UTF16BE || my_encoding == TextFileEncoding::UTF16BE;
+            my_encoding == TextFileEncoding::EightBit || my_encoding == TextFileEncoding::UTF16BE || my_encoding == TextFileEncoding::UTF16LE;
 
         // Special heuristics to be sure it's a valid text files
         if check_75percent_text && !Self::is_75percent_ascii(decoded_string.chars()) {
@@ -349,7 +355,8 @@ impl TextAutoDecode {
             });
         }
 
-        if my_encoding != TextFileEncoding::EightBit && Self::contains_binary_chars(decoded_string.chars(), my_encoding == TextFileEncoding::EightBit) {
+        if my_encoding != TextFileEncoding::EightBit && Self::contains_binary_chars(decoded_string.chars(), my_encoding == TextFileEncoding::EightBit)
+        {
             return Ok(TextAutoDecode {
                 text: None,
                 encoding: TextFileEncoding::NotText,
@@ -367,7 +374,7 @@ impl TextAutoDecode {
             my_encoding
         };
 
-        return Ok(TextAutoDecode { text: Some(s), encoding: e });
+        Ok(TextAutoDecode { text: Some(s), encoding: e })
     }
 
     pub fn check_utf8(buffer_1000: &'_ [u8], n: usize) -> Option<Cow<'_, str>> {

@@ -26,6 +26,7 @@
 // 2025-09-13   PV      1.9.1 Check for unclosed brackets in glob expressions such as "C:\[a-z"
 // 2025-10-01   PV      1.10  Macro !SOURCES to represent common (for me) source files extensions. d is not in the list (also rust temp build files extension)
 // 2025-10-17   PV      1.11  Case sensitive option
+// 2025-20-22   PV      Clippy review
 
 //#![allow(unused_variables, dead_code, unused_imports)]
 
@@ -62,7 +63,7 @@ pub enum Segment {
 #[derive(Debug, Default)]
 pub struct MyGlobSearch {
     root: String,
-    pub segments: Vec<Segment>,     // pub for debugging
+    pub segments: Vec<Segment>, // pub for debugging
     ignore_dirs: Vec<String>,
     maxdepth: usize,
 }
@@ -261,7 +262,11 @@ impl MyGlobBuilder {
         let (root, rem) = MyGlobBuilder::get_root(&self.glob_pattern);
 
         // Then build segments
-        let mut segments = if rem.is_empty() { Vec::new() } else { Self::glob_to_segments(&rem, self.case_sensitive)? };
+        let mut segments = if rem.is_empty() {
+            Vec::new()
+        } else {
+            Self::glob_to_segments(&rem, self.case_sensitive)?
+        };
 
         // Process autorecurse transformation if required
         if self.autorecurse {
@@ -299,7 +304,9 @@ impl MyGlobBuilder {
 
         // Macro expansion. For efficiency, don't use regexp or complex code to check it's surrounded by braces
         if let Some(pos) = glob_pattern.to_ascii_uppercase().find("!SOURCES") {
-            glob_pattern = glob_pattern[..pos].to_string() + "asm,awk,c,cc,cpp,cs,cxx,fs,go,h,hpp,hxx,java,jl,js,lua,py,rs,sql,ts,vb,xaml" + &glob_pattern[pos + 8..];
+            glob_pattern = glob_pattern[..pos].to_string()
+                + "asm,awk,c,cc,cpp,cs,cxx,fs,go,h,hpp,hxx,java,jl,js,lua,py,rs,sql,ts,vb,xaml"
+                + &glob_pattern[pos + 8..];
         }
 
         let mut segments = Vec::<Segment>::new();
@@ -355,11 +362,11 @@ impl MyGlobBuilder {
                     in_bracket = true;
 
                     // Special case, ! at the beginning of a glob match is converted to a ^ in regex syntax
-                    if let Some(next_c) = iter.peek() {
-                        if *next_c == '!' {
-                            iter.next();
-                            regex_buffer.push('^');
-                        }
+                    if let Some(next_c) = iter.peek()
+                        && *next_c == '!'
+                    {
+                        iter.next();
+                        regex_buffer.push('^');
                     }
 
                     while let Some(inner_c) = iter.next() {
@@ -525,16 +532,16 @@ impl Iterator for MyGlobIteratorState<'_> {
                                                     }
                                                 } else if ft.is_dir() {
                                                     let flnc = fname.to_lowercase();
-                                                    if !self.ignore_dirs.iter().any(|ie| *ie == flnc) {
-                                                        if re.is_match(&fname) {
-                                                            if self.maxdepth == 0 || recurse_depth < self.maxdepth {
-                                                                // If it's the last segment, we just return the directory
-                                                                // Otherwise, we continue exploration in next loop
-                                                                if depth == self.segments.len() - 1 {
-                                                                    self.queue.insert(0, SearchPendingData::Dir(pb.clone()));
-                                                                } else {
-                                                                    self.queue.insert(0, SearchPendingData::DirToExplore(pb.clone(), depth + 1, false, 0));
-                                                                }
+                                                    //if !self.ignore_dirs.iter().any(|ie| *ie == flnc) {
+                                                    if !self.ignore_dirs.contains(&flnc) {
+                                                        if re.is_match(&fname) && (self.maxdepth == 0 || recurse_depth < self.maxdepth) {
+                                                            // If it's the last segment, we just return the directory
+                                                            // Otherwise, we continue exploration in next loop
+                                                            if depth == self.segments.len() - 1 {
+                                                                self.queue.insert(0, SearchPendingData::Dir(pb.clone()));
+                                                            } else {
+                                                                self.queue
+                                                                    .insert(0, SearchPendingData::DirToExplore(pb.clone(), depth + 1, false, 0));
                                                             }
                                                         }
                                                         dirs.push(pb);

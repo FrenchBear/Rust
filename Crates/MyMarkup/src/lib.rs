@@ -5,7 +5,8 @@
 // 2025-05-07   PV      Clippy cleanup
 // 2025-07-04   PV      1.0.1 Fixed add \n if text doesn't ends with \n
 // 2025-07-05   PV      1.1.0 Main generation is now build_markup_core, which returns a string rather than printing directly
-//
+// 2025-20-22   PV      Clippy review
+
 // MyMarkup use pecialized brackets for formatting text:
 // ⟪Bold⟫           ~W  ~X
 // ⟨Italic⟩         ~w  ~x
@@ -332,7 +333,8 @@ impl MyMarkup {
                 }
             }
         }
-        return res;
+
+        res
     }
 }
 
