@@ -11,6 +11,7 @@
 // 2025-10-13 	PV 		Option -exec, -xargs and struct CommandToRun
 // 2025-10-17   PV      Option -yaml
 // 2025-20-22   PV      Clippy review
+// 2025-20-22   PV      links options, reorg usage message
 
 // Application imports
 use crate::*;
@@ -44,6 +45,7 @@ pub struct Options {
     pub recycle: bool,
     pub case_sensitive: bool,
     pub autorecurse: bool,
+    pub link_mode: usize,
     pub noaction: bool,
     pub verbose: bool,
     pub debug: bool,
@@ -61,19 +63,19 @@ impl Options {
     fn usage() {
         Options::header();
         println!();
-        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄] [⦃-v⦄] [⦃-n⦄] [⦃-f⦄|⦃-type f⦄|⦃-d⦄|⦃-type d⦄] [⦃-e⦄|⦃-empty⦄] [⦃-r+⦄|⦃-r-⦄] [⦃-a+⦄|⦃-a-⦄] [⦃-cs⦄] [⟨action⟩...] [⦃-name⦄ ⟨name⟩] [⦃-maxdepth⦄ ⟨n⟩] ⟨source⟩...
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄] [⦃-v⦄] [⦃-n⦄] [⦃-cs⦄] [⦃-r+⦄|⦃-r-⦄] [⦃-a+⦄|⦃-a-⦄] [⦃-l⦄[⦃0⦄|⦃1⦄|⦃2⦄]] [⦃-name⦄ ⟨name⟩] [⦃-maxdepth⦄ ⟨n⟩] [⟨filter⟩...] [⟨action⟩...] ⟨source⟩...
 
 ⌊Options⌋:
 ⦃?⦄|⦃-?⦄|⦃-h⦄          ¬Show this message
 ⦃??⦄               ¬Show advanced usage notes
 ⦃-v⦄               ¬Verbose output
 ⦃-n⦄               ¬No action: display actions, but don't execute them
+⦃-cs⦄              ¬Case-sensitive search (default is case insensitive)
 ⦃-r+⦄|⦃-r-⦄          ¬Delete to recycle bin (default) or delete forever; Recycle bin is not allowed on network sources
 ⦃-a+⦄|⦃-a-⦄          ¬Enable (default) or disable glob autorecurse mode (see extended usage)
-⦃-cs⦄              ¬Case-sensitive search (default is case insensitive)
+⦃-l⦄[⦃0⦄|⦃1⦄|⦃2⦄]        ¬Link mode: 0=ignore links, 1=include links but don't follow them (default), 2=follow links
 ⦃-name⦄ ⟨name⟩       ¬Append ⟦/**/⟧⟨name⟩ to each source directory (compatibility with XFind/Search)
 ⦃-maxdepth⦄ ⟨n⟩      ¬Limit the recursion depth of ** segments, 1=One directory only, ... Default=0 is unlimited depth
-⟨source⟩           ¬File or directory to search
 
 ⌊Filters⌋:
 ⦃-f⦄|⦃-type f⦄       ¬Search for files
@@ -88,7 +90,10 @@ impl Options {
 ⦃-rmdir⦄           ¬Delete matching directories, whether empty or not
 ⦃-exec⦄ ⟨cmd⟩ [⦃;⦄]    ¬Execute command ⟨cmd⟩ for each path found, {} replaced by the path. A single semicolon marks the end of the command
 ⦃-xargs⦄ ⟨cmd⟩ [⦃;⦄]   ¬Execute command ⟨cmd⟩ at the end, {} replaced by all the paths found. A single semicolon marks the end of the command
-⦃-yaml⦄            ¬Generate old/new yaml data for matching files names and dir names, to be edited and used by rcheckfiles -F";
+⦃-yaml⦄            ¬Generate old/new yaml data for matches, to be edited and used by rcheckfiles -F
+
+⟨source⟩           ¬File or directory to search (glob pattern)";
+
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }
@@ -130,6 +135,7 @@ impl Options {
         let mut options = Options {
             autorecurse: true,
             recycle: true,
+            link_mode: 1,
             ..Default::default()
         };
 
@@ -211,6 +217,10 @@ impl Options {
 
                     "a+" => options.autorecurse = true,
                     "a-" => options.autorecurse = false,
+
+                    "l0" => options.link_mode = 0,
+                    "l1" => options.link_mode = 1,
+                    "l2" => options.link_mode = 2,
 
                     "print" => {
                         options.actions_names.insert("print");

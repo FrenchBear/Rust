@@ -25,6 +25,7 @@
 // 2025-10-22   PV      2.1.1 to_yaml_single_quoted for ActionYaml to avoid problems with filenames containing special yaml values/characters
 // 2025-20-22   PV      Clippy review
 // 2025-20-22   PV      2.2.0 option -dir show Windows files attributes
+// 2025-20-22   PV      2.3.0 support of links (with MyGlob 2.0)
 
 // Notes:
 // - Finding denormalized paths is handled by rcheckfiles and checknnn, no need for a third version :-)
@@ -136,8 +137,9 @@ fn main() {
     for source in options.sources.iter() {
         let mut builder = MyGlobSearch::new(source)
             .autorecurse(options.autorecurse)
-            .maxdepth(options.maxdepth)
-            .case_sensitive(options.case_sensitive);
+            .max_depth(options.maxdepth)
+            .case_sensitive(options.case_sensitive)
+            .set_link_mode(options.link_mode);
         if !USE_MYGLOB_DEFAULT_EXCLUSIONS {
             builder = builder.clear_ignore_dirs();
         }

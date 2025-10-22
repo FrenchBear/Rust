@@ -27,7 +27,7 @@
 // 2025-10-01   PV      1.10  Macro !SOURCES to represent common (for me) source files extensions. d is not in the list (also rust temp build files extension)
 // 2025-10-17   PV      1.11  Case sensitive option
 // 2025-20-22   PV      1.12  Clippy review; added MyGlobBuilder.clear_ignore_dirs()
-// 2025-20-22   PV      2.0   Option to follow links (hide them, include them but don't follow dir symlinks, include and follow links). max_depth default =
+// 2025-20-22   PV      2.0   Option to follow links (hide them, include them but don't follow dir symlinks, include and follow links). max_depth fixed
 
 //#![allow(unused_variables, dead_code, unused_imports)]
 
@@ -38,7 +38,6 @@ use std::fmt::Display;
 use std::fs;
 use std::io::Error as IOError;
 use std::os::windows::fs::FileTypeExt;
-//use std::os::windows::fs::FileTypeExt;
 use std::path::{Path, PathBuf};
 
 // -----------------------------------
@@ -50,6 +49,8 @@ mod tests;
 // Globals
 
 const LIB_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+const TRACE: bool = false;
 
 // -----------------------------------
 // Structures
@@ -177,6 +178,9 @@ Case-sensitive option only apply to filters such as ⟦*.JPG⟧ or ⟦*Eric*⟧,
             };
         }
 
+        if TRACE {
+            println!("$0: Start iteration, initial push DirToExplore {}", self.root);
+        }
         // Normal case, start iterator at root
         MyGlobIteratorState {
             queue: vec![SearchPendingData::DirToExplore(Path::new(&self.root).to_path_buf(), 0, false, 0)],
@@ -484,8 +488,22 @@ impl Iterator for MyGlobIteratorState<'_> {
                 SearchPendingData::Dir(pb, _is_link) => return Some(MyGlobMatch::Dir(pb)),
 
                 SearchPendingData::DirToExplore(root, depth, recurse, recurse_depth) => {
+                    if TRACE {
+                        println!(
+                            "\n$1: Main loop, DirToExplore {}  max_depth={} depth={} recurse_depth={}",
+                            root.display(),
+                            self.max_depth,
+                            depth,
+                            recurse_depth
+                        );
+                    }
+
                     match &self.segments[depth] {
                         Segment::Constant(name) => {
+                            if TRACE {
+                                println!("$1b Constant segment: {}", name);
+                            }
+
                             let pb = root.join(name);
                             let ft = pb.metadata().unwrap().file_type();
                             if depth == self.segments.len() - 1 {
@@ -506,6 +524,16 @@ impl Iterator for MyGlobIteratorState<'_> {
 
                             // Then if recurse mode, we also search in all subdirectories
                             if recurse && (self.max_depth == 0 || recurse_depth < self.max_depth) {
+                                if TRACE {
+                                    println!(
+                                        "$2: Search subdirectories of {}  max_depth={} depth={} recurse_depth={}",
+                                        root.display(),
+                                        self.max_depth,
+                                        depth,
+                                        recurse_depth
+                                    );
+                                }
+
                                 match fs::read_dir(&root) {
                                     Ok(contents) => {
                                         for resentry in contents {
@@ -516,6 +544,15 @@ impl Iterator for MyGlobIteratorState<'_> {
                                                         let p = entry.path();
                                                         let fnlc = p.file_name().unwrap().to_string_lossy().to_lowercase();
                                                         if !self.ignore_dirs.iter().any(|ie| *ie == fnlc.to_lowercase()) {
+                                                            if TRACE {
+                                                                println!(
+                                                                    "$3: Push DirToExplore {}  max_depth={} depth={} recurse_depth={}",
+                                                                    p.display(),
+                                                                    self.max_depth,
+                                                                    depth,
+                                                                    recurse_depth
+                                                                );
+                                                            }
                                                             self.queue.insert(0, SearchPendingData::DirToExplore(p, depth, true, recurse_depth + 1));
                                                         }
                                                     }
@@ -539,10 +576,27 @@ impl Iterator for MyGlobIteratorState<'_> {
                         }
 
                         Segment::Recurse => {
+                            if TRACE {
+                                println!("$1c Recurse segment");
+
+                                println!(
+                                    "$4: Push DirToExplore {}  max_depth={}  current: depth={} recurse_depth={}  pushed: depth={} recurse_depth={}",
+                                    root.display(),
+                                    self.max_depth,
+                                    depth,
+                                    recurse_depth,
+                                    depth + 1,
+                                    0
+                                );
+                            }
                             self.queue.insert(0, SearchPendingData::DirToExplore(root, depth + 1, true, 0));
                         }
 
                         Segment::Filter(re) => {
+                            if TRACE {
+                                println!("$1d Filter segment");
+                            }
+
                             // Search all files, return the ones that match
                             let mut dirs: Vec<PathBuf> = Vec::new();
 
@@ -558,6 +612,16 @@ impl Iterator for MyGlobIteratorState<'_> {
                                                 if ft.is_file() || ft.is_symlink_file() {
                                                     if ft.is_file() || self.link_mode > 0 {
                                                         if depth == self.segments.len() - 1 && re.is_match(&fname) {
+                                                            if TRACE {
+                                                                println!(
+                                                                    "$5a: Push File {}  max_depth={} depth={} recurse_depth={}",
+                                                                    pb.display(),
+                                                                    self.max_depth,
+                                                                    depth,
+                                                                    recurse_depth
+                                                                );
+                                                            }
+
                                                             self.queue.insert(0, SearchPendingData::File(pb, ft.is_symlink()));
                                                         }
                                                     }
@@ -570,13 +634,46 @@ impl Iterator for MyGlobIteratorState<'_> {
                                                                 // If it's the last segment, we just return the directory
                                                                 // Otherwise, we continue exploration in next loop
                                                                 if depth == self.segments.len() - 1 {
+                                                                    if TRACE {
+                                                                        println!(
+                                                                            "$5b: Push Dir {}  max_depth={} depth={} recurse_depth={}",
+                                                                            pb.display(),
+                                                                            self.max_depth,
+                                                                            depth,
+                                                                            recurse_depth
+                                                                        );
+                                                                    }
+
                                                                     self.queue.insert(0, SearchPendingData::Dir(pb.clone(), ft.is_symlink()));
                                                                 } else if ft.is_dir() || self.link_mode > 1 {
+                                                                    if TRACE {
+                                                                        println!(
+                                                                            "$5c: Push DirToExplore {}  max_depth={} depth={} recurse_depth={}",
+                                                                            pb.display(),
+                                                                            self.max_depth,
+                                                                            depth,
+                                                                            recurse_depth
+                                                                        );
+                                                                    }
                                                                     self.queue
                                                                         .insert(0, SearchPendingData::DirToExplore(pb.clone(), depth + 1, false, 0));
                                                                 }
                                                             }
-                                                            dirs.push(pb);
+
+                                                            if self.max_depth == 0 || recurse_depth < self.max_depth - 1 {
+                                                                if ft.is_dir() || self.link_mode > 1 {
+                                                                    if TRACE {
+                                                                        println!(
+                                                                            "$6: Add to dirs {}  max_depth={} depth={} recurse_depth={}",
+                                                                            pb.display(),
+                                                                            self.max_depth,
+                                                                            depth,
+                                                                            recurse_depth
+                                                                        );
+                                                                    }
+                                                                    dirs.push(pb);
+                                                                }
+                                                            }
                                                         }
                                                     }
                                                 } else {
@@ -604,8 +701,19 @@ impl Iterator for MyGlobIteratorState<'_> {
                             }
 
                             // Then if recurse mode, we also search in all subdirectories (already collected in dirs in previous loop to avoid enumerating directory twice)
+
                             if recurse && (self.max_depth == 0 || recurse_depth < self.max_depth) {
                                 for dir in dirs {
+                                    if TRACE {
+                                        println!(
+                                            "$7:Pushing from dirs SearchPendingData {} max_depth={} depth={} recurse_depth={}",
+                                            dir.display(),
+                                            self.max_depth,
+                                            depth,
+                                            recurse_depth
+                                        );
+                                    }
+
                                     self.queue.insert(0, SearchPendingData::DirToExplore(dir, depth, true, recurse_depth + 1));
                                 }
                             }

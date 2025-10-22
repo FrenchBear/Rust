@@ -23,7 +23,7 @@ fn main() {
     //test_myglob(r"S:\max_depth", true, &[], 1, 1);
     //test_myglob(r"C:\Development\GitVSTS\DevForFun\**\*.{!SOURCES}", true, &[], 2, 1);
     //test_myglob(r"C:\MusicOD\Humour\**\*Eric*", true, &[], 0, true, 1);
-    test_myglob(r"C:\", true, false, &[], 1, true, 0, 1);
+    test_myglob(r"C:\", true, false, &[], 2, true, 2, 1);
 }
 
 // Entry point for testing
