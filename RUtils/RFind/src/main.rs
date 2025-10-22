@@ -24,9 +24,13 @@
 // 2025-10-17   PV      2.1.0 Options -yaml and -cs
 // 2025-10-22   PV      2.1.1 to_yaml_single_quoted for ActionYaml to avoid problems with filenames containing special yaml values/characters
 // 2025-20-22   PV      Clippy review
+// 2025-20-22   PV      2.2.0 option -dir show Windows files attributes
 
 // Notes:
 // - Finding denormalized paths is handled by rcheckfiles and checknnn, no need for a third version :-)
+// - This program uses MyGlob for enumeration, with standard filters, so $RECYCLE.BIN, .git and System Volume
+//   Information are automatically filtered out. Maybe add an option -noglobfilter to optionally deactivate this filtering,
+//   until then, use USE_MYGLOB_DEFAULT_EXCLUSIONS constant
 
 // ToDo:
 // - Accent insensitive search (actually maybe not useful, but everything does it)
@@ -44,6 +48,7 @@ use std::time::Instant;
 // External crates imports
 use logging::{LogWriter, log, logln, logwriter_none};
 use myglob::{MyGlobMatch, MyGlobSearch};
+use windows as _;
 
 // -----------------------------------
 // Submodules
@@ -59,6 +64,9 @@ use options::*;
 const APP_NAME: &str = env!("CARGO_PKG_NAME");
 const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 const APP_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
+
+const USE_MYGLOB_DEFAULT_EXCLUSIONS: bool = true;
+
 
 // -----------------------------------
 // Traits
@@ -126,11 +134,15 @@ fn main() {
     // Convert String sources into MyGlobSearch structs
     let mut sources: Vec<(&String, MyGlobSearch)> = Vec::new();
     for source in options.sources.iter() {
-        let resgs = MyGlobSearch::new(source)
+        let mut builder = MyGlobSearch::new(source)
             .autorecurse(options.autorecurse)
             .maxdepth(options.maxdepth)
-            .case_sensitive(options.case_sensitive)
-            .compile();
+            .case_sensitive(options.case_sensitive);
+        if !USE_MYGLOB_DEFAULT_EXCLUSIONS {
+            builder = builder.clear_ignore_dirs();
+        }
+            
+        let resgs = builder.compile();
         match resgs {
             Ok(gs) => {
                 if options.debug {

@@ -21,12 +21,13 @@
 // 2025-05-04   PV      1.5.4 Added glob_syntax()
 // 2025-07-12   PV      1.6.0 Don't complain about glob patterns ending with / or \
 // 2025-08-08   PV      1.7.0 Use get_root to rewrite root separation, and handle windows C:\xxx patterns corretcly
-// 2025-09-06   PV      1.8.0 MaxDepth added
+// 2025-09-06   PV      1.8.0 max_depth added
 // 2025-09-08   PV      1.9.0 Use queue instead of stack to have a breadth-first search instead of depth-first, and return results in a more natural order
 // 2025-09-13   PV      1.9.1 Check for unclosed brackets in glob expressions such as "C:\[a-z"
 // 2025-10-01   PV      1.10  Macro !SOURCES to represent common (for me) source files extensions. d is not in the list (also rust temp build files extension)
 // 2025-10-17   PV      1.11  Case sensitive option
-// 2025-20-22   PV      Clippy review
+// 2025-20-22   PV      1.12  Clippy review; added MyGlobBuilder.clear_ignore_dirs()
+// 2025-20-22   PV      2.0   Option to follow links (hide them, include them but don't follow dir symlinks, include and follow links). max_depth default =
 
 //#![allow(unused_variables, dead_code, unused_imports)]
 
@@ -36,6 +37,8 @@ use std::error::Error;
 use std::fmt::Display;
 use std::fs;
 use std::io::Error as IOError;
+use std::os::windows::fs::FileTypeExt;
+//use std::os::windows::fs::FileTypeExt;
 use std::path::{Path, PathBuf};
 
 // -----------------------------------
@@ -65,16 +68,18 @@ pub struct MyGlobSearch {
     root: String,
     pub segments: Vec<Segment>, // pub for debugging
     ignore_dirs: Vec<String>,
-    maxdepth: usize,
+    max_depth: usize,
+    link_mode: usize,
 }
 
 #[derive(Debug, Default)]
 pub struct MyGlobBuilder {
     glob_pattern: String,
     ignore_dirs: Vec<String>, // just plain lowercase dir name, no path, no *
-    maxdepth: usize,          // Counted from ** segment, 0 means no limit
+    max_depth: usize,         // Counted from ** segment, 0 means no limit
     case_sensitive: bool,     // Filters are case-sensitive? false by default
     autorecurse: bool,        // Apply optional autorecurse transformation
+    link_mode: usize,         // 0=ignore links, 1=include links but don't follow them (default), 2=include and follow links
 }
 
 /// Error returned by MyGlob, either a Regex error or an io::Error
@@ -141,6 +146,7 @@ Case-sensitive option only apply to filters such as ⟦*.JPG⟧ or ⟦*Eric*⟧,
                 String::from("system volume information"),
                 String::from(".git"),
             ],
+            link_mode: 1,
             ..Default::default()
         }
     }
@@ -155,17 +161,19 @@ Case-sensitive option only apply to filters such as ⟦*.JPG⟧ or ⟦*Eric*⟧,
         // It's actually a but faster to process it before iterator loop, so there is no special case to handle at the beginning of each iterator call
         if self.segments.is_empty() {
             let p = Path::new(&self.root);
+            let ft = p.metadata().unwrap().file_type();
             let mut stack: Vec<SearchPendingData> = Vec::new();
-            if p.is_file() {
-                stack.insert(0, SearchPendingData::File(p.to_path_buf()));
-            } else if p.is_dir() {
-                stack.insert(0, SearchPendingData::Dir(p.to_path_buf()));
+            if p.is_file() || ft.is_symlink_file() {
+                stack.insert(0, SearchPendingData::File(p.to_path_buf(), p.is_symlink()));
+            } else if p.is_dir() || ft.is_symlink_dir() {
+                stack.insert(0, SearchPendingData::Dir(p.to_path_buf(), p.is_symlink()));
             }
             return MyGlobIteratorState {
                 queue: stack,
                 segments: &self.segments,
                 ignore_dirs: &self.ignore_dirs,
-                maxdepth: self.maxdepth,
+                max_depth: self.max_depth,
+                link_mode: self.link_mode,
             };
         }
 
@@ -174,7 +182,8 @@ Case-sensitive option only apply to filters such as ⟦*.JPG⟧ or ⟦*Eric*⟧,
             queue: vec![SearchPendingData::DirToExplore(Path::new(&self.root).to_path_buf(), 0, false, 0)],
             segments: &self.segments,
             ignore_dirs: &self.ignore_dirs,
-            maxdepth: self.maxdepth,
+            max_depth: self.max_depth,
+            link_mode: self.link_mode,
         }
     }
 
@@ -192,12 +201,29 @@ impl MyGlobBuilder {
         self
     }
 
-    /// Set maxdepth, counted from ** segment, 0 means no limit
-    pub fn maxdepth(mut self, depth: usize) -> Self {
+    /// Remove default and current dirs to ignore
+    pub fn clear_ignore_dirs(mut self) -> Self {
+        self.ignore_dirs.clear();
+        self
+    }
+
+    /// Set max_depth, counted from ** segment, 0 means no limit
+    pub fn max_depth(mut self, depth: usize) -> Self {
         if depth == 0 {
             return self;
         }
-        self.maxdepth = depth;
+        self.max_depth = depth;
+        self
+    }
+
+    /// Set link mode: 0=ignore links, 1=include links but don't follow them (default), 2=include and follow links
+    pub fn set_link_mode(mut self, link_mode: usize) -> Self {
+        if link_mode > 2 {
+            println!("*** MyGlobBuilder.set_link_mode argument must be 0, 1 or 2, defaulting to 1");
+            self.link_mode = 1;
+        } else {
+            self.link_mode = link_mode;
+        }
         self
     }
 
@@ -289,7 +315,8 @@ impl MyGlobBuilder {
             root,
             segments,
             ignore_dirs: self.ignore_dirs,
-            maxdepth: self.maxdepth,
+            max_depth: self.max_depth,
+            link_mode: self.link_mode,
         })
     }
 
@@ -431,14 +458,15 @@ struct MyGlobIteratorState<'a> {
     queue: Vec<SearchPendingData>,
     segments: &'a Vec<Segment>,
     ignore_dirs: &'a Vec<String>,
-    maxdepth: usize,
+    max_depth: usize,
+    link_mode: usize,
 }
 
 // Internal structure of derecursived search, pending data to explore or return, stored in stack
 #[derive(Debug)]
 enum SearchPendingData {
-    File(PathBuf),                             // Data to return
-    Dir(PathBuf),                              // Data to return
+    File(PathBuf, bool),                       // Data to return
+    Dir(PathBuf, bool),                        // Data to return
     DirToExplore(PathBuf, usize, bool, usize), // Dir not explored yet
     Error(IOError),                            // Returns an error
 }
@@ -451,21 +479,22 @@ impl Iterator for MyGlobIteratorState<'_> {
             match fof {
                 SearchPendingData::Error(e) => return Some(MyGlobMatch::Error(e)),
 
-                SearchPendingData::File(pb) => return Some(MyGlobMatch::File(pb)),
+                SearchPendingData::File(pb, _is_link) => return Some(MyGlobMatch::File(pb)),
 
-                SearchPendingData::Dir(pb) => return Some(MyGlobMatch::Dir(pb)),
+                SearchPendingData::Dir(pb, _is_link) => return Some(MyGlobMatch::Dir(pb)),
 
                 SearchPendingData::DirToExplore(root, depth, recurse, recurse_depth) => {
                     match &self.segments[depth] {
                         Segment::Constant(name) => {
                             let pb = root.join(name);
+                            let ft = pb.metadata().unwrap().file_type();
                             if depth == self.segments.len() - 1 {
                                 // Final segment
-                                if pb.is_file() {
+                                if pb.is_file() || ft.is_symlink_file() {
                                     // Case-insensitive comparison is provided by filesystem
-                                    self.queue.insert(0, SearchPendingData::File(pb));
-                                } else if pb.is_dir() {
-                                    self.queue.insert(0, SearchPendingData::Dir(pb.clone()));
+                                    self.queue.insert(0, SearchPendingData::File(pb, ft.is_symlink()));
+                                } else if pb.is_dir() || ft.is_symlink_dir() {
+                                    self.queue.insert(0, SearchPendingData::Dir(pb.clone(), ft.is_symlink()));
                                 }
                             } else {
                                 // non-final segment, can only match a directory
@@ -476,13 +505,13 @@ impl Iterator for MyGlobIteratorState<'_> {
                             }
 
                             // Then if recurse mode, we also search in all subdirectories
-                            if recurse && (self.maxdepth == 0 || recurse_depth < self.maxdepth) {
+                            if recurse && (self.max_depth == 0 || recurse_depth < self.max_depth) {
                                 match fs::read_dir(&root) {
                                     Ok(contents) => {
                                         for resentry in contents {
                                             match resentry {
                                                 Ok(entry) => {
-                                                    // Don't follow folders recursively if maxdepth has been reached
+                                                    // Don't follow folders recursively if max_depth has been reached
                                                     if entry.file_type().unwrap().is_dir() {
                                                         let p = entry.path();
                                                         let fnlc = p.file_name().unwrap().to_string_lossy().to_lowercase();
@@ -526,26 +555,36 @@ impl Iterator for MyGlobIteratorState<'_> {
                                                 let pb = entry.path();
                                                 let fname = entry.file_name().to_string_lossy().to_string();
 
-                                                if ft.is_file() {
-                                                    if depth == self.segments.len() - 1 && re.is_match(&fname) {
-                                                        self.queue.insert(0, SearchPendingData::File(pb));
-                                                    }
-                                                } else if ft.is_dir() {
-                                                    let flnc = fname.to_lowercase();
-                                                    //if !self.ignore_dirs.iter().any(|ie| *ie == flnc) {
-                                                    if !self.ignore_dirs.contains(&flnc) {
-                                                        if re.is_match(&fname) && (self.maxdepth == 0 || recurse_depth < self.maxdepth) {
-                                                            // If it's the last segment, we just return the directory
-                                                            // Otherwise, we continue exploration in next loop
-                                                            if depth == self.segments.len() - 1 {
-                                                                self.queue.insert(0, SearchPendingData::Dir(pb.clone()));
-                                                            } else {
-                                                                self.queue
-                                                                    .insert(0, SearchPendingData::DirToExplore(pb.clone(), depth + 1, false, 0));
-                                                            }
+                                                if ft.is_file() || ft.is_symlink_file() {
+                                                    if ft.is_file() || self.link_mode > 0 {
+                                                        if depth == self.segments.len() - 1 && re.is_match(&fname) {
+                                                            self.queue.insert(0, SearchPendingData::File(pb, ft.is_symlink()));
                                                         }
-                                                        dirs.push(pb);
                                                     }
+                                                } else if ft.is_dir() || ft.is_symlink_dir() {
+                                                    if ft.is_dir() || self.link_mode > 0 {
+                                                        let flnc = fname.to_lowercase();
+                                                        //if !self.ignore_dirs.iter().any(|ie| *ie == flnc) {
+                                                        if !self.ignore_dirs.contains(&flnc) {
+                                                            if re.is_match(&fname) && (self.max_depth == 0 || recurse_depth < self.max_depth) {
+                                                                // If it's the last segment, we just return the directory
+                                                                // Otherwise, we continue exploration in next loop
+                                                                if depth == self.segments.len() - 1 {
+                                                                    self.queue.insert(0, SearchPendingData::Dir(pb.clone(), ft.is_symlink()));
+                                                                } else if ft.is_dir() || self.link_mode > 1 {
+                                                                    self.queue
+                                                                        .insert(0, SearchPendingData::DirToExplore(pb.clone(), depth + 1, false, 0));
+                                                                }
+                                                            }
+                                                            dirs.push(pb);
+                                                        }
+                                                    }
+                                                } else {
+                                                    let e = IOError::new(
+                                                        std::io::ErrorKind::Other,
+                                                        format!("Unknown directory entry type while enumerating {}: {:#?}", root.display(), entry),
+                                                    );
+                                                    self.queue.insert(0, SearchPendingData::Error(e));
                                                 }
                                             }
 
@@ -565,7 +604,7 @@ impl Iterator for MyGlobIteratorState<'_> {
                             }
 
                             // Then if recurse mode, we also search in all subdirectories (already collected in dirs in previous loop to avoid enumerating directory twice)
-                            if recurse && (self.maxdepth == 0 || recurse_depth < self.maxdepth) {
+                            if recurse && (self.max_depth == 0 || recurse_depth < self.max_depth) {
                                 for dir in dirs {
                                     self.queue.insert(0, SearchPendingData::DirToExplore(dir, depth, true, recurse_depth + 1));
                                 }

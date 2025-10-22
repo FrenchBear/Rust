@@ -9,12 +9,27 @@
 // 2025-10-17   PV      ActionYaml
 // 2025-10-22   PV      to_yaml_single_quoted for Yaml action
 // 2025-20-22   PV      Clippy review
+// 2025-20-22   PV      PrintAction 'Dir' shows Windows files attributes, and more generally, links
 
 use super::*;
 
+// Standard library imports
+use std::{fs, process::Command};
+
+// External library imports
 use chrono::{DateTime, Local, Utc};
 use num_format::{Locale, ToFormattedString};
-use std::{fs, process::Command};
+
+// Conditional imports
+#[cfg(target_os = "windows")]
+use std::os::windows::fs::MetadataExt;
+// #[cfg(target_os = "windows")]
+// use std::os::windows::prelude::*;
+// #[cfg(target_os = "windows")]
+// use windows::{
+//     Win32::UI::Shell::StrCmpLogicalW,
+//     core::{HRESULT, PCWSTR},
+// }; // For OsStringExt::encode_wide
 
 use trash::delete;
 
@@ -52,7 +67,42 @@ impl Action for ActionPrint {
                         let datetime_local = datetime_utc.with_timezone(&Local);
                         let formatted_time = datetime_local.format("%d/%m/%Y %H:%M:%S");
 
-                        logln(lw, format!("{:>19}   {:>15} {}", formatted_time, formatted_size, path.display()).as_str());
+                        // Get Windows basic attributes
+                        let mut attributes_string = String::new();
+                        #[cfg(target_os = "windows")]
+                        {
+                            // Getting metadata of link itself, not link target
+                            if let Ok(metadata) = fs::symlink_metadata(path) {
+                                let attributes = metadata.file_attributes();
+
+                                const FILE_ATTRIBUTE_READONLY: u32 = 0x00000001;
+                                const FILE_ATTRIBUTE_HIDDEN: u32 = 0x00000002;
+                                const FILE_ATTRIBUTE_SYSTEM: u32 = 0x00000004;
+
+                                attributes_string.push_str(if (attributes & FILE_ATTRIBUTE_SYSTEM) != 0 { "S" } else { "." });
+                                attributes_string.push_str(if (attributes & FILE_ATTRIBUTE_HIDDEN) != 0 { "H" } else { "." });
+                                attributes_string.push_str(if (attributes & FILE_ATTRIBUTE_READONLY) != 0 { "R" } else { "." });
+                            }
+                        }
+
+                        let link_string = if path.is_symlink() {
+                            let target_path = fs::read_link(path).unwrap();
+                            let t = target_path.to_string_lossy().replace(r"\\?\", "");
+                            format!(" -> {}", t)
+                        } else {
+                            String::new()
+                        };
+
+                        logln(
+                            lw,
+                            format!(
+                                "{:>19}   {:>15}  {attributes_string}  {} {link_string}",
+                                formatted_time,
+                                formatted_size,
+                                path.display()
+                            )
+                            .as_str(),
+                        );
                     }
                     Err(e) => {
                         logln(lw, format!("*** Error retrieving metadata for file {}: {e}", path.display()).as_str());
@@ -61,7 +111,7 @@ impl Action for ActionPrint {
             } else {
                 logln(lw, path.display().to_string().as_str());
             }
-        } else {
+        } else if path.is_dir() {
             let dir_sep = if cfg!(target_os = "windows") { '\\' } else { '/' };
 
             if self.detailed_output {
@@ -75,7 +125,7 @@ impl Action for ActionPrint {
 
                         logln(
                             lw,
-                            format!("{:>19}   {:<15} {}{dir_sep}", formatted_time, "<DIR>", path.display()).as_str(),
+                            format!("{:>19}   {:<15}       {}{dir_sep}", formatted_time, "<DIR>", path.display()).as_str(),
                         );
                     }
                     Err(e) => {
@@ -87,6 +137,8 @@ impl Action for ActionPrint {
                 msg.push(dir_sep);
                 logln(lw, msg.as_str());
             }
+        } else {
+            logln(lw, format!("*** Error neither dir not file {}", path.display()).as_str());
         }
     }
 

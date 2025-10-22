@@ -59,7 +59,7 @@ const FILE_ATTRIBUTE_RECALL_ON_OPEN: u32 = 0x00040000;
 const FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS: u32 = 0x00400000;
 
 fn main() {
-    // show(r"C:\inexistant"); // Does not exist
+    show(r"C:\inexistant"); // Does not exist
     show(r"C:\vfcompat.dll"); // Simple file
     show(r"C:\vfcompat_link.dll"); // File link
     show(r"C:\vfcompat.dll - Shortcut.lnk"); // Shell link, just seen as a plain file
@@ -70,8 +70,9 @@ fn main() {
     show(r"\\teraz\temp"); // ?
     show(r"C:\Users\manfr\OneDrive"); // ?
     show(r"C:\Users\manfr\OneDrive\Sauve Books.bat"); // Stub
-    show(r"\\cloro-02\Cloro\Images\Accessoires");   // Other: IO_REPARSE_TAG_MOUNT_POINT
-    show(r"\\cloro-02\Cloro\Images\Formation photo");   // Other: IO_REPARSE_TAG_MOUNT_POINT
+    // show(r"\\cloro-02\Cloro\Images\Accessoires");   // Other: IO_REPARSE_TAG_MOUNT_POINT
+    // show(r"\\cloro-02\Cloro\Images\Formation photo");   // Other: IO_REPARSE_TAG_MOUNT_POINT
+    show(r"C:\hosts");
 }
 
 fn show(filename: &str) {

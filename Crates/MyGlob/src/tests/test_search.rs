@@ -4,7 +4,7 @@
 // 2025-04-09   PV
 // 2025-04-23   PV      Added search_error tests
 // 2025-07-13   PV      Tests with chinese characters
-// 2025-09-06   PV      Tests maxdepth
+// 2025-09-06   PV      Tests max_depth
 
 #![cfg(test)]
 use crate::*;
@@ -70,8 +70,8 @@ fn search_count_ignore(glob_pattern: &str, ignore_dirs: &[&str]) -> (usize, usiz
     search_count_base(builder.compile())
 }
 
-fn search_count_maxdepth(glob_pattern: &str, maxdepth: usize) -> (usize, usize) {
-    search_count_base(MyGlobSearch::new(glob_pattern).maxdepth(maxdepth).compile())
+fn search_count_max_depth(glob_pattern: &str, max_depth: usize) -> (usize, usize) {
+    search_count_base(MyGlobSearch::new(glob_pattern).max_depth(max_depth).compile())
 }
 
 #[test]
@@ -124,9 +124,9 @@ fn search_1() -> io::Result<()> {
     assert_eq!(search_count_ignore(r"C:\Temp\search1\**\*.txt", &["Légumes"]), (10, 0));
     assert_eq!(search_count_ignore(r"C:\Temp\search1\**\*.txt", &["Légumes", "我爱你"]), (5, 0));
 
-    // Testing maxdepth
-    assert_eq!(search_count_maxdepth(r"C:\Temp\search1\**\*.txt", 1), (10, 0));
-    assert_eq!(search_count_maxdepth(r"C:\Temp\search1\**\*.txt", 2), (13, 0));
+    // Testing max_depth
+    assert_eq!(search_count_max_depth(r"C:\Temp\search1\**\*.txt", 1), (10, 0));
+    assert_eq!(search_count_max_depth(r"C:\Temp\search1\**\*.txt", 2), (13, 0));
 
     // Cleanup
     fs::remove_dir_all(r"C:\Temp\search1")?;

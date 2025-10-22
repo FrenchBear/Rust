@@ -68,15 +68,17 @@ impl Options {
 ⦃??⦄               ¬Show advanced usage notes
 ⦃-v⦄               ¬Verbose output
 ⦃-n⦄               ¬No action: display actions, but don't execute them
-⦃-f⦄|⦃-type f⦄       ¬Search for files
-⦃-d⦄|⦃-type d⦄       ¬Search for directories
-⦃-e⦄|⦃-empty⦄        ¬Only find empty files or directories
 ⦃-r+⦄|⦃-r-⦄          ¬Delete to recycle bin (default) or delete forever; Recycle bin is not allowed on network sources
 ⦃-a+⦄|⦃-a-⦄          ¬Enable (default) or disable glob autorecurse mode (see extended usage)
 ⦃-cs⦄              ¬Case-sensitive search (default is case insensitive)
 ⦃-name⦄ ⟨name⟩       ¬Append ⟦/**/⟧⟨name⟩ to each source directory (compatibility with XFind/Search)
 ⦃-maxdepth⦄ ⟨n⟩      ¬Limit the recursion depth of ** segments, 1=One directory only, ... Default=0 is unlimited depth
 ⟨source⟩           ¬File or directory to search
+
+⌊Filters⌋:
+⦃-f⦄|⦃-type f⦄       ¬Search for files
+⦃-d⦄|⦃-type d⦄       ¬Search for directories
+⦃-e⦄|⦃-empty⦄        ¬Only find empty files or directories
 
 ⌊Actions⌋:
 ⦃-print⦄           ¬Default, print matching files names and dir names
