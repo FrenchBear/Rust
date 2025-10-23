@@ -10,6 +10,7 @@
 // 2025-10-22   PV      to_yaml_single_quoted for Yaml action
 // 2025-20-22   PV      Clippy review
 // 2025-20-22   PV      PrintAction 'Dir' shows Windows files attributes, and more generally, links
+// 2025-20-23   PV      PrintAction 'Dir' processes links, when target of a link does not exist. Show attributes of directories
 
 use super::*;
 
@@ -53,96 +54,120 @@ impl Action for ActionPrint {
     }
 
     fn action(&mut self, lw: &mut LogWriter, path: &Path, _noaction: bool, _verbose: bool) {
-        if path.is_file() {
-            if self.detailed_output {
-                match path.metadata() {
-                    Ok(meta) => {
-                        // File size formatting
-                        let file_size = meta.len();
-                        let formatted_size = file_size.to_formatted_string(&Locale::fr); //Use French locale for now. Later we will find the user locale.
-
-                        // Last modified time formatting
-                        let modified_time = meta.modified().unwrap(); // Get last modified time
-                        let datetime_utc: DateTime<Utc> = DateTime::<Utc>::from(modified_time);
-                        let datetime_local = datetime_utc.with_timezone(&Local);
-                        let formatted_time = datetime_local.format("%d/%m/%Y %H:%M:%S");
-
-                        // Get Windows basic attributes
-                        let mut attributes_string = String::new();
-                        #[cfg(target_os = "windows")]
-                        {
-                            // Getting metadata of link itself, not link target
-                            if let Ok(metadata) = fs::symlink_metadata(path) {
-                                let attributes = metadata.file_attributes();
-
-                                const FILE_ATTRIBUTE_READONLY: u32 = 0x00000001;
-                                const FILE_ATTRIBUTE_HIDDEN: u32 = 0x00000002;
-                                const FILE_ATTRIBUTE_SYSTEM: u32 = 0x00000004;
-
-                                attributes_string.push_str(if (attributes & FILE_ATTRIBUTE_SYSTEM) != 0 { "S" } else { "." });
-                                attributes_string.push_str(if (attributes & FILE_ATTRIBUTE_HIDDEN) != 0 { "H" } else { "." });
-                                attributes_string.push_str(if (attributes & FILE_ATTRIBUTE_READONLY) != 0 { "R" } else { "." });
-                            }
-                        }
-
-                        let link_string = if path.is_symlink() {
-                            let target_path = fs::read_link(path).unwrap();
-                            let t = target_path.to_string_lossy().replace(r"\\?\", "");
-                            format!(" -> {}", t)
-                        } else {
-                            String::new()
-                        };
-
-                        logln(
-                            lw,
-                            format!(
-                                "{:>19}   {:>15}  {attributes_string}  {} {link_string}",
-                                formatted_time,
-                                formatted_size,
-                                path.display()
-                            )
-                            .as_str(),
-                        );
-                    }
-                    Err(e) => {
-                        logln(lw, format!("*** Error retrieving metadata for file {}: {e}", path.display()).as_str());
-                    }
-                }
-            } else {
-                logln(lw, path.display().to_string().as_str());
-            }
-        } else if path.is_dir() {
-            let dir_sep = if cfg!(target_os = "windows") { '\\' } else { '/' };
-
-            if self.detailed_output {
-                match path.metadata() {
-                    Ok(meta) => {
-                        // Last modified time formatting
-                        let modified_time = meta.modified().unwrap(); // Get last modified time
-                        let datetime_utc: DateTime<Utc> = DateTime::<Utc>::from(modified_time);
-                        let datetime_local = datetime_utc.with_timezone(&Local);
-                        let formatted_time = datetime_local.format("%d/%m/%Y %H:%M:%S");
-
-                        logln(
-                            lw,
-                            format!("{:>19}   {:<15}       {}{dir_sep}", formatted_time, "<DIR>", path.display()).as_str(),
-                        );
-                    }
-                    Err(e) => {
-                        logln(lw, format!("*** Error retrieving metadata for dir {}: {e}", path.display()).as_str());
-                    }
-                }
-            } else {
-                let mut msg = path.display().to_string();
-                msg.push(dir_sep);
-                logln(lw, msg.as_str());
-            }
+        if self.detailed_output {
+            action_dir(lw, path, _noaction, _verbose);
         } else {
-            logln(lw, format!("*** Error neither dir not file {}", path.display()).as_str());
+            action_print(lw, path, _noaction, _verbose);
         }
     }
 
     fn conclusion(&mut self, _lw: &mut LogWriter, _noaction: bool, _verbose: bool) {}
+}
+
+fn action_print(lw: &mut LogWriter, path: &Path, _noaction: bool, _verbose: bool) {
+    if path.is_file() {
+        // Includes links to existing files
+        logln(lw, path.display().to_string().as_str());
+    } else if path.is_dir() {
+        // Includes links to existing directories
+        let dir_sep = if cfg!(target_os = "windows") { '\\' } else { '/' };
+        logln(lw, format!("{}{}", path.display(), dir_sep).as_str());
+    } else if path.is_symlink() {
+        logln(lw, format!("{}{}", path.display(), '?').as_str());
+    } else {
+        logln(lw, format!("*** Error neither dir not file {}", path.display()).as_str());
+    }
+}
+
+fn action_dir(lw: &mut LogWriter, path: &Path, _noaction: bool, _verbose: bool) {
+    let link_string = if path.is_symlink() {
+        let target_path = fs::read_link(path).unwrap();
+        let t = target_path.to_string_lossy().replace(r"\\?\", "");
+        format!(" -> {}", t)
+    } else {
+        String::new()
+    };
+
+    // Handle the case of a link when target is not accessible such as
+    // C:\Users\Pierr\.julia\packages\FilePathsBase\NV2We\docs\src, a <SYMLINK> io inexistent file ../../README.md
+    if path.is_symlink() && !path.is_dir() && !path.is_file() {
+        // Since target does not exist, we retrieve link metadata
+        let meta = fs::symlink_metadata(path).unwrap();
+        let modified_time = meta.modified().unwrap(); // Get last modified time
+        let datetime_utc: DateTime<Utc> = DateTime::<Utc>::from(modified_time);
+        let datetime_local = datetime_utc.with_timezone(&Local);
+        let formatted_time = datetime_local.format("%d/%m/%Y %H:%M:%S");
+
+        logln(
+            lw,
+            format!(
+                "{:>19}   {:<15}       {} {link_string}  [not found]",
+                formatted_time,
+                "<LINK>",
+                path.display()
+            )
+            .as_str(),
+        );
+        return;
+    }
+
+    // Last modified time formatting and attributes
+    let meta = match path.metadata() {
+        Ok(meta) => meta,
+        Err(e) => {
+            logln(lw, format!("*** Error retrieving metadata for {}: {}", path.display(), e).as_str());
+            return;
+        }
+    };
+    let modified_time = meta.modified().unwrap(); // Get last modified time
+    let datetime_utc: DateTime<Utc> = DateTime::<Utc>::from(modified_time);
+    let datetime_local = datetime_utc.with_timezone(&Local);
+    let formatted_time = datetime_local.format("%d/%m/%Y %H:%M:%S");
+
+    // Get Windows basic attributes
+    let mut attributes_string = String::new();
+    #[cfg(target_os = "windows")]
+    {
+        // Getting metadata of link itself, not link target
+        if let Ok(metadata) = fs::symlink_metadata(path) {
+            let attributes = metadata.file_attributes();
+
+            const FILE_ATTRIBUTE_READONLY: u32 = 0x00000001;
+            const FILE_ATTRIBUTE_HIDDEN: u32 = 0x00000002;
+            const FILE_ATTRIBUTE_SYSTEM: u32 = 0x00000004;
+
+            attributes_string.push_str(if (attributes & FILE_ATTRIBUTE_SYSTEM) != 0 { "S" } else { "." });
+            attributes_string.push_str(if (attributes & FILE_ATTRIBUTE_HIDDEN) != 0 { "H" } else { "." });
+            attributes_string.push_str(if (attributes & FILE_ATTRIBUTE_READONLY) != 0 { "R" } else { "." });
+        }
+    }
+
+    if path.is_file() {
+        // Includes links to existing files
+        let file_size = meta.len();
+        let formatted_size = file_size.to_formatted_string(&Locale::fr); //Use French locale for now. Later we will find the user locale.
+
+        logln(
+            lw,
+            format!(
+                "{:>19}   {:>15}  {attributes_string}  {} {link_string}",
+                formatted_time,
+                formatted_size,
+                path.display()
+            )
+            .as_str(),
+        );
+    } else if path.is_dir() {
+        // Includes links to existing directories
+        let dir_sep = if cfg!(target_os = "windows") { '\\' } else { '/' };
+
+        logln(
+            lw,
+            format!("{:>19}   {:<15}  {attributes_string}  {}{dir_sep} {link_string}", formatted_time, "<DIR>", path.display()).as_str(),
+        );
+    } else {
+        logln(lw, format!("*** Error neither dir not file {}", path.display()).as_str());
+    }
 }
 
 // ===============================================================

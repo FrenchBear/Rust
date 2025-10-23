@@ -12,6 +12,7 @@
 // 2025-10-17   PV      Option -yaml
 // 2025-20-22   PV      Clippy review
 // 2025-20-22   PV      links options, reorg usage message
+// 2025-20-23   PV      no_glob_filtering
 
 // Application imports
 use crate::*;
@@ -46,6 +47,7 @@ pub struct Options {
     pub case_sensitive: bool,
     pub autorecurse: bool,
     pub link_mode: usize,
+    pub no_glob_filtering: bool,
     pub noaction: bool,
     pub verbose: bool,
     pub debug: bool,
@@ -117,6 +119,7 @@ impl Options {
 ⌊Advanced options⌋:
 ⦃-dbg⦄       ¬Debug mode, show internal dev informations
 ⦃-log⦄       ¬Write log file in temp folder
+⦃-ngf⦄       ¬No glob filtering: $RECYCLE.BIN, .git and System Volume Information are not filtered out
 
 ⌊Compatibility with XFind⌋:
 - ¬Option ⦃-norecycle⦄ can be used instead of ⦃-r-⦄ to indicate to delete forever.
@@ -221,6 +224,8 @@ impl Options {
                     "l0" => options.link_mode = 0,
                     "l1" => options.link_mode = 1,
                     "l2" => options.link_mode = 2,
+
+                    "ngf" => options.no_glob_filtering = true,
 
                     "print" => {
                         options.actions_names.insert("print");

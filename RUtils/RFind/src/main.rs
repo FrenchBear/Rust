@@ -24,14 +24,12 @@
 // 2025-10-17   PV      2.1.0 Options -yaml and -cs
 // 2025-10-22   PV      2.1.1 to_yaml_single_quoted for ActionYaml to avoid problems with filenames containing special yaml values/characters
 // 2025-20-22   PV      Clippy review
-// 2025-20-22   PV      2.2.0 option -dir show Windows files attributes
-// 2025-20-22   PV      2.3.0 support of links (with MyGlob 2.0)
+// 2025-20-22   PV      2.2.0 Option -dir show Windows files attributes
+// 2025-20-22   PV      2.3.0 Support of links (with MyGlob 2.0)
+// 2025-20-23   PV      2.3.1 Handle correctly links to non-existent targets; no_glob_filtering option -ngf
 
 // Notes:
 // - Finding denormalized paths is handled by rcheckfiles and checknnn, no need for a third version :-)
-// - This program uses MyGlob for enumeration, with standard filters, so $RECYCLE.BIN, .git and System Volume
-//   Information are automatically filtered out. Maybe add an option -noglobfilter to optionally deactivate this filtering,
-//   until then, use USE_MYGLOB_DEFAULT_EXCLUSIONS constant
 
 // ToDo:
 // - Accent insensitive search (actually maybe not useful, but everything does it)
@@ -65,9 +63,6 @@ use options::*;
 const APP_NAME: &str = env!("CARGO_PKG_NAME");
 const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 const APP_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
-
-const USE_MYGLOB_DEFAULT_EXCLUSIONS: bool = true;
-
 
 // -----------------------------------
 // Traits
@@ -140,7 +135,7 @@ fn main() {
             .max_depth(options.maxdepth)
             .case_sensitive(options.case_sensitive)
             .set_link_mode(options.link_mode);
-        if !USE_MYGLOB_DEFAULT_EXCLUSIONS {
+        if options.no_glob_filtering {
             builder = builder.clear_ignore_dirs();
         }
             
