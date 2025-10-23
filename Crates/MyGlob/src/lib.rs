@@ -29,6 +29,7 @@
 // 2025-20-22   PV      1.12  Clippy review; added MyGlobBuilder.clear_ignore_dirs()
 // 2025-20-22   PV      2.0   Option to follow links (hide them, include them but don't follow dir symlinks, include and follow links). max_depth fixed
 // 2025-20-23   PV      2.0.1 Don't add two consecutive recurse segments in glob_to_segments, it's useless and inefficient
+// 2025-20-23   PV      2.1.0 Rollback and use again std::os::windows::fs::FileTypeExt, because dir entry .is_dir() is different than path .is_dir() (for dir link, first is false, second is true)
 
 //#![allow(unused_variables, dead_code, unused_imports)]
 
@@ -38,7 +39,7 @@ use std::error::Error;
 use std::fmt::Display;
 use std::fs;
 use std::io::Error as IOError;
-//use std::os::windows::fs::FileTypeExt;
+use std::os::windows::fs::FileTypeExt;
 use std::path::{Path, PathBuf};
 
 // -----------------------------------
@@ -163,19 +164,25 @@ Case-sensitive option only apply to filters such as ⟦*.JPG⟧ or ⟦*Eric*⟧,
         // It's actually a but faster to process it before iterator loop, so there is no special case to handle at the beginning of each iterator call
         if self.segments.is_empty() {
             let p = Path::new(&self.root);
-
             let mut stack: Vec<SearchPendingData> = Vec::new();
-            if p.is_file() {
-                stack.insert(0, SearchPendingData::File(p.to_path_buf(), p.is_symlink()));
-            } else if p.is_dir() {
-                stack.insert(0, SearchPendingData::Dir(p.to_path_buf(), p.is_symlink()));
-            } else {
-                let e = IOError::new(
-                    std::io::ErrorKind::Other,
-                    format!("Can't find or access file or folder {}", p.display()),
-                );
-                stack.insert(0, SearchPendingData::Error(e));
+            match p.metadata() {
+                Ok(meta) => {
+                    let ft = meta.file_type();
+                    if p.is_file() || ft.is_symlink_file() {
+                        stack.insert(0, SearchPendingData::File(p.to_path_buf(), p.is_symlink()));
+                    } else if p.is_dir() || ft.is_symlink_dir() {
+                        stack.insert(0, SearchPendingData::Dir(p.to_path_buf(), p.is_symlink()));
+                    } else {
+                        let e = IOError::new(std::io::ErrorKind::Other, format!("Can't find or access file or folder {}", p.display()));
+                        stack.insert(0, SearchPendingData::Error(e));
+                    }
+                }
+                Err(e) => {
+                    let f = IOError::new(std::io::ErrorKind::Other, format!("Can't find or access file or folder {}: {e}", p.display()));
+                    stack.insert(0, SearchPendingData::Error(f));
+                }
             }
+
             return MyGlobIteratorState {
                 queue: stack,
                 segments: &self.segments,
@@ -380,7 +387,7 @@ impl MyGlobBuilder {
 
                     if constant_buffer == "**" {
                         // Don't add two consecutive Recurse segments
-                        if !segments.is_empty() && !matches!(segments.last().unwrap(), Segment::Recurse) {
+                        if segments.is_empty() || !matches!(segments.last().unwrap(), Segment::Recurse) {
                             segments.push(Segment::Recurse);
                         }
                     } else if constant_buffer.contains("**") {
@@ -445,7 +452,8 @@ impl MyGlobBuilder {
         }
 
         // If last segment is a **, append a Filter * to find everything (doesn't have to be case insensitive)
-        if let Segment::Recurse = &segments[segments.len() - 1] {
+        // We are sure that segments is not empty since we appended \ at the end of glob pattern
+        if matches!(segments.last().unwrap(), Segment::Recurse) {
             segments.push(Segment::Filter(Regex::new("^.*$").unwrap()));
         }
 
@@ -526,10 +534,10 @@ impl Iterator for MyGlobIteratorState<'_> {
                             };
                             if depth == self.segments.len() - 1 {
                                 // Final segment
-                                if pb.is_file() {
+                                if pb.is_file() || ft.is_symlink_file() {
                                     // Case-insensitive comparison is provided by filesystem
                                     self.queue.insert(0, SearchPendingData::File(pb, ft.is_symlink()));
-                                } else if pb.is_dir() {
+                                } else if pb.is_dir() || ft.is_symlink_dir() {
                                     self.queue.insert(0, SearchPendingData::Dir(pb.clone(), ft.is_symlink()));
                                 }
                             } else {
@@ -627,7 +635,7 @@ impl Iterator for MyGlobIteratorState<'_> {
                                                 let pb = entry.path();
                                                 let fname = entry.file_name().to_string_lossy().to_string();
 
-                                                if ft.is_file() {
+                                                if ft.is_file() || ft.is_symlink_file() {
                                                     if ft.is_file() || self.link_mode > 0 {
                                                         if depth == self.segments.len() - 1 && re.is_match(&fname) {
                                                             if TRACE {
@@ -643,7 +651,7 @@ impl Iterator for MyGlobIteratorState<'_> {
                                                             self.queue.insert(0, SearchPendingData::File(pb, ft.is_symlink()));
                                                         }
                                                     }
-                                                } else if ft.is_dir() {
+                                                } else if ft.is_dir() || ft.is_symlink_dir() {
                                                     if ft.is_dir() || self.link_mode > 0 {
                                                         let flnc = fname.to_lowercase();
                                                         //if !self.ignore_dirs.iter().any(|ie| *ie == flnc) {
@@ -697,7 +705,7 @@ impl Iterator for MyGlobIteratorState<'_> {
                                                 } else {
                                                     let e = IOError::new(
                                                         std::io::ErrorKind::Other,
-                                                        format!("Unknown directory entry type while enumerating {}: {:#?}", root.display(), entry),
+                                                        format!("Unknown directory entry type while enumerating {}: {:#?}", pb.display(), entry),
                                                     );
                                                     self.queue.insert(0, SearchPendingData::Error(e));
                                                 }

@@ -82,7 +82,7 @@ fn action_dir(lw: &mut LogWriter, path: &Path, _noaction: bool, _verbose: bool) 
     };
 
     // Handle the case of a link when target is not accessible such as
-    // C:\Users\Pierr\.julia\packages\FilePathsBase\NV2We\docs\src, a <SYMLINK> io inexistent file ../../README.md
+    // C:\Users\Pierr\.julia\packages\FilePathsBase\NV2We\docs\src\index.md, a <SYMLINK> io inexistent file ../../README.md
     if path.is_symlink() && !path.is_dir() && !path.is_file() {
         // Since target does not exist, we retrieve link metadata
         let meta = fs::symlink_metadata(path).unwrap();

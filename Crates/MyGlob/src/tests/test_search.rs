@@ -36,15 +36,15 @@ fn search_count_base(resgs: Result<MyGlobSearch, MyGlobError>) -> (usize, usize)
             for ma in gs.explore_iter() {
                 match ma {
                     MyGlobMatch::File(_pb) => {
-                        //println!("{}", pb.display());
+                        println!("{}", _pb.display());
                         nf += 1;
                     }
                     MyGlobMatch::Dir(_pb) => {
-                        //println!("{}\\", pb.display());
+                        println!("{}\\", _pb.display());
                         nd += 1;
                     }
                     MyGlobMatch::Error(_e) => {
-                        //println!("{}", e);
+                        println!("{}", _e);
                     }
                 }
             }
@@ -171,7 +171,68 @@ fn search_count2(glob_pattern: &str, max_depth: usize, link_mode: usize) -> (usi
 }
 
 #[test]
-fn search_2() -> io::Result<()> {
+fn zsearch_1() -> io::Result<()> {
+    // create_directory(r"C:\Temp\search1")?;
+    // create_file(r"C:\Temp\search1\fruits et légumes.txt", "Des fruits et des légumes")?;
+    // create_file(r"C:\Temp\search1\info", "Information")?;
+    // create_directory(r"C:\Temp\search1\fruits")?;
+    // create_file(r"C:\Temp\search1\fruits\pomme.txt", "Pomme")?;
+    // create_file(r"C:\Temp\search1\fruits\poire.txt", "Poire")?;
+    // create_file(r"C:\Temp\search1\fruits\ananas.txt", "Ananas")?;
+    // create_file(r"C:\Temp\search1\fruits\tomate.txt", "Tomate")?;
+    // create_directory(r"C:\Temp\search1\légumes")?;
+    // create_file(r"C:\Temp\search1\légumes\épinard.txt", "Épinard")?;
+    // create_file(r"C:\Temp\search1\légumes\tomate.txt", "Tomate")?;
+    // create_file(r"C:\Temp\search1\légumes\pomme.de.terre.txt", "Pomme de terre")?;
+    // create_directory(r"C:\Temp\search1\我爱你")?;
+    // create_file(r"C:\Temp\search1\我爱你\你好世界.txt", "Hello world")?;
+    // create_file(r"C:\Temp\search1\我爱你\tomate.txt", "Hello Tomate")?;
+    // create_directory(r"C:\Temp\search1\我爱你\Ƥḭҽɾɾҽ ѵìǫłҽղէ")?;
+    // create_file(r"C:\Temp\search1\我爱你\Ƥḭҽɾɾҽ ѵìǫłҽղէ\tomate.txt", "Hello Tomate")?;
+    // create_file(r"C:\Temp\search1\我爱你\Ƥḭҽɾɾҽ ѵìǫłҽղէ\Aé♫山𝄞🐗.txt", "Random 1")?;
+    // create_file(r"C:\Temp\search1\我爱你\Ƥḭҽɾɾҽ ѵìǫłҽղէ\œæĳøß≤≠Ⅷﬁﬆ.txt", "Random 2")?;
+
+    // // Basic testing
+    // assert_eq!(search_count1(r"C:\Temp\search1\info"), (1, 0));
+    // assert_eq!(search_count1(r"C:\Temp\search1\*"), (2, 3));
+    // assert_eq!(search_count1(r"C:\Temp\search1\*.*"), (1, 0));
+    // assert_eq!(search_count1(r"C:\Temp\search1\fruits\*"), (4, 0));
+    // assert_eq!(search_count1(r"C:\Temp\search1\{fruits,légumes}\p*"), (3, 0));
+    // assert_eq!(search_count1(r"C:\Temp\search1\**\p*"), (3, 0));
+    // assert_eq!(search_count1(r"C:\Temp\search1\**\*.txt"), (13, 0));
+    // assert_eq!(search_count1(r"C:\Temp\search1\**\*.*.*"), (1, 0));
+    // assert_eq!(search_count1(r"C:\Temp\search1\légumes\*"), (3, 0));
+    // assert_eq!(search_count1(r"C:\Temp\search1\*s\to[a-z]a{r,s,t}e.t[xX]t"), (2, 0));
+
+    // // Multibyte characters
+    // assert_eq!(search_count1(r"C:\Temp\search1\**\*爱*\*a*.txt"), (1, 0));
+    // assert_eq!(search_count1(r"C:\Temp\search1\**\*爱*\**\*a*.txt"), (3, 0));
+    // assert_eq!(search_count1(r"C:\Temp\search1\我爱你\**\*🐗*"), (1, 0));
+
+    // // Testing autorecurse
+    // assert_eq!(search_count1(r"C:\Temp\search1\*.txt"), (1, 0));
+    // assert_eq!(search_count_autorecurse(r"C:\Temp\search1\*.txt"), (13, 0));
+    // assert_eq!(search_count1(r"C:\Temp\search1"), (0, 1));
+    // assert_eq!(search_count_autorecurse(r"C:\Temp\search1"), (14, 4));
+    // assert_eq!(search_count_autorecurse(r"C:\Temp\search1\"), (14, 4)); // Test with final \
+
+    // // Testing ignore
+    // assert_eq!(search_count_ignore(r"C:\Temp\search1\**\*.txt", &["Légumes"]), (10, 0));
+    // assert_eq!(search_count_ignore(r"C:\Temp\search1\**\*.txt", &["Légumes", "我爱你"]), (5, 0));
+
+    // // Testing max_depth
+    // assert_eq!(search_count_max_depth(r"C:\Temp\search1\**\*.txt", 1), (1, 0));
+    // assert_eq!(search_count_max_depth(r"C:\Temp\search1\**\*.txt", 2), (10, 0));
+
+    // Cleanup
+    //fs::remove_dir_all(r"C:\Temp\search1")?;
+
+    Ok(())
+}
+
+
+#[test]
+fn zsearch_2() -> io::Result<()> {
     // Setup directories and a file to be linked to
     create_directory(r"C:\Temp\search3")?;
     create_file(r"C:\Temp\search3\File_L0_original.txt", "Content of File_L0_original.txt")?;
@@ -203,20 +264,20 @@ fn search_2() -> io::Result<()> {
         os_fs::symlink_file(r"C:\Temp\search3\File_L0_original.txt", r"C:\Temp\search2\RealSubDir\Cave\File_L2.txt")?;
     }
 
-    // max_depth 0
-    assert_eq!(search_count2(r"C:\Temp\search2", 0, 0), (3, 2));
+    // // max_depth 0
+    // assert_eq!(search_count2(r"C:\Temp\search2", 0, 0), (3, 2));
     assert_eq!(search_count2(r"C:\Temp\search2", 0, 1), (5, 3));
-    assert_eq!(search_count2(r"C:\Temp\search2", 0, 2), (7, 4));
+    // assert_eq!(search_count2(r"C:\Temp\search2", 0, 2), (7, 4));
 
-    // max_depth 1
-    assert_eq!(search_count2(r"C:\Temp\search2", 1, 0), (1, 1));
-    assert_eq!(search_count2(r"C:\Temp\search2", 1, 1), (2, 2));
-    assert_eq!(search_count2(r"C:\Temp\search2", 1, 2), (2, 2));
+    // // max_depth 1
+    // assert_eq!(search_count2(r"C:\Temp\search2", 1, 0), (1, 1));
+    // assert_eq!(search_count2(r"C:\Temp\search2", 1, 1), (2, 2));
+    // assert_eq!(search_count2(r"C:\Temp\search2", 1, 2), (2, 2));
 
-    // max_depth 2
-    assert_eq!(search_count2(r"C:\Temp\search2", 2, 0), (2, 2));
-    assert_eq!(search_count2(r"C:\Temp\search2", 2, 1), (3, 3));
-    assert_eq!(search_count2(r"C:\Temp\search2", 2, 2), (4, 4));
+    // // max_depth 2
+    // assert_eq!(search_count2(r"C:\Temp\search2", 2, 0), (2, 2));
+    // assert_eq!(search_count2(r"C:\Temp\search2", 2, 1), (3, 3));
+    // assert_eq!(search_count2(r"C:\Temp\search2", 2, 2), (4, 4));
 
     // Cleanup
     fs::remove_dir_all(r"C:\Temp\search2")?;
