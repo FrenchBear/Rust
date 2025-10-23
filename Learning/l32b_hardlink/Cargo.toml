@@ -1,6 +1,7 @@
 [package]
-name = "l32_symlink_junction"
+name = "l32b_hardlink"
 version = "0.1.0"
+description = "Detects hard links on Windows NTFS volumes"
 edition = "2024"
 
 [dependencies]

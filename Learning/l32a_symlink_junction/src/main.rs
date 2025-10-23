@@ -1,4 +1,4 @@
-// l32_symlink_junction - Learning Rust
+// l32a_symlink_junction - Learning Rust
 // Detects junctions and symbolic links (for file and directory) on Windows NTFS volumes
 // Big help from ChatGPT for the code, while Gemini was hallucinating inexistent functions and useless
 //
