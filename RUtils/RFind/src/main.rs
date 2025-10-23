@@ -215,6 +215,7 @@ fn main() {
 
     let mut files_count = 0;
     let mut dirs_count = 0;
+    let mut errs_count = 0;
     for gs in sources.iter() {
         for ma in gs.1.explore_iter() {
             match ma {
@@ -237,6 +238,7 @@ fn main() {
                 }
 
                 MyGlobMatch::Error(err) => {
+                    errs_count += 1;
                     if options.verbose {
                         logln(&mut writer, format!("{APP_NAME}: MyGlobMatch error {}", err).as_str());
                     }
@@ -253,17 +255,23 @@ fn main() {
     let duration = start.elapsed();
 
     if options.verbose {
-        if files_count + dirs_count > 0 {
+        if files_count + dirs_count + errs_count > 0 {
             logln(&mut writer, "");
         }
         if options.search_files {
-            log(&mut writer, format!("{files_count} files(s)").as_str());
+            log(&mut writer, format!("{files_count} files{}", s(files_count)).as_str());
         }
         if options.search_dirs {
             if options.search_files {
                 log(&mut writer, ", ");
             }
             log(&mut writer, format!("{dirs_count} dir(s)").as_str());
+        }
+        if errs_count>0 {
+            if files_count + dirs_count > 0{
+                log(&mut writer, ", ");
+            }
+            log(&mut writer, format!("{errs_count} error(s)").as_str());
         }
         logln(&mut writer, format!(" found in {:.3}s", duration.as_secs_f64()).as_str());
     }

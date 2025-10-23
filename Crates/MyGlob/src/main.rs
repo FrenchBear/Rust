@@ -16,14 +16,15 @@ use std::time::Instant;
 fn main() {
     println!("MyGlob lib version: {}\n", MyGlobSearch::version());
 
-    //let new_path = Path::new(r"S:\Temp");
-    //_ = env::set_current_dir(&new_path);
-    //test_myglob(r"S:\**\*Intel*", true, &["d2"], 0, 1);
-    //test_myglob(r"C:\Temp\search1\info", false, &[], 0, 1);
-    //test_myglob(r"S:\max_depth", true, &[], 1, 1);
-    //test_myglob(r"C:\Development\GitVSTS\DevForFun\**\*.{!SOURCES}", true, &[], 2, 1);
-    //test_myglob(r"C:\MusicOD\Humour\**\*Eric*", true, &[], 0, true, 1);
-    test_myglob(r"C:\", true, false, &[], 2, true, 2, 1);
+    // Error cases
+    // test_myglob(r"azerty", true, false, &[], 2, true, 2, 1);
+    // test_myglob(r"NUL", true, false, &[], 2, true, 2, 1);
+    // test_myglob(r"Z:\hello.txt", true, false, &[], 2, true, 2, 1);
+    // test_myglob(r"C:\Timp\File.txt", true, false, &[], 2, true, 2, 1);
+    // test_myglob(r"C:\Temp\**\NUL", true, false, &[], 2, true, 2, 1);
+    
+    // Test optimization
+    test_myglob(r"C:\Temp\**\**\**\**\*.txt", true, false, &[], 2, true, 2, 1);
 }
 
 // Entry point for testing
@@ -74,7 +75,7 @@ pub fn test_myglob(
                             nd += 1;
                         }
                         MyGlobMatch::Error(e) => {
-                            println!("{}", e);
+                            println!("Err: «{}»", e);
                         }
                     }
                 }

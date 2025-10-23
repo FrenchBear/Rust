@@ -28,6 +28,7 @@
 // 2025-10-17   PV      1.11  Case sensitive option
 // 2025-20-22   PV      1.12  Clippy review; added MyGlobBuilder.clear_ignore_dirs()
 // 2025-20-22   PV      2.0   Option to follow links (hide them, include them but don't follow dir symlinks, include and follow links). max_depth fixed
+// 2025-20-23   PV      2.0.1 Don't add two consecutive recurse segments in glob_to_segments, it's useless and inefficient
 
 //#![allow(unused_variables, dead_code, unused_imports)]
 
@@ -162,13 +163,22 @@ Case-sensitive option only apply to filters such as ⟦*.JPG⟧ or ⟦*Eric*⟧,
         // It's actually a but faster to process it before iterator loop, so there is no special case to handle at the beginning of each iterator call
         if self.segments.is_empty() {
             let p = Path::new(&self.root);
-            let ft = p.metadata().unwrap().file_type();
+
             let mut stack: Vec<SearchPendingData> = Vec::new();
-            if p.is_file() || ft.is_symlink_file() {
-                stack.insert(0, SearchPendingData::File(p.to_path_buf(), p.is_symlink()));
-            } else if p.is_dir() || ft.is_symlink_dir() {
-                stack.insert(0, SearchPendingData::Dir(p.to_path_buf(), p.is_symlink()));
-            }
+            // Access to metadata will fail for inexistent files, special names such as NUL or COM2, inexistent drive or paths...
+            match p.metadata() {
+                Ok(meta) => {
+                    let ft = meta.file_type();
+                    if p.is_file() || ft.is_symlink_file() {
+                        stack.insert(0, SearchPendingData::File(p.to_path_buf(), p.is_symlink()));
+                    } else if p.is_dir() || ft.is_symlink_dir() {
+                        stack.insert(0, SearchPendingData::Dir(p.to_path_buf(), p.is_symlink()));
+                    }
+                }
+                Err(e) => {
+                    stack.insert(0, SearchPendingData::Error(e));
+                }
+            };
             return MyGlobIteratorState {
                 queue: stack,
                 segments: &self.segments,
@@ -372,7 +382,10 @@ impl MyGlobBuilder {
                     }
 
                     if constant_buffer == "**" {
-                        segments.push(Segment::Recurse);
+                        // Don't add two consecutive Recurse segments
+                        if !segments.is_empty() && !matches!(segments.last().unwrap(), Segment::Recurse) {
+                            segments.push(Segment::Recurse);
+                        }
                     } else if constant_buffer.contains("**") {
                         return Err(MyGlobError::GlobError(format!("Glob pattern ** must be alone between {c}")));
                     } else if constant_buffer.chars().any(|c| "*?[{".contains(c)) {
@@ -505,7 +518,14 @@ impl Iterator for MyGlobIteratorState<'_> {
                             }
 
                             let pb = root.join(name);
-                            let ft = pb.metadata().unwrap().file_type();
+                            // Access to metadata can fail if the segment is a special reserved name such as NUL or MPT2
+                            let ft = match pb.metadata() {
+                                Ok(meta) => meta.file_type(),
+                                Err(e) => {
+                                    self.queue.insert(0, SearchPendingData::Error(e));
+                                    continue;
+                                }
+                            };
                             if depth == self.segments.len() - 1 {
                                 // Final segment
                                 if pb.is_file() || ft.is_symlink_file() {
