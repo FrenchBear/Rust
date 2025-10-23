@@ -34,6 +34,7 @@
 // ToDo:
 // - Accent insensitive search (actually maybe not useful, but everything does it)
 // - Option -rename with a simplified sed syntax
+// - Separate ActionDir and ActionPrint
 
 //#![allow(unused)]
 

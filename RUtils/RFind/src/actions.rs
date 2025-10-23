@@ -21,16 +21,9 @@ use std::{fs, process::Command};
 use chrono::{DateTime, Local, Utc};
 use num_format::{Locale, ToFormattedString};
 
-// Conditional imports
+// Retrieve files/dirs attributes on Windows
 #[cfg(target_os = "windows")]
 use std::os::windows::fs::MetadataExt;
-// #[cfg(target_os = "windows")]
-// use std::os::windows::prelude::*;
-// #[cfg(target_os = "windows")]
-// use windows::{
-//     Win32::UI::Shell::StrCmpLogicalW,
-//     core::{HRESULT, PCWSTR},
-// }; // For OsStringExt::encode_wide
 
 use trash::delete;
 
@@ -119,6 +112,7 @@ fn action_dir(lw: &mut LogWriter, path: &Path, _noaction: bool, _verbose: bool) 
             return;
         }
     };
+
     let modified_time = meta.modified().unwrap(); // Get last modified time
     let datetime_utc: DateTime<Utc> = DateTime::<Utc>::from(modified_time);
     let datetime_local = datetime_utc.with_timezone(&Local);
@@ -145,7 +139,11 @@ fn action_dir(lw: &mut LogWriter, path: &Path, _noaction: bool, _verbose: bool) 
     if path.is_file() {
         // Includes links to existing files
         let file_size = meta.len();
-        let formatted_size = file_size.to_formatted_string(&Locale::fr); //Use French locale for now. Later we will find the user locale.
+        let formatted_size = if path.is_symlink() {
+            "<FILE LINK>    ".into()
+        } else {
+            file_size.to_formatted_string(&Locale::fr) //Use French locale for now. Later we will find the user locale.
+        };
 
         logln(
             lw,
@@ -160,10 +158,16 @@ fn action_dir(lw: &mut LogWriter, path: &Path, _noaction: bool, _verbose: bool) 
     } else if path.is_dir() {
         // Includes links to existing directories
         let dir_sep = if cfg!(target_os = "windows") { '\\' } else { '/' };
-
+        let tag = if path.is_symlink() { "<DIR LINK>" } else { "<DIR>" };
         logln(
             lw,
-            format!("{:>19}   {:<15}  {attributes_string}  {}{dir_sep} {link_string}", formatted_time, "<DIR>", path.display()).as_str(),
+            format!(
+                "{:>19}   {:<15}  {attributes_string}  {}{dir_sep} {link_string}",
+                formatted_time,
+                tag,
+                path.display()
+            )
+            .as_str(),
         );
     } else {
         logln(lw, format!("*** Error neither dir not file {}", path.display()).as_str());

@@ -38,7 +38,7 @@ use std::error::Error;
 use std::fmt::Display;
 use std::fs;
 use std::io::Error as IOError;
-use std::os::windows::fs::FileTypeExt;
+//use std::os::windows::fs::FileTypeExt;
 use std::path::{Path, PathBuf};
 
 // -----------------------------------
@@ -165,21 +165,17 @@ Case-sensitive option only apply to filters such as ⟦*.JPG⟧ or ⟦*Eric*⟧,
             let p = Path::new(&self.root);
 
             let mut stack: Vec<SearchPendingData> = Vec::new();
-            // Access to metadata will fail for inexistent files, special names such as NUL or COM2, inexistent drive or paths...
-            match p.metadata() {
-                Ok(meta) => {
-                    let ft = meta.file_type();
-                    if p.is_file() || ft.is_symlink_file() {
-                        stack.insert(0, SearchPendingData::File(p.to_path_buf(), p.is_symlink()));
-                    } else if p.is_dir() || ft.is_symlink_dir() {
-                        stack.insert(0, SearchPendingData::Dir(p.to_path_buf(), p.is_symlink()));
-                    }
-                }
-                Err(e) => {
-                    let f = std::io::Error::new(e.kind(), format!("Error retrieving metadata for {}: {}", p.display(), e));
-                    stack.insert(0, SearchPendingData::Error(f));
-                }
-            };
+            if p.is_file() {
+                stack.insert(0, SearchPendingData::File(p.to_path_buf(), p.is_symlink()));
+            } else if p.is_dir() {
+                stack.insert(0, SearchPendingData::Dir(p.to_path_buf(), p.is_symlink()));
+            } else {
+                let e = IOError::new(
+                    std::io::ErrorKind::Other,
+                    format!("Can't find or access file or folder {}", p.display()),
+                );
+                stack.insert(0, SearchPendingData::Error(e));
+            }
             return MyGlobIteratorState {
                 queue: stack,
                 segments: &self.segments,
@@ -530,10 +526,10 @@ impl Iterator for MyGlobIteratorState<'_> {
                             };
                             if depth == self.segments.len() - 1 {
                                 // Final segment
-                                if pb.is_file() || ft.is_symlink_file() {
+                                if pb.is_file() {
                                     // Case-insensitive comparison is provided by filesystem
                                     self.queue.insert(0, SearchPendingData::File(pb, ft.is_symlink()));
-                                } else if pb.is_dir() || ft.is_symlink_dir() {
+                                } else if pb.is_dir() {
                                     self.queue.insert(0, SearchPendingData::Dir(pb.clone(), ft.is_symlink()));
                                 }
                             } else {
@@ -631,7 +627,7 @@ impl Iterator for MyGlobIteratorState<'_> {
                                                 let pb = entry.path();
                                                 let fname = entry.file_name().to_string_lossy().to_string();
 
-                                                if ft.is_file() || ft.is_symlink_file() {
+                                                if ft.is_file() {
                                                     if ft.is_file() || self.link_mode > 0 {
                                                         if depth == self.segments.len() - 1 && re.is_match(&fname) {
                                                             if TRACE {
@@ -647,7 +643,7 @@ impl Iterator for MyGlobIteratorState<'_> {
                                                             self.queue.insert(0, SearchPendingData::File(pb, ft.is_symlink()));
                                                         }
                                                     }
-                                                } else if ft.is_dir() || ft.is_symlink_dir() {
+                                                } else if ft.is_dir() {
                                                     if ft.is_dir() || self.link_mode > 0 {
                                                         let flnc = fname.to_lowercase();
                                                         //if !self.ignore_dirs.iter().any(|ie| *ie == flnc) {

@@ -75,8 +75,8 @@ impl Options {
 ⦃-cs⦄              ¬Case-sensitive search (default is case insensitive)
 ⦃-r+⦄|⦃-r-⦄          ¬Delete to recycle bin (default) or delete forever; Recycle bin is not allowed on network sources
 ⦃-a+⦄|⦃-a-⦄          ¬Enable (default) or disable glob autorecurse mode (see extended usage)
-⦃-l⦄[⦃0⦄|⦃1⦄|⦃2⦄]        ¬Link mode: 0=ignore links, 1=include links but don't follow them (default), 2=follow links
-⦃-name⦄ ⟨name⟩       ¬Append ⟦/**/⟧⟨name⟩ to each source directory (compatibility with XFind/Search)
+⦃-l⦄[⦃0⦄|⦃1⦄|⦃2⦄]        ¬Links mode: 0=ignore links, 1=include links but don't follow them (default), 2=follow links
+⦃-name⦄ ⟨name⟩       ¬Append ⟦/**/⟨name⟩⟧ to each source directory (compatibility with XFind/Search)
 ⦃-maxdepth⦄ ⟨n⟩      ¬Limit the recursion depth of ** segments, 1=One directory only, ... Default=0 is unlimited depth
 
 ⌊Filters⌋:

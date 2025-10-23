@@ -25,7 +25,9 @@ fn main() {
     // test_myglob(r"C:\Temp\*\NUL", true, false, &[], 2, true, 2, 1);
     
     // Test optimization
-    test_myglob(r"C:\Temp\**\**\**\**\*.txt", true, false, &[], 2, true, 2, 1);
+    // test_myglob(r"C:\Temp\**\**\**\**\*.txt", true, false, &[], 2, true, 2, 1);
+    
+    test_myglob(r"C:\Hosts", false, false, &[], 0, true, 2, 1);
 }
 
 // Entry point for testing
