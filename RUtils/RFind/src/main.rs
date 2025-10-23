@@ -138,7 +138,7 @@ fn main() {
         if options.no_glob_filtering {
             builder = builder.clear_ignore_dirs();
         }
-            
+
         let resgs = builder.compile();
         match resgs {
             Ok(gs) => {
@@ -254,26 +254,37 @@ fn main() {
 
     let duration = start.elapsed();
 
+    fn s(n: i32) -> &'static str {
+        if n > 1 { "s" } else { "" }
+    }
+
     if options.verbose {
-        if files_count + dirs_count + errs_count > 0 {
-            logln(&mut writer, "");
-        }
-        if options.search_files {
-            log(&mut writer, format!("{files_count} files{}", s(files_count)).as_str());
-        }
-        if options.search_dirs {
+        let mut msg = String::new();
+
+        if files_count + dirs_count == 0 {
+            msg.push_str("No match");
+        } else {
             if options.search_files {
-                log(&mut writer, ", ");
+                if !msg.is_empty() {
+                    msg.push_str(", ");
+                }
+                msg.push_str(format!("{files_count} file{}", s(files_count)).as_str());
             }
-            log(&mut writer, format!("{dirs_count} dir(s)").as_str());
-        }
-        if errs_count>0 {
-            if files_count + dirs_count > 0{
-                log(&mut writer, ", ");
+            if options.search_dirs {
+                if !msg.is_empty() {
+                    msg.push_str(", ");
+                }
+                msg.push_str(format!("{dirs_count} dir{}", s(dirs_count)).as_str());
             }
-            log(&mut writer, format!("{errs_count} error(s)").as_str());
         }
-        logln(&mut writer, format!(" found in {:.3}s", duration.as_secs_f64()).as_str());
+
+        if errs_count > 0 {
+            if !msg.is_empty() {
+                msg.push_str(", ");
+            }
+            msg.push_str(format!("{errs_count} error{}", s(errs_count)).as_str());
+        }
+        logln(&mut writer, format!("\n{msg} found in {:.3}s", duration.as_secs_f64()).as_str());
     }
 }
 

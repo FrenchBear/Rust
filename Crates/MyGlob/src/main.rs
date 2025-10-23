@@ -22,6 +22,7 @@ fn main() {
     // test_myglob(r"Z:\hello.txt", true, false, &[], 2, true, 2, 1);
     // test_myglob(r"C:\Timp\File.txt", true, false, &[], 2, true, 2, 1);
     // test_myglob(r"C:\Temp\**\NUL", true, false, &[], 2, true, 2, 1);
+    // test_myglob(r"C:\Temp\*\NUL", true, false, &[], 2, true, 2, 1);
     
     // Test optimization
     test_myglob(r"C:\Temp\**\**\**\**\*.txt", true, false, &[], 2, true, 2, 1);

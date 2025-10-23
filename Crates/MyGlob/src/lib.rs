@@ -176,7 +176,8 @@ Case-sensitive option only apply to filters such as ⟦*.JPG⟧ or ⟦*Eric*⟧,
                     }
                 }
                 Err(e) => {
-                    stack.insert(0, SearchPendingData::Error(e));
+                    let f = std::io::Error::new(e.kind(), format!("Error retrieving metadata for {}: {}", p.display(), e));
+                    stack.insert(0, SearchPendingData::Error(f));
                 }
             };
             return MyGlobIteratorState {
@@ -522,7 +523,8 @@ impl Iterator for MyGlobIteratorState<'_> {
                             let ft = match pb.metadata() {
                                 Ok(meta) => meta.file_type(),
                                 Err(e) => {
-                                    self.queue.insert(0, SearchPendingData::Error(e));
+                                    let f = std::io::Error::new(e.kind(), format!("Error retrieving metadata for {}: {}", pb.display(), e));
+                                    self.queue.insert(0, SearchPendingData::Error(f));
                                     continue;
                                 }
                             };
