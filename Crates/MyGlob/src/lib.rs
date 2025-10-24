@@ -135,6 +135,7 @@ impl MyGlobSearch {
 ⌊Autorecurse glob pattern transformation⌋:
 - ¬⟪Constant pattern⟫ (no filter, no ⟦**⟧) pointing to a directory: ⟦/**/*⟧ is appended at the end to search all files of all subdirectories.
 - ¬⟪Patterns without ⟦**⟧ and ending with a filter⟫: ⟦/**⟧ is inserted before the final filter to find all matching files of all subdirectories.
+- ¬⟪Patterns without ⟦**⟧ and ending with a constant⟫: no transformation, ⟦W:\\thumbs.db⟧ matches onky this file.
 
 ⌊Case sensitive option⌋:
 Case-sensitive option only apply to filters such as ⟦*.JPG⟧ or ⟦*Eric*⟧, ⟦**⟧ ignore folders case, and constant parts such as ⟦C:\\Development⟧ depend on the OS and the filesystem: typically case-insensitive on Windows, and case-sensitive on Linux, MacOS or case-sensitive volumes on Windows (Cryptomator, WSL volummes, ...).

@@ -23,6 +23,7 @@
 // 2025-10-21	PV      3.1.0 Detect double extensions; Protect strings in yaml output
 // 2025-20-22   PV      Clippy review
 // 2025-20-24   PV      3.2.0 Dash confusables and mixed scripts
+// 2025-20-25   PV      3.2.1 Space allowed before ¡
 
 // Note: Can't use MyGlob crate since directories names can be updated during recursive enumeration, this is not a
 // supported use case of MyGlob, so hierarchical exploration is handled directly
@@ -67,7 +68,7 @@ const APP_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 const SPECIAL_CHARS: &str = "€®™©–—…×·•∶⧹⧸／⚹†‽¿🎜🎝♫♪“”‹›⚡♥";
 
 const CHARS_NO_SPACE_AFTER: &str = "([{«‹";
-const CHARS_NO_SPACE_BEFORE: &str = ")]}»›¿!‽¡.,…";
+const CHARS_NO_SPACE_BEFORE: &str = ")]}»›¿!‽.,…";
 
 // Confusables for space (note that U+FEFF ZERO WIDTH NO-BREAK SPACE is always removed)
 const SPACE_CONFUSABLES: [char; 14] = [
