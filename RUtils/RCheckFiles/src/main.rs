@@ -22,6 +22,7 @@
 // 2025-10-21	PV      3.0.0 Filtering on specific problems
 // 2025-10-21	PV      3.1.0 Detect double extensions; Protect strings in yaml output
 // 2025-20-22   PV      Clippy review
+// 2025-20-24   PV      3.2.0 Dash confusables and mixed scripts
 
 // Note: Can't use MyGlob crate since directories names can be updated during recursive enumeration, this is not a
 // supported use case of MyGlob, so hierarchical exploration is handled directly
@@ -41,7 +42,9 @@ use getopt::Opt;
 use logging::{LogWriter, log, logln};
 use regex::Regex;
 use serde::Deserialize;
+use unicode_ident::{is_xid_continue, is_xid_start};
 use unicode_normalization::{UnicodeNormalization, is_nfc};
+use unicode_script::{Script, UnicodeScript};
 
 // -----------------------------------
 // Submodules
@@ -121,6 +124,23 @@ const APOSTROPHE_CONFUSABLES: [char; 33] = [
     '\u{FF40}', // ｀ U+FF40	FULLWIDTH GRAVE ACCENT
 ];
 
+const DASH_CONFUSABLES: [char; 14] = [
+    '\u{00AD}',  //	- Soft hyphen
+    '\u{02D7}',  // ˗ MODIFIER LETTER MINUS SIGN
+    '\u{06D4}',  // ۔ ARABIC FULL STOP
+    '\u{2010}',  // ‐ HYPHEN
+    '\u{2011}',  // ‑ NON-BREAKING HYPHEN
+    '\u{2012}',  // ‒ FIGURE DASH
+    '\u{2013}',  // – EN DASH
+    '\u{2043}',  // ⁃ HYPHEN BULLET
+    '\u{2212}',  // − MINUS SIGN
+    '\u{2796}',  // ➖ HEAVY MINUS SIGN
+    '\u{2CBA}',  // Ⲻ COPTIC CAPITAL LETTER DIALECT-P NI
+    '\u{2CBB}',  // ⲻ COPTIC SMALL LETTER DIALECT-P NI
+    '\u{FE58}',  // ﹘ SMALL EM DASH
+    '\u{10191}', //	𐆑 Roman uncia sign
+];
+
 macro_rules! hashmap {
     ($( $key:expr => $val:expr ),* $(,)?) => {{
         let mut map = HashMap::new();
@@ -179,14 +199,16 @@ struct Statistics {
     total: u32, // Total files/dirs processed
     nnn: u32,   // Non-normalized names
     bra: u32,   // Bracket issue
-    apo: u32,   // Incorrect apostrophe
     spc: u32,   // Incorrect space
+    apo: u32,   // Incorrect apostrophe
+    das: u32,   // Incorrect dash
     car: u32,   // Maybe incorrect char
     sp2: u32,   // Double space
     lig: u32,   // Ligatures
     sba: u32,   // Space after opening bracket or before closing bracket
     ewd: u32,   // Ends with dots
     dex: u32,   // Double extension
+    mix: u32,   // Mixed scripts
     fix: u32,   // Number of path fixed
     err: u32,   // Number of errors
 
@@ -198,6 +220,7 @@ impl Statistics {}
 struct TransformationData {
     space_confusables: HashSet<char>,
     apostrophe_confusables: HashSet<char>,
+    dash_confusables: HashSet<char>,
     ligatures: HashMap<char, &'static str>,
     no_space_after: HashMap<char, Regex>,
     no_space_before: HashMap<char, Regex>,
@@ -209,6 +232,7 @@ fn get_transformation_data() -> TransformationData {
     TransformationData {
         space_confusables: HashSet::from_iter(SPACE_CONFUSABLES),
         apostrophe_confusables: HashSet::from_iter(APOSTROPHE_CONFUSABLES),
+        dash_confusables: HashSet::from_iter(DASH_CONFUSABLES),
         ligatures: LIGATURES.clone(),
         no_space_after: CHARS_NO_SPACE_AFTER
             .chars()
@@ -265,11 +289,14 @@ fn main() {
             if stats.bra > 0 {
                 log(writer, &format!(", {} brackets issue{}", stats.bra, s(stats.bra)));
             }
+            if stats.spc > 0 {
+                log(writer, &format!(", {} wrong space", stats.spc));
+            }
             if stats.apo > 0 {
                 log(writer, &format!(", {} wrong apostrophe", stats.apo));
             }
-            if stats.spc > 0 {
-                log(writer, &format!(", {} wrong space", stats.spc));
+            if stats.das > 0 {
+                log(writer, &format!(", {} wrong dash", stats.das));
             }
             if stats.sp2 > 0 {
                 log(writer, &format!(", {} multiple spaces", stats.sp2));
@@ -288,6 +315,9 @@ fn main() {
             }
             if stats.dex > 0 {
                 log(writer, &format!(", {} double extension", stats.dex));
+            }
+            if stats.mix > 0 {
+                log(writer, &format!(", {} mixed scripts", stats.mix));
             }
             if stats.fix > 0 {
                 log(writer, &format!(", {} problem{} fixed", stats.fix, s(stats.fix)));
@@ -493,7 +523,7 @@ fn check_name(
     options: &Options,
     writer: &mut LogWriter,
     transformation_data: &TransformationData,
-    test_mode: bool,
+    fixit: bool,
 ) -> Option<String> {
     let fp = p.display();
     let file = p.file_name();
@@ -502,7 +532,7 @@ fn check_name(
     let file = file.unwrap().to_str();
     if file.is_none() {
         stats.err += 1;
-        if !test_mode {
+        if !fixit {
             logln(writer, &format!("*** Invalid {pt} name {fp}, ignored"));
         }
         return None;
@@ -521,7 +551,7 @@ fn check_name(
 
     // Check for balanced brackets, but don't attempt a correction
     if (options.report_types.is_empty() || options.report_types.contains("bra")) && !is_balanced(&file) {
-        if !test_mode {
+        if !fixit {
             if options.yaml_output {
                 add_problem(&mut problems, "Non-balanced brackets");
             } else {
@@ -533,7 +563,7 @@ fn check_name(
 
     // Check normalization
     if (options.report_types.is_empty() || options.report_types.contains("nnn")) && !is_nfc(&file) {
-        if !test_mode {
+        if !fixit {
             if options.yaml_output {
                 add_problem(&mut problems, "Non-normalized");
             } else {
@@ -551,7 +581,7 @@ fn check_name(
         for nsa in &transformation_data.no_space_after {
             if nsa.1.is_match(&file) {
                 if !pbnsa {
-                    if !test_mode {
+                    if !fixit {
                         if options.yaml_output {
                             add_problem(&mut problems, "Space after opening bracket");
                         } else {
@@ -576,7 +606,7 @@ fn check_name(
         for nsb in &transformation_data.no_space_before {
             if nsb.1.is_match(&file) {
                 if !pbnsb {
-                    if !test_mode {
+                    if !fixit {
                         if options.yaml_output {
                             add_problem(&mut problems, "Invalid space before character");
                         } else {
@@ -597,34 +627,17 @@ fn check_name(
     let vc: Vec<char> = file.chars().collect();
     file = String::new();
 
-    let mut pbapo = false;
     let mut pbspc = false;
+    let mut pbapo = false;
+    let mut pbdas = false;
     let mut pblig = false;
 
     for c in &vc {
         let mut pushed: bool = false;
 
-        // Check apostrophes
-        if (options.report_types.is_empty() || options.report_types.contains("apo")) && transformation_data.apostrophe_confusables.contains(c) {
-            if !test_mode {
-                if options.yaml_output {
-                    if !pbapo {
-                        add_problem(&mut problems, "Invalid apostrophe");
-                    }
-                } else {
-                    logln(writer, &format!("Invalid apostrophe in {pt} name {fp} -> {c} {:04X}", *c as i32));
-                }
-            }
-            if !pbapo {
-                pbapo = true;
-                stats.apo += 1;
-            }
-            file.push('\'');
-            pushed = true;
-        }
-
+        // Check for spaces
         if (options.report_types.is_empty() || options.report_types.contains("spc")) && transformation_data.space_confusables.contains(c) {
-            if !test_mode {
+            if !fixit {
                 if options.yaml_output {
                     if !pbspc {
                         add_problem(&mut problems, "Invalid space");
@@ -641,8 +654,46 @@ fn check_name(
             pushed = true;
         }
 
+        // Check apostrophes
+        if (options.report_types.is_empty() || options.report_types.contains("apo")) && transformation_data.apostrophe_confusables.contains(c) {
+            if !fixit {
+                if options.yaml_output {
+                    if !pbapo {
+                        add_problem(&mut problems, "Invalid apostrophe");
+                    }
+                } else {
+                    logln(writer, &format!("Invalid apostrophe in {pt} name {fp} -> {c} {:04X}", *c as i32));
+                }
+            }
+            if !pbapo {
+                pbapo = true;
+                stats.apo += 1;
+            }
+            file.push('\'');
+            pushed = true;
+        }
+
+        // Check dashes
+        if (options.report_types.is_empty() || options.report_types.contains("das")) && transformation_data.dash_confusables.contains(c) {
+            if !fixit {
+                if options.yaml_output {
+                    if !pbdas {
+                        add_problem(&mut problems, "Invalid dash");
+                    }
+                } else {
+                    logln(writer, &format!("Invalid dash in {pt} name {fp} -> {c} {:04X}", *c as i32));
+                }
+            }
+            if !pbdas {
+                pbdas = true;
+                stats.das += 1;
+            }
+            file.push('-');
+            pushed = true;
+        }
+
         if (options.report_types.is_empty() || options.report_types.contains("lig")) && transformation_data.ligatures.contains_key(c) {
-            if !test_mode {
+            if !fixit {
                 if options.yaml_output {
                     if !pblig {
                         add_problem(&mut problems, "Ligature found");
@@ -679,7 +730,7 @@ fn check_name(
     if pt == "file" && (options.report_types.is_empty() || options.report_types.contains("dex")) && !extension.is_empty() {
         let ext2 = Path::new(basename).extension().and_then(|s| s.to_str()).unwrap_or("");
         if extension.to_lowercase() == ext2.to_lowercase() {
-            if !test_mode {
+            if !fixit {
                 if options.yaml_output {
                     add_problem(&mut problems, "Double extension");
                 } else {
@@ -707,7 +758,7 @@ fn check_name(
             }
         }
         if end_dots_count > 0 {
-            if !test_mode {
+            if !fixit {
                 if options.yaml_output {
                     add_problem(&mut problems, format!("Ends with {end_dots_count} dot{}", s(end_dots_count)).as_str());
                 } else {
@@ -731,7 +782,7 @@ fn check_name(
             if c == ' ' {
                 if lastc == ' ' {
                     if !pbsp2 {
-                        if !test_mode {
+                        if !fixit {
                             if options.yaml_output {
                                 add_problem(&mut problems, "Multiple spaces");
                             } else {
@@ -769,7 +820,7 @@ fn check_name(
                     pbchr = true;
                     stats.car += 1;
                 }
-                if !test_mode {
+                if !fixit {
                     if options.yaml_output {
                         add_problem(&mut problems, &format!("Invalid char {:04X}", c as i32));
                     } else {
@@ -789,7 +840,28 @@ fn check_name(
         }
     }
 
-    if !test_mode && options.yaml_output && !problems.is_empty() {
+    // Check for mixed scripts
+    if options.report_types.is_empty() || options.report_types.contains("mix") {
+        let mut pbmix = false;
+        let identifiers = extract_identifiers(&file);
+        for identifier in identifiers {
+            if !is_single_script(identifier) {
+                if !pbmix {
+                    if options.yaml_output {
+                        if !pbmix {
+                            add_problem(&mut problems, "Mixed scripts");
+                        }
+                    } else {
+                        logln(writer, &format!("Mixed scripts in {pt} name {fp}"));
+                    }
+                    pbmix = true;
+                    stats.mix += 1;
+                }
+            }
+        }
+    }
+
+    if !fixit && options.yaml_output && !problems.is_empty() {
         logln(writer, &format!("- typ: {pt}"));
         logln(writer, &format!("  prb: {problems}"));
         logln(writer, &format!("  old: {}", to_yaml_single_quoted(format!("{fp}").as_str())));
@@ -824,6 +896,69 @@ fn to_yaml_single_quoted(s: &str) -> String {
 
     // 2. Wrap the escaped string in single quotes.
     format!("'{}'", escaped)
+}
+
+/// Extracts identifiers from a string slice based on UAX #31 default identifier definition.
+/// An identifier is a sequence of characters starting with a character with the
+/// `XID_Start` property, followed by zero or more characters with the `XID_Continue` property.
+/// See https://www.unicode.org/reports/tr31/#R1
+pub fn extract_identifiers(text: &str) -> Vec<&str> {
+    let mut identifiers = Vec::new();
+    let mut it = text.char_indices().peekable();
+    let mut start_pos: Option<usize> = None;
+
+    while let Some((i, c)) = it.next() {
+        if start_pos.is_none() && is_xid_start(c) {
+            start_pos = Some(i);
+        }
+
+        if let Some(start) = start_pos {
+            let next_is_continue = it.peek().map_or(false, |&(_, next_c)| is_xid_continue(next_c));
+            if !next_is_continue {
+                identifiers.push(&text[start..i + c.len_utf8()]);
+                start_pos = None;
+            }
+        }
+    }
+    identifiers
+}
+
+// My own version to detect whether a string contains mixed scripts, since unicode_security::RestrictionLevelDetection
+// rejects runic or arabic strings at anay level on compliance for instance, which is too strict for me.
+// Following combinations are allowed (from UTS #39):
+// - Latin + Han + Hiragana + Katakana; or equivalently: Latn + Jpan
+// - Latin + Han + Bopomofo; or equivalently: Latn + Hanb
+// - Latin + Han + Hangul; or equivalently: Latn + Kore
+// I should probably allow some exceptions when there is no risk of confusion, such as Δt, Teχ or πⁿ
+fn is_single_script(s: &str) -> bool {
+    // Collect all unique scripts in the string, ignoring common ones.
+    let scripts_in_string: HashSet<Script> = s
+        .chars()
+        .map(|c| c.script())
+        .filter(|&sc| sc != Script::Common && sc != Script::Inherited && sc != Script::Unknown)
+        .collect();
+
+    // If there are no specific scripts (e.g., string is all digits), it's valid.
+    // If there is only one specific script, it's also valid.
+    if scripts_in_string.len() <= 1 {
+        return true;
+    }
+
+    // Define the allowed script combinations as specified in UTS #39
+    // for moderately restrictive profiles.
+    let allowed_combinations: Vec<HashSet<Script>> = vec![
+        // Japanese: Latin + Han + Hiragana + Katakana
+        HashSet::from([Script::Latin, Script::Han, Script::Hiragana, Script::Katakana]),
+        // Korean: Latin + Han + Hangul
+        HashSet::from([Script::Latin, Script::Han, Script::Hangul]),
+        // Chinese: Latin + Han + Bopomofo
+        HashSet::from([Script::Latin, Script::Han, Script::Bopomofo]),
+    ];
+
+    // Check if the set of scripts found in the string is a subset of any allowed combination.
+    allowed_combinations
+        .iter()
+        .any(|combo| scripts_in_string.is_subset(combo))
 }
 
 /// Checks that () [] {} «» ‹› pairs are correctly embedded and closed in a string

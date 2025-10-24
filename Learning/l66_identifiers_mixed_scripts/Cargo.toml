@@ -1,0 +1,9 @@
+[package]
+name = "l66_identifiers_mixed_scripts"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+unicode-ident = "1.0.12"
+unicode-script = "0.5.7"
+# unicode-security = "0.1.2"

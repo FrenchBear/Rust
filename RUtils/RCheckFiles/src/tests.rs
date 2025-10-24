@@ -5,6 +5,7 @@
 // 2025-10-17	PV      test_check_basename_characters_to_remove
 // 2025-10-18	PV      test_check_basename_ends_with_one/three/four_dots
 // 2025-10-21	PV      test_double_extension
+// 2025-10-24	PV      test_check_basename_dashes
 
 #[cfg(test)]
 pub mod balanced_tests {
@@ -72,8 +73,9 @@ pub mod check_basename_tests {
     fn get_sum(files_stats: &Statistics) -> u32 {
         files_stats.nnn
             + files_stats.bra
-            + files_stats.apo
             + files_stats.spc
+            + files_stats.apo
+            + files_stats.das
             + files_stats.car
             + files_stats.sp2
             + files_stats.lig
@@ -101,12 +103,12 @@ pub mod check_basename_tests {
         assert_eq!(res.unwrap(), "État de siège à Katmandou");
     }
 
-    #[test]
-    fn test_check_basename_apostrophes() {
+        #[test]
+    fn test_check_basename_spaces() {
         let mut files_stats = Statistics { ..Default::default() };
 
         let res = check_name(
-            Path::new("A\u{00B4}B\u{02B9}C\u{02BB}D\u{02BC}E\u{02BD}F\u{02BE}G"),
+            Path::new("A\u{2006}B\u{2007}C\u{2002}D\u{2003}E\u{200A}F"),
             "file",
             &mut files_stats,
             &SHARED_DATA.options,
@@ -116,12 +118,31 @@ pub mod check_basename_tests {
         );
         assert!(res.is_some());
         assert_eq!(get_sum(&files_stats), 1);
-        assert_eq!(files_stats.apo, 1);
-        assert_eq!(res.unwrap(), "A'B'C'D'E'F'G");
+        assert_eq!(files_stats.spc, 1);
+        assert_eq!(res.unwrap(), "A B C D E F");
     }
 
     #[test]
-    fn test_check_basename_spaces() {
+    fn test_check_basename_apostrophes() {
+        let mut files_stats = Statistics { ..Default::default() };
+
+        let res = check_name(
+            Path::new("A-B˗C۔D‐E‑F‒G–H⁃I−J"),
+            "file",
+            &mut files_stats,
+            &SHARED_DATA.options,
+            &mut logwriter_none(),
+            &SHARED_DATA.transformation_data,
+            true,
+        );
+        assert!(res.is_some());
+        assert_eq!(get_sum(&files_stats), 1);
+        assert_eq!(files_stats.das, 1);
+        assert_eq!(res.unwrap(), "A-B-C-D-E-F-G-H-I-J");
+    }
+
+    #[test]
+    fn test_check_basename_dashes() {
         let mut files_stats = Statistics { ..Default::default() };
 
         let res = check_name(

@@ -5,6 +5,7 @@
 // 2025-10-21	PV      Filtering on problem types
 // 2025-10-21	PV      Specific type dex for double extension
 // 2025-20-22   PV      Clippy review
+// 2025-20-24   PV      Problem das for dashes confusables, and mex for mixed scripts
 
 // Application imports
 use crate::*;
@@ -62,14 +63,16 @@ impl Options {
 ⌊Types⌋⟫:
 nnn   ¬Non-normalized names
 bra   ¬Bracket issue
-apo   ¬Incorrect apostrophe
 spc   ¬Incorrect space
+apo   ¬Incorrect apostrophe
+das   ¬Incorrect dash
 car   ¬Maybe incorrect char
 sp2   ¬Double space
 lig   ¬Ligatures
 sba   ¬Space after opening bracket or before closing bracket
 ewd   ¬Ends with dots
-dex   ¬Double extension";
+dex   ¬Double extension
+mix   ¬Mixed scripts";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }
@@ -130,17 +133,19 @@ Option ⦃-y⦄ generates yaml output, including extra non-yaml header and foote
                             let pb = problem.trim().to_lowercase();
                             if pb != "nnn"
                                 && pb != "bra"
-                                && pb != "apo"
                                 && pb != "spc"
+                                && pb != "apo"
+                                && pb != "das"
                                 && pb != "car"
                                 && pb != "sp2"
                                 && pb != "lig"
                                 && pb != "sba"
                                 && pb != "ewd"
                                 && pb != "dex"
+                                && pb != "mix"
                             {
                                 return Err(
-                                    format!("Invalid problem type {}, must be one of nnn|bra|apo|spc|car|sp2|lig|sba|ewd|dex", problem).into(),
+                                    format!("Invalid problem type {}, must be one of nnn|bra|spc|apo|das|car|sp2|lig|sba|ewd|dex|mix", problem).into(),
                                 );
                             }
                             if !options.report_types.contains(&pb) {
