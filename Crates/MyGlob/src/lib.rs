@@ -30,6 +30,7 @@
 // 2025-20-22   PV      2.0   Option to follow links (hide them, include them but don't follow dir symlinks, include and follow links). max_depth fixed
 // 2025-20-23   PV      2.0.1 Don't add two consecutive recurse segments in glob_to_segments, it's useless and inefficient
 // 2025-20-23   PV      2.1.0 Rollback and use again std::os::windows::fs::FileTypeExt, because dir entry .is_dir() is different than path .is_dir() (for dir link, first is false, second is true)
+// 2025-20-24   PV      2.1.1 Fixed bug C:\**\thumbs.db stopping search at first file not found
 
 //#![allow(unused_variables, dead_code, unused_imports)]
 
@@ -178,7 +179,10 @@ Case-sensitive option only apply to filters such as ⟦*.JPG⟧ or ⟦*Eric*⟧,
                     }
                 }
                 Err(e) => {
-                    let f = IOError::new(std::io::ErrorKind::Other, format!("Can't find or access file or folder {}: {e}", p.display()));
+                    let f = IOError::new(
+                        std::io::ErrorKind::Other,
+                        format!("Can't find or access file or folder {}: {e}", p.display()),
+                    );
                     stack.insert(0, SearchPendingData::Error(f));
                 }
             }
@@ -523,28 +527,34 @@ impl Iterator for MyGlobIteratorState<'_> {
                             }
 
                             let pb = root.join(name);
-                            // Access to metadata can fail if the segment is a special reserved name such as NUL or MPT2
-                            let ft = match pb.metadata() {
-                                Ok(meta) => meta.file_type(),
-                                Err(e) => {
-                                    let f = std::io::Error::new(e.kind(), format!("Error retrieving metadata for {}: {}", pb.display(), e));
-                                    self.queue.insert(0, SearchPendingData::Error(f));
-                                    continue;
+                            let fto: Option<fs::FileType> = if !pb.exists() {
+                                None
+                            } else {
+                                // Access to metadata can fail if the segment is a special reserved name such as NUL or MPT2
+                                match pb.metadata() {
+                                    Ok(meta) => Some(meta.file_type()),
+                                    Err(e) => {
+                                        let f = std::io::Error::new(e.kind(), format!("Error retrieving metadata for {}: {}", pb.display(), e));
+                                        self.queue.insert(0, SearchPendingData::Error(f));
+                                        None
+                                    }
                                 }
                             };
-                            if depth == self.segments.len() - 1 {
-                                // Final segment
-                                if pb.is_file() || ft.is_symlink_file() {
-                                    // Case-insensitive comparison is provided by filesystem
-                                    self.queue.insert(0, SearchPendingData::File(pb, ft.is_symlink()));
-                                } else if pb.is_dir() || ft.is_symlink_dir() {
-                                    self.queue.insert(0, SearchPendingData::Dir(pb.clone(), ft.is_symlink()));
-                                }
-                            } else {
-                                // non-final segment, can only match a directory
-                                if pb.is_dir() {
-                                    // Found a matching directory, we continue exploration in next loop
-                                    self.queue.insert(0, SearchPendingData::DirToExplore(pb, depth + 1, false, 0));
+                            if let Some(ft) = fto {
+                                if depth == self.segments.len() - 1 {
+                                    // Final segment
+                                    if pb.is_file() || ft.is_symlink_file() {
+                                        // Case-insensitive comparison is provided by filesystem
+                                        self.queue.insert(0, SearchPendingData::File(pb, ft.is_symlink()));
+                                    } else if pb.is_dir() || ft.is_symlink_dir() {
+                                        self.queue.insert(0, SearchPendingData::Dir(pb.clone(), ft.is_symlink()));
+                                    }
+                                } else {
+                                    // non-final segment, can only match a directory
+                                    if pb.is_dir() {
+                                        // Found a matching directory, we continue exploration in next loop
+                                        self.queue.insert(0, SearchPendingData::DirToExplore(pb, depth + 1, false, 0));
+                                    }
                                 }
                             }
 

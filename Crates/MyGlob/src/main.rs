@@ -27,8 +27,9 @@ fn main() {
     // Test optimization
     // test_myglob(r"C:\Temp\**\**\**\**\*.txt", true, false, &[], 2, true, 2, 1);
     
-    test_myglob(r"S:\**", false, false, &[], 0, true, 2, 1);
-    test_myglob(r"C:\Users\Pierr\.julia\packages\FilePathsBase\NV2We\docs\src\*", false, false, &[], 0, true, 2, 1);
+    // test_myglob(r"S:\**", false, false, &[], 0, true, 2, 1);
+    // test_myglob(r"C:\Users\Pierr\.julia\packages\FilePathsBase\NV2We\docs\src\*", false, false, &[], 0, true, 2, 1);
+    test_myglob(r"C:\**\thumbs.db", false, false, &[], 0, true, 1, 1);
 }
 
 // Entry point for testing

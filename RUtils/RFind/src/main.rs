@@ -27,6 +27,7 @@
 // 2025-20-22   PV      2.2.0 Option -dir show Windows files attributes
 // 2025-20-22   PV      2.3.0 Support of links (with MyGlob 2.0)
 // 2025-20-23   PV      2.3.1 Handle correctly links to non-existent targets; no_glob_filtering option -ngf
+// 2025-20-24   PV      2.3.2 Fixed MyGlob bug C:\**\thumbs.db
 
 // Notes:
 // - Finding denormalized paths is handled by rcheckfiles and checknnn, no need for a third version :-)
