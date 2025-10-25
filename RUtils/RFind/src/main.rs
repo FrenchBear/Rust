@@ -28,6 +28,7 @@
 // 2025-20-22   PV      2.3.0 Support of links (with MyGlob 2.0)
 // 2025-20-23   PV      2.3.1 Handle correctly links to non-existent targets; no_glob_filtering option -ngf
 // 2025-20-24   PV      2.3.2 Fixed MyGlob bug C:\**\thumbs.db
+// 2025-20-25   PV      2.3.3 ActionDir separated from ActionPrint
 
 // Notes:
 // - Finding denormalized paths is handled by rcheckfiles and checknnn, no need for a third version :-)
@@ -181,11 +182,11 @@ fn main() {
                 if options.actions_names.contains("dir") {
                     logln(&mut writer, "*** Both actions print and dir used, action print ignored.");
                 } else {
-                    actions.push(Box::new(actions::ActionPrint::new(false)))
+                    actions.push(Box::new(actions::ActionPrint::new()));
                 }
             }
             "yaml" => actions.push(Box::new(actions::ActionYaml::new())),
-            "dir" => actions.push(Box::new(actions::ActionPrint::new(true))),
+            "dir" => actions.push(Box::new(actions::ActionDir::new())),
             "delete" => actions.push(Box::new(actions::ActionDelete::new(options.recycle))),
             "rmdir" => actions.push(Box::new(actions::ActionRmdir::new(options.recycle))),
             "nop" => {}

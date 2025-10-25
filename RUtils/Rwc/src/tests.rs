@@ -7,7 +7,7 @@
 use crate::*;
 
 #[test]
-fn text_count_1() {
+fn test_count_1() {
     let o = Options {show_only_total:true, ..Default::default()};
     let mut b = DataBag { ..Default::default()};
     process_text(&mut b, "Once upon a time\nWas a King and a Prince\nIn a far, far away kingdom.", "(test)", &o, 68);
@@ -19,7 +19,7 @@ fn text_count_1() {
 }
 
 #[test]
-fn text_count_2() {
+fn test_count_2() {
     let o = Options {show_only_total:true, ..Default::default()};
     let mut b = DataBag { ..Default::default()};
     // Simple emojis, no ZWJ or emoji attributes
@@ -34,7 +34,7 @@ fn text_count_2() {
 
 
 #[test]
-fn text_file_ascii() {
+fn test_file_ascii() {
     let o = Options {show_only_total:true, ..Default::default()};
     let mut b = DataBag { ..Default::default()};
     process_file(&mut b, Path::new(r"C:\DocumentsOD\Doc tech\Encodings\prenoms-ascii.txt"), &o);
@@ -46,7 +46,7 @@ fn text_file_ascii() {
 }
 
 #[test]
-fn text_file_utf8() {
+fn test_file_utf8() {
     let o = Options {show_only_total:true, ..Default::default()};
     let mut b = DataBag { ..Default::default()};
     process_file(&mut b, Path::new(r"C:\DocumentsOD\Doc tech\Encodings\prenoms-utf8.txt"), &o);
@@ -58,7 +58,7 @@ fn text_file_utf8() {
 }
 
 #[test]
-fn text_file_utf16lebom() {
+fn test_file_utf16lebom() {
     let o = Options {show_only_total:true, ..Default::default()};
     let mut b = DataBag { ..Default::default()};
     process_file(&mut b, Path::new(r"C:\DocumentsOD\Doc tech\Encodings\prenoms-utf16lebom.txt"), &o);

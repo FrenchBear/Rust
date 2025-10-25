@@ -1,0 +1,16 @@
+[package]
+name = "rdir"
+description = "Show detailed information on files"
+version = "1.0.0"
+authors = ["Pierre Violent"]
+edition = "2024"
+
+[dependencies]
+windows = { version = "0.62", features = ["Win32_Foundation", "Win32_Storage_FileSystem", "Win32_System_IO"] }
+mymarkup = { path = "../../Crates/MyMarkup" }
+getopt = "1.1.7"
+chrono = "0.4.40"
+num-format = "0.4.4"
+
+[build-dependencies]
+toml = "0.9"
