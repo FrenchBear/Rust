@@ -21,6 +21,7 @@ mod fa_dates;
 mod fa_attributes;
 mod fa_reparsepoints;
 mod fa_hardlinks;
+mod fa_streams;
 mod options;
 
 use fa_size::*;
@@ -28,6 +29,7 @@ use fa_dates::*;
 use fa_attributes::*;
 use fa_reparsepoints::*;
 use fa_hardlinks::*;
+use fa_streams::*;
 use options::*;
 
 // -----------------------------------
@@ -210,6 +212,16 @@ fn process_file(b: &mut DataBag, path: &Path, options: &Options) {
         Err(e) => println!("Error analyzing reparse info: {}", e),
     }
 
-    
-
+    match get_streams_information(path, &options) {
+        Ok(s) => {
+            if !s.streams.is_empty() {
+                println!("Alternate Data Streams:");
+                for stream in s.streams {
+                    let size_formatted = stream.size.to_formatted_string(&Locale::fr);
+                    println!("  {} ({}B)", stream.name, size_formatted);
+                }
+            }
+        }
+        Err(e) => println!("Error analyzing streams info: {}", e),
+    }
 }
