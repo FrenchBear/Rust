@@ -24,6 +24,7 @@
 // 2025-20-22   PV      Clippy review
 // 2025-20-24   PV      3.2.0 Dash confusables and mixed scripts
 // 2025-20-25   PV      3.2.1 Space allowed before ¡
+// 2025-20-25   PV      3.2.2 πΔΩ allowed with other scripts
 
 // Note: Can't use MyGlob crate since directories names can be updated during recursive enumeration, this is not a
 // supported use case of MyGlob, so hierarchical exploration is handled directly
@@ -247,6 +248,9 @@ fn get_transformation_data() -> TransformationData {
 }
 
 fn main() {
+    // println!("{}", is_single_script_identifier("2πr"));
+    // process::exit(0);
+    
     // Process options
     let options = Options::new().unwrap_or_else(|err| {
         let msg = format!("{}", err);
@@ -843,22 +847,13 @@ fn check_name(
 
     // Check for mixed scripts
     if options.report_types.is_empty() || options.report_types.contains("mix") {
-        let mut pbmix = false;
-        let identifiers = extract_identifiers(&file);
-        for identifier in identifiers {
-            if !is_single_script(identifier) {
-                if !pbmix {
-                    if options.yaml_output {
-                        if !pbmix {
-                            add_problem(&mut problems, "Mixed scripts");
-                        }
-                    } else {
-                        logln(writer, &format!("Mixed scripts in {pt} name {fp}"));
-                    }
-                    pbmix = true;
-                    stats.mix += 1;
-                }
+        if !is_single_script(&file) {
+            if options.yaml_output {
+                add_problem(&mut problems, "Mixed scripts");
+            } else {
+                logln(writer, &format!("Mixed scripts in {pt} name {fp}"));
             }
+            stats.mix += 1;
         }
     }
 
@@ -874,9 +869,8 @@ fn check_name(
 
 /// Wraps a string in single quotes for safe inclusion in a YAML file.
 ///
-/// In YAML, single-quoted strings handle most special characters literally,
-/// including '#' and '\'. The only character that must be escaped is the
-/// single quote itself, which is done by doubling it (e.g., 'It''s').
+/// In YAML, single-quoted strings handle most special characters literally, including '#' and '\'. The only character
+/// that must be escaped is the single quote itself, which is done by doubling it (e.g., 'It''s').
 ///
 /// This function always returns a quoted string, which is always valid.
 ///
@@ -890,13 +884,19 @@ fn check_name(
 /// - Is the word true, false, yes, no, on, off, null, or ~
 /// - Looks like a number (e.g., 123, 45.6)
 ///
-/// Writing a function checking all these cases would be very complex
+/// Writing a function checking all these cases would be complex, so always surrounding with quotes is simpler and
+/// quicker
 fn to_yaml_single_quoted(s: &str) -> String {
     // 1. Escape any single quotes by replacing them with two single quotes.
     let escaped = s.replace('\'', "''");
 
     // 2. Wrap the escaped string in single quotes.
     format!("'{}'", escaped)
+}
+
+// Single script test for a whole string: split in identifiers (words), and check that all identiers are single script
+pub fn is_single_script(s: &str) -> bool {
+    extract_identifiers(s).iter().all(|id| is_single_script_identifier(id))
 }
 
 /// Extracts identifiers from a string slice based on UAX #31 default identifier definition.
@@ -930,12 +930,12 @@ pub fn extract_identifiers(text: &str) -> Vec<&str> {
 // - Latin + Han + Hiragana + Katakana; or equivalently: Latn + Jpan
 // - Latin + Han + Bopomofo; or equivalently: Latn + Hanb
 // - Latin + Han + Hangul; or equivalently: Latn + Kore
-// I should probably allow some exceptions when there is no risk of confusion, such as Δt, Teχ or πⁿ
-fn is_single_script(s: &str) -> bool {
+// I should probably allow some exceptions when there is no risk of confusion, such as Δt, Teχ, 2πr or πⁿ
+pub fn is_single_script_identifier(s: &str) -> bool {
     // Collect all unique scripts in the string, ignoring common ones.
     let scripts_in_string: HashSet<Script> = s
         .chars()
-        .map(|c| c.script())
+        .map(|c| if "πΔΩ".contains(c) { Script::Common } else { c.script() })
         .filter(|&sc| sc != Script::Common && sc != Script::Inherited && sc != Script::Unknown)
         .collect();
 
@@ -957,9 +957,7 @@ fn is_single_script(s: &str) -> bool {
     ];
 
     // Check if the set of scripts found in the string is a subset of any allowed combination.
-    allowed_combinations
-        .iter()
-        .any(|combo| scripts_in_string.is_subset(combo))
+    allowed_combinations.iter().any(|combo| scripts_in_string.is_subset(combo))
 }
 
 /// Checks that () [] {} «» ‹› pairs are correctly embedded and closed in a string

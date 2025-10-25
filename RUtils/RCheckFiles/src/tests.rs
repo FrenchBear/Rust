@@ -56,6 +56,7 @@ pub mod balanced_tests {
 pub mod check_basename_tests {
     use crate::Statistics;
     use crate::check_name;
+    use crate::is_single_script;
     use logging::logwriter_none;
     use std::path::Path;
     use std::sync::LazyLock;
@@ -103,7 +104,7 @@ pub mod check_basename_tests {
         assert_eq!(res.unwrap(), "État de siège à Katmandou");
     }
 
-        #[test]
+    #[test]
     fn test_check_basename_spaces() {
         let mut files_stats = Statistics { ..Default::default() };
 
@@ -329,7 +330,6 @@ pub mod check_basename_tests {
         assert_eq!(files_stats.ewd, 1);
     }
 
-
     #[test]
     fn test_check_basename_double_extension() {
         let mut files_stats = Statistics { ..Default::default() };
@@ -347,5 +347,14 @@ pub mod check_basename_tests {
         assert_eq!(get_sum(&files_stats), 1);
         assert_eq!(files_stats.dex, 1);
         assert_eq!(res.unwrap(), "My document.pdf");
+    }
+
+    #[test]
+    fn test_check_basename_mixed_scripts() {
+        assert_eq!(is_single_script("ABCabc ΑΒΓαβγ АБВабв"), true);
+        assert_eq!(is_single_script("ABCabc AΒΓαβγ АБВабв"), false); // 2nd A is latin, not greek
+        assert_eq!(is_single_script("ABCabcΑΒΓαβγАБВабв"), false);
+        assert_eq!(is_single_script("Ƥḭҽɾɾҽ ѵìǫłҽղէ.docx"), false);
+        assert_eq!(is_single_script("2πr πr² Δt Ωmega"), true); // πΔΩ can be mixed with other languages
     }
 }
