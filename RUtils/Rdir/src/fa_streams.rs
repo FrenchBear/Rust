@@ -1,27 +1,23 @@
 // fa_streams.rs - File analysis for Alternate Data Streams
 //
-// 2025-10-26   PV      First version
+// 2025-10-26   PV      First version, ChatGPT+Gemini and *a lot* of me to make IA code correct (and that is no trivial matter!)
 
-use std::ffi::OsString;
 use std::io;
-use std::os::windows::ffi::{OsStrExt, OsStringExt};
 use std::path::Path;
 
-use windows::{
-    core::PCWSTR,
-    Win32::Foundation::{CloseHandle, GetLastError, ERROR_HANDLE_EOF, HANDLE, INVALID_HANDLE_VALUE},
-    Win32::Storage::FileSystem::{
-        FindClose, FindFirstStreamW, FindNextStreamW, FindStreamInfoStandard,
-        WIN32_FIND_STREAM_DATA,
-    },
-};
+use windows::Win32::Foundation::*;
+use windows::Win32::Storage::FileSystem::*;
+use windows::core::*;
+
+use std::ffi::{OsString, c_void};
+use std::os::windows::ffi::OsStrExt;
 
 use crate::Options;
 
 #[derive(Debug)]
 pub struct StreamInfo {
     pub name: String,
-    pub size: u64,
+    pub size: i64,
 }
 
 #[derive(Debug)]
@@ -31,59 +27,50 @@ pub struct StreamsInfo {
 
 /// Enumerate Alternate Data Streams for a given path.
 /// The default `::$DATA` stream is excluded from the results.
-pub fn get_streams_information(
-    path: &Path,
-    _options: &Options,
-) -> Result<StreamsInfo, String> {
-    let path_wide: Vec<u16> = path.as_os_str().encode_wide().chain(std::iter::once(0)).collect();
-    let mut find_stream_data: WIN32_FIND_STREAM_DATA = unsafe { std::mem::zeroed() };
-
-    let find_handle = unsafe {
-        FindFirstStreamW(
-            PCWSTR(path_wide.as_ptr()),
-            FindStreamInfoStandard,
-            &mut find_stream_data,
-            0,
-        )
+pub fn get_streams_information(path: &Path, _options: &Options) -> core::result::Result<StreamsInfo, String> {
+    let wide_path: Vec<u16> = path.as_os_str().encode_wide().chain(std::iter::once(0)).collect();
+    let mut find_stream_data = WIN32_FIND_STREAM_DATA {
+        cStreamName: [0; 296],
+        StreamSize: 296,
     };
-
-    if find_handle == INVALID_HANDLE_VALUE {
-        let last_error = unsafe { GetLastError() };
-        // ERROR_HANDLE_EOF means no streams were found, which is not an error for us.
-        if last_error == ERROR_HANDLE_EOF {
-            return Ok(StreamsInfo { streams: vec![] });
-        }
-        return Err(io::Error::last_os_error().to_string());
-    }
-
-    // Use a guard to ensure FindClose is called
-    let _handle_guard = HandleGuard(find_handle);
 
     let mut streams = Vec::new();
 
-    loop {
-        // The stream name is a null-terminated string within the cStreamName array.
-        let name_len = find_stream_data.cStreamName.iter().position(|&w| w == 0).unwrap_or(0);
-        let os_string = OsString::from_wide(&find_stream_data.cStreamName[..name_len]);
-        let name = os_string.to_string_lossy().to_string();
+    unsafe {
+        // The correct API for enumerating streams
+        let h_find = match FindFirstStreamW(
+            PCWSTR(wide_path.as_ptr()),
+            FindStreamInfoStandard,
+            &mut find_stream_data as *mut _ as *mut c_void,
+            None,
+        ) {
+            Ok(h) => h,
+            Err(e) => return Err(e.to_string()),
+        };
 
-        // Exclude the default data stream
-        if name != "::$DATA" {
-            streams.push(StreamInfo {
-                name,
-                size: unsafe { *find_stream_data.StreamSize.QuadPart() as u64 },
-            });
-        }
+        // Use a guard to ensure FindClose is called
+        let _handle_guard = HandleGuard(h_find);
 
-        if unsafe { FindNextStreamW(find_handle, &mut find_stream_data) }.as_bool() {
-            continue;
-        }
+        loop {
+            let stream_name = String::from_utf16_lossy(&find_stream_data.cStreamName);
+            let stream_name = stream_name.trim_end_matches(char::from(0)); // remove null terminator
 
-        let last_error = unsafe { GetLastError() };
-        if last_error == ERROR_HANDLE_EOF {
-            break; // No more streams
-        } else {
-            return Err(io::Error::from_raw_os_error(last_error.0 as i32).to_string());
+            // Print the stream name and size
+            let stream_size = find_stream_data.StreamSize;
+
+            // Exclude the default data stream
+            if stream_name != "::$DATA" {
+                streams.push(StreamInfo {
+                    name: stream_name.to_string(),
+                    size: stream_size,
+                });
+            }
+
+            // Continue to the next stream
+            if FindNextStreamW(h_find, &mut find_stream_data as *mut _ as *mut c_void).is_err() {
+                break;
+            }
+            // os error: return Err(io::Error::from_raw_os_error(last_error.0 as i32).to_string());
         }
     }
 

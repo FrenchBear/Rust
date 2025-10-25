@@ -16,19 +16,21 @@ use num_format::{Locale, ToFormattedString};
 // -----------------------------------
 // Submodules
 
-mod fa_size;
-mod fa_dates;
 mod fa_attributes;
-mod fa_reparsepoints;
+mod fa_dates;
 mod fa_hardlinks;
+mod fa_names;
+mod fa_reparsepoints;
+mod fa_size;
 mod fa_streams;
 mod options;
 
-use fa_size::*;
-use fa_dates::*;
 use fa_attributes::*;
-use fa_reparsepoints::*;
+use fa_dates::*;
 use fa_hardlinks::*;
+use fa_names::*;
+use fa_reparsepoints::*;
+use fa_size::*;
 use fa_streams::*;
 use options::*;
 
@@ -103,10 +105,21 @@ fn process_file(b: &mut DataBag, path: &Path, options: &Options) {
 
     println!("\n-----------------");
     println!("File: {}", path.display());
-    let original_path = path.to_string_lossy().replace(r"\\?\", "");
-    let absolute_path = path.canonicalize().unwrap().to_string_lossy().replace(r"\\?\", "");
-    if absolute_path != original_path {
-        println!("Absolute path: {}", absolute_path); // For links, get target...
+
+    match get_names_information(path, &options) {
+        Ok(n) => {
+            println!("File name: {}", show_invisible_chars(n.filename.as_str()));
+            if n.original_with_path != n.canonical_fullpath {
+                println!("Canonical path: {}", show_invisible_chars(n.canonical_fullpath.as_str())); // For links, get target...
+            }
+            if let Some(typ) = n.file_type_description {
+                println!("File type: {}", typ);
+            }
+            if let Some(app) = n.opens_with {
+                println!("Opens with: {}", app);
+            } 
+        }
+        Err(e) => println!("Error analyzing names info: {}", e),
     }
 
     match get_size_information(path, &options) {
@@ -203,7 +216,7 @@ fn process_file(b: &mut DataBag, path: &Path, options: &Options) {
         Err(e) => println!("Error analyzing reparse info: {}", e),
     }
 
-        match get_hardlinks_information(path, &options) {
+    match get_hardlinks_information(path, &options) {
         Ok(h) => {
             if h.hardlinks_count > 1 {
                 println!("Hard links count: {}", h.hardlinks_count);
@@ -224,4 +237,16 @@ fn process_file(b: &mut DataBag, path: &Path, options: &Options) {
         }
         Err(e) => println!("Error analyzing streams info: {}", e),
     }
+}
+
+fn show_invisible_chars(s: &str) -> String {
+    let s = format!("{:?}", s).replace(r"\\", r"\");
+    strip_quotes(&s).to_string()
+}
+
+/// Removes the surrounding double quotes from a string slice, if they exist.
+/// If the string starts and ends with a `"` character, a slice without those
+/// characters is returned. Otherwise, the original string slice is returned.
+fn strip_quotes(s: &str) -> &str {
+    s.strip_prefix('"').and_then(|s| s.strip_suffix('"')).unwrap_or(s)
 }

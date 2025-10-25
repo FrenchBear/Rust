@@ -17,7 +17,7 @@ use mymarkup::MyMarkup;
 #[derive(Debug, Default)]
 pub struct Options {
     pub sources: Vec<String>,
-    pub show_link_target_info: bool,     // Unused for now
+    pub show_link_target_info: bool, // Unused for now
     pub verbose: bool,
 }
 
@@ -73,9 +73,7 @@ impl Options {
             }
         }
 
-        let mut options = Options {
-            ..Default::default()
-        };
+        let mut options = Options { ..Default::default() };
         let mut opts = getopt::Parser::new(&args, "h?lv");
 
         loop {
@@ -108,6 +106,9 @@ impl Options {
 
             options.sources.push(arg);
         }
+
+        // For dev/debug
+        options.sources.push(r"S:Streams\f2.pdf".to_string());
 
         if options.sources.is_empty() {
             return Err("No source provided".into());

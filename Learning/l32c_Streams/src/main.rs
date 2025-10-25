@@ -9,7 +9,6 @@ use std::io;
 
 use windows::Win32::Foundation::*;
 use windows::Win32::Storage::FileSystem::*;
-use windows::Win32::System::Threading::*;
 use windows::core::*;
 
 use std::ffi::{OsString, c_void};
@@ -60,6 +59,6 @@ fn enumerate_ads(path: &str) -> Result<()> {
 }
 
 fn main() -> Result<()> {
-    let path = r"s:\Streams\file.txt";
+    let path = r"s:\Streams\f1.pdf";
     enumerate_ads(path)
 }

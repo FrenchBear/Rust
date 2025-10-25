@@ -1,0 +1,9 @@
+[package]
+name = "l67_format_f64"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+format_num = "0.1.0"
+num-format = "0.4.4"
+numfmt = "1.2.0"
