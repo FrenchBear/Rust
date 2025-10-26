@@ -53,7 +53,7 @@ impl Options {
         println!("- MyMarkup: {}", MyMarkup::version());
         println!("- getopt: {}", env!("DEP_GETOPT_VERSION"));
         println!("- chrono: {}", env!("DEP_CHRONO_VERSION"));
-        println!("- num-format: {}", env!("DEP_NUM_FORMAT_VERSION"));
+        println!("- numfmt: {}", env!("DEP_NUMFMT_VERSION"));
         println!();
     }
 
@@ -108,7 +108,7 @@ impl Options {
         }
 
         // For dev/debug
-        options.sources.push(r"S:Streams\f2.pdf".to_string());
+        options.sources.push(r"S:Streams\f1.pdf".to_string());
 
         if options.sources.is_empty() {
             return Err("No source provided".into());

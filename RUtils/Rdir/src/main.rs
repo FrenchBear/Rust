@@ -11,7 +11,7 @@ use std::process;
 use std::time::Instant;
 
 // External imports
-use num_format::{Locale, ToFormattedString};
+use numfmt::{Formatter, Precision, Scales};
 
 // -----------------------------------
 // Submodules
@@ -117,15 +117,15 @@ fn process_file(b: &mut DataBag, path: &Path, options: &Options) {
             }
             if let Some(app) = n.opens_with {
                 println!("Opens with: {}", app);
-            } 
+            }
         }
         Err(e) => println!("Error analyzing names info: {}", e),
     }
 
     match get_size_information(path, &options) {
         Ok(s) => {
-            let size_formatted = s.size.to_formatted_string(&Locale::fr); // Use French locale for now. Later we will find the user locale.
-            println!("Size: {}B", size_formatted);
+            let size = get_formatted_size(s.size);
+            println!("Size: {}", size);
         }
         Err(e) => println!("Error analyzing size info: {}", e),
     }
@@ -230,8 +230,8 @@ fn process_file(b: &mut DataBag, path: &Path, options: &Options) {
             if !s.streams.is_empty() {
                 println!("Alternate Data Streams:");
                 for stream in s.streams {
-                    let size_formatted = stream.size.to_formatted_string(&Locale::fr);
-                    println!("  {} ({}B)", stream.name, size_formatted);
+                    let size = get_formatted_size(stream.size);
+                    println!("  {}  [{}]", stream.name, size);
                 }
             }
         }
@@ -249,4 +249,27 @@ fn show_invisible_chars(s: &str) -> String {
 /// characters is returned. Otherwise, the original string slice is returned.
 fn strip_quotes(s: &str) -> &str {
     s.strip_prefix('"').and_then(|s| s.strip_suffix('"')).unwrap_or(s)
+}
+
+fn get_formatted_size(size: u64) -> String {
+    // numfmt formatter
+    let mut fmt_bytes = Formatter::new()
+        .scales(Scales::none())
+        .separator(' ').unwrap()
+        .precision(Precision::Decimals(0))
+        .suffix("\u{00A0}B")
+        .unwrap();
+    let mut res = fmt_bytes.fmt2(size).replace(' ', "\u{00A0}");
+
+    if size >= 1024 {
+        let mut fmt_scaled = Formatter::new()
+            .scales(Scales::binary())
+            .separator(' ').unwrap()
+            .precision(Precision::Significance(3))
+            .suffix("B")
+            .unwrap();
+        let size_scaled = fmt_scaled.fmt2(size).replace(' ', "\u{00A0}");
+        res = res + format!(" ({})", size_scaled).as_str();
+    }
+    res
 }

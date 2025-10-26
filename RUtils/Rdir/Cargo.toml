@@ -10,7 +10,7 @@ windows = { version = "0.62", features = ["Win32_Foundation", "Win32_Storage_Fil
 mymarkup = { path = "../../Crates/MyMarkup" }
 getopt = "1.1.7"
 chrono = "0.4.40"
-num-format = "0.4.4"
+numfmt = "1.2.0"
 
 [build-dependencies]
 toml = "0.9"

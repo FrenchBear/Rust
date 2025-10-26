@@ -23,7 +23,7 @@ fn main() {
 
     generate_variable(packages, "getopt");
     generate_variable(packages, "chrono");
-    generate_variable(packages, "num-format");
+    generate_variable(packages, "numfmt");
 
     // Tell cargo to re-run the build script if Cargo.lock changes.
     println!("cargo:rerun-if-changed=Cargo.lock");

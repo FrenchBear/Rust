@@ -17,7 +17,7 @@ use crate::Options;
 #[derive(Debug)]
 pub struct StreamInfo {
     pub name: String,
-    pub size: i64,
+    pub size: u64,
 }
 
 #[derive(Debug)]
@@ -62,7 +62,7 @@ pub fn get_streams_information(path: &Path, _options: &Options) -> core::result:
             if stream_name != "::$DATA" {
                 streams.push(StreamInfo {
                     name: stream_name.to_string(),
-                    size: stream_size,
+                    size: stream_size as u64,
                 });
             }
 

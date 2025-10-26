@@ -73,4 +73,14 @@ fn main() {
         .precision(Precision::Decimals(0));
     let s = f.fmt2(n).replace(' ', "\u{00A0}");
     println!("numfmt i32: {}", s);
+
+
+    let size:i64 = 385_976_527_801;
+    let mut f = Formatter::new()
+                .scales(Scales::binary())
+                .precision(Precision::Significance(3))
+                .suffix("B").unwrap();
+    let s = f.fmt2(size).replace(' ', "\u{00A0}");
+    println!("size i64: {}", s);
+
 }
