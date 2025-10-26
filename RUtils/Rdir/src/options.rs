@@ -11,13 +11,15 @@ use std::error::Error;
 
 // External crates imports
 use getopt::Opt;
+use myglob::{MyGlobBuilder, MyGlobSearch};
 use mymarkup::MyMarkup;
 
 // Dedicated struct to store command line arguments
 #[derive(Debug, Default)]
 pub struct Options {
     pub sources: Vec<String>,
-    pub show_link_target_info: bool, // Unused for now
+    pub show_link_target_info: bool,
+    pub autorecurse: bool,
     pub verbose: bool,
 }
 
@@ -32,12 +34,13 @@ impl Options {
     fn usage() {
         Options::header();
         println!();
-        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄|⦃-??⦄] [-⦃l⦄] [-⦃v⦄] ⟨source⟩...
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄|⦃-??⦄] [-⦃l⦄] [-⦃s⦄] [-⦃v⦄] ⟨source⟩...
 
 ⌊Options⌋:
 ⦃?⦄|⦃-?⦄|⦃-h⦄  ¬Show this message
 ⦃??⦄|⦃-??⦄   ¬Show advanced usage notes
-⦃-l⦄       ¬Show information of links target instead of link (not implemented yet)
+⦃-s⦄       ¬Displays files in specified directory and all subdirectories (glob autorecurse)
+⦃-l⦄       ¬Show information of links target instead of link
 ⦃-v⦄       ¬Verbose output
 ⟨source⟩   ¬Files or directories to analyze";
 
@@ -51,6 +54,7 @@ impl Options {
 
         MyMarkup::render_markup("⌊Dependencies⌋:");
         println!("- MyMarkup: {}", MyMarkup::version());
+        println!("- MyGlob: {}", MyGlobSearch::version());
         println!("- getopt: {}", env!("DEP_GETOPT_VERSION"));
         println!("- chrono: {}", env!("DEP_CHRONO_VERSION"));
         println!("- numfmt: {}", env!("DEP_NUMFMT_VERSION"));
@@ -74,7 +78,7 @@ impl Options {
         }
 
         let mut options = Options { ..Default::default() };
-        let mut opts = getopt::Parser::new(&args, "h?lv");
+        let mut opts = getopt::Parser::new(&args, "h?lsv");
 
         loop {
             match opts.next().transpose()? {
@@ -87,6 +91,10 @@ impl Options {
 
                     Opt('l', None) => {
                         options.show_link_target_info = true;
+                    }
+
+                                        Opt('s', None) => {
+                        options.autorecurse = true;
                     }
 
                     Opt('v', None) => {
@@ -111,7 +119,7 @@ impl Options {
         // options.sources.push(r"S:\Streams\f1.pdf".to_string());
         // options.sources.push(r"S:\Multilinks\link1.txt".to_string());
         // options.sources.push(r"S:\MultiLinks\inexistent_target.txt".to_string());
-        options.sources.push(r"S:\MultiLinks".to_string());
+        //options.sources.push(r"S:\MultiLinks".to_string());
 
         if options.sources.is_empty() {
             return Err("No source provided".into());

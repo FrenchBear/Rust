@@ -11,6 +11,7 @@ use std::process;
 use std::time::Instant;
 
 // External imports
+use myglob::{MyGlobMatch, MyGlobSearch};
 use numfmt::{Formatter, Precision, Scales};
 
 // -----------------------------------
@@ -52,6 +53,8 @@ const APP_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 #[derive(Debug, Default)]
 struct DataBag {
     files_count: usize,
+    dirs_count: usize,
+    links_count: usize,
 }
 
 // fn main() {
@@ -83,21 +86,55 @@ fn main() {
         process::exit(1);
     });
 
+    // Convert String sources into MyGlobSearch structs
+    let mut sources: Vec<(&String, MyGlobSearch)> = Vec::new();
+    for source in options.sources.iter() {
+        let resgs = MyGlobSearch::new(source).autorecurse(options.autorecurse).compile();
+        match resgs {
+            Ok(gs) => sources.push((source, gs)),
+
+            Err(e) => {
+                eprintln!("*** Error building MyGlob: {:?}", e);
+                process::exit(1);
+            }
+        }
+    }
+    if sources.is_empty() {
+        eprintln!("*** No source specified. Use {APP_NAME} ? to show usage.");
+        process::exit(1);
+    }
+
     let start = Instant::now();
 
     let mut b = DataBag { ..Default::default() };
 
-    for source in options.sources.iter() {
-        let pb = Path::new(source);
-        if pb.is_file() {
-            process_path(&mut b, &pb, &options);
-        } else if pb.is_dir() {
-            process_path(&mut b, &pb, &options);
-        } else if pb.is_symlink() {
-            //println!("{} is a symbolic link with invalid target", source);
-            process_path(&mut b, &pb, &options);
-        } else {
-            println!("{}: Not found", source);
+    // for source in options.sources.iter() {
+    //     let pb = Path::new(source);
+    //     if pb.is_file() {
+    //         process_path(&mut b, &pb, &options);
+    //     } else if pb.is_dir() {
+    //         process_path(&mut b, &pb, &options);
+    //     } else if pb.is_symlink() {
+    //         //println!("{} is a symbolic link with invalid target", source);
+    //         process_path(&mut b, &pb, &options);
+    //     } else {
+    //         println!("{}: Not found", source);
+    //     }
+    // }
+
+    for gs in sources.iter() {
+        for ma in gs.1.explore_iter() {
+            match ma {
+                MyGlobMatch::File(pb) => process_path(&mut b, &pb, &options),
+
+                MyGlobMatch::Dir(pb) => process_path(&mut b, &pb, &options),
+
+                MyGlobMatch::Error(err) => {
+                    if options.verbose {
+                        eprintln!("{APP_NAME}: MyGlobMatch error {}", err);
+                    }
+                }
+            }
         }
     }
 
@@ -116,15 +153,33 @@ fn main() {
 }
 
 fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
-    b.files_count += 1;
+    if path.is_symlink() {
+        b.links_count += 1;
+    } else if path.is_dir() {
+        b.dirs_count += 1;
+    } else if path.is_file() {
+        b.files_count += 1;
+    } else {
+        if options.verbose {
+            eprintln!("{}: Unknown type", path.display());
+        }
+        return;
+    }
 
-    println!("\n-----------------");
-    print!("Path: {}", path.display());
+    print!("Path:           {}", path.display());
 
     let (kind, kind2) = if path.is_file() {
-        if path.is_symlink() { ("File symbolic link", "Link") } else { ("File", "File") }
+        if path.is_symlink() {
+            ("File symbolic link", "Link")
+        } else {
+            ("File", "File")
+        }
     } else if path.is_dir() {
-        if path.is_symlink() { ("Directory symbolic link", "Link") } else { ("Directory", "Directory") }
+        if path.is_symlink() {
+            ("Directory symbolic link", "Link")
+        } else {
+            ("Directory", "Directory")
+        }
     } else if path.is_symlink() {
         ("Symbolic link (inxistent target)", "Link")
     } else {
@@ -134,14 +189,15 @@ fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
 
     match get_names_information(path, &options) {
         Ok(n) => {
-            println!("{kind2} name: {}", show_invisible_chars(n.filename.as_str()));
-            println!("Parent: {}", show_invisible_chars(n.parent.as_str()));
+            let label = format!("{kind2} name:");
+            println!("{label:<15} {}", show_invisible_chars(n.filename.as_str()));
+            println!("Parent:         {}", show_invisible_chars(n.parent.as_str()));
             if n.original_with_path != n.canonical_fullpath {
                 println!("Canonical path: {}", show_invisible_chars(n.canonical_fullpath.as_str())); // For links, get target...
             }
             let mut pr = false;
             if let Some(typ) = n.file_type_description {
-                print!("File type: {}", typ);
+                print!("File type:      {}", typ);
                 pr = true;
             }
             if let Some(app) = n.opens_with {
@@ -152,22 +208,22 @@ fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
                 println!();
             }
         }
-        Err(e) => println!("Error analyzing names info: {}", e),
+        Err(e) => eprintln!("*** Error analyzing names info: {}", e),
     }
 
     match get_size_information(path, &options) {
         Ok(si) => {
             if path.is_file() {
                 let size = get_formatted_size(si.size);
-                print!("Apparent size: {}", size);
+                print!("Apparent size:  {}", size);
 
                 let size_on_disk = get_formatted_size(si.size_on_disk);
                 println!("   Size on disk: {}", size_on_disk);
             } else {
                 if si.dir_filescount + si.dir_dirscount + si.dir_linkscount == 0 {
-                    print!("Empty directory");
+                    println!("Dir counts:     Empty directory");
                 } else {
-                    print!("Dir counts: ");
+                    print!("Dir counts:     ");
                     if si.dir_filescount > 0 {
                         print!("{} file{} ", si.dir_filescount, s(si.dir_filescount));
                     }
@@ -185,119 +241,127 @@ fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
                 }
             }
         }
-        Err(e) => println!("Error analyzing size info: {}", e),
+        Err(e) => eprintln!("*** Error analyzing size info: {}", e),
     }
 
     match get_dates_information(path, &options) {
         Ok(d) => {
             println!(
-                "Dates:  Creation: {}  Modification: {}  Access: {}",
+                "Dates:          Creation: {}  Modification: {}  Access: {}",
                 d.created_local.format("%d/%m/%Y %H:%M:%S"),
                 d.modified_local.format("%d/%m/%Y %H:%M:%S"),
                 d.accessed_local.format("%d/%m/%Y %H:%M:%S")
             );
         }
-        Err(e) => println!("Error analyzing dates info: {}", e),
+        Err(e) => eprintln!("*** Error analyzing dates info: {}", e),
     }
 
     match get_attributes_information(path, &options) {
         Ok(ai) => {
-            print!("Attributes: ");
+            let mut at: Vec<&str> = Vec::new();
             if ai.normal {
-                print!("normal (no attributes) ");
+                at.push("Normal (no attributes)");
             }
             if ai.archive {
-                print!("archive ");
+                at.push("Archive");
             }
             if ai.readonly {
-                print!("readonly ");
+                at.push("Readonly");
             }
             if ai.hidden {
-                print!("hidden ");
+                at.push("Hidden");
             }
             if ai.system {
-                print!("system ");
+                at.push("System");
             }
             if ai.directory {
-                print!("directory ");
+                at.push("Directory");
             }
             if ai.tempoary {
-                print!("tempoary ");
+                at.push("Tempoary");
             }
             if ai.sparse_file {
-                print!("sparse_file ");
+                at.push("Sparse file");
             }
             if ai.reparse_point {
-                print!("reparse_point ");
+                at.push("Reparse point");
             }
             if ai.compressed {
-                print!("compressed ");
+                at.push("Compressed");
             }
             if ai.offline {
-                print!("offline ");
+                at.push("Offline");
             }
             if ai.not_content_indexed {
-                print!("not_content_indexed ");
+                at.push("Not content indexed");
             }
             if ai.encrypted {
-                print!("encrypted ");
+                at.push("Encrypted");
             }
             if ai.integrity_stream {
-                print!("integrity_stream ");
+                at.push("Integrity stream");
             }
             if ai.isvirtual {
-                print!("isvirtual ");
+                at.push("IsVirtual");
             }
             if ai.no_scrub_data {
-                print!("no_scrub_data ");
+                at.push("No scrub data");
             }
             if ai.pinned {
-                print!("pinned ");
+                at.push("Pinned");
             }
             if ai.unpinned {
-                print!("unpinned ");
+                at.push("Unpinned");
             }
             if ai.recall_on_open {
-                print!("recall_on_open ");
+                at.push("Recall on open");
             }
             if ai.recall_on_data_access {
-                print!("recall_on_data_access (STUB)");
+                at.push("Recall on data access (STUB)");
             }
-            println!()
+            println!("Attributes:     {}", at.join(", "));
         }
-        Err(e) => println!("Error analyzing attributes info: {}", e),
+        Err(e) => eprintln!("*** Error analyzing attributes info: {}", e),
     }
 
     match get_reparsepoints_information(path, &options) {
         Ok(r) => {
             if r.kind != ReparseType::NO_REPARSE {
-                println!("Reparse point: {:#?}: {}", r.kind, r.detail);
+                println!("Reparse point:  {:#?}: {}", r.kind, r.detail);
             }
         }
-        Err(e) => println!("Error analyzing reparse info: {}", e),
+        Err(e) => eprintln!("*** Error analyzing reparse info: {}", e),
     }
 
     match get_hardlinks_information(path, &options) {
         Ok(h) => {
             if h.hardlinks_count > 1 {
-                println!("Hard links count: {}", h.hardlinks_count);
+                println!("Hardlink count: {}", h.hardlinks_count);
             }
         }
-        Err(e) => println!("Error analyzing hardlinks info: {}", e),
+        Err(e) => eprintln!("*** Error analyzing hardlinks info: {}", e),
     }
 
     match get_streams_information(path, &options) {
         Ok(s) => {
             if !s.streams.is_empty() {
-                println!("Alternate Data Streams:");
+                print!("Alt Streams:    ");
+                let mut line1:bool = true;
                 for stream in s.streams {
                     let size = get_formatted_size(stream.size);
-                    println!("  {}  [{}]", stream.name, size);
+                    if !line1 {
+                        print!("                ");
+                    } else {
+                        line1 = false;
+                    }
+                    println!("{}  [{}]", stream.name, size);
                 }
             }
         }
-        Err(e) => println!("Error analyzing streams info: {}", e),
+        Err(e) => eprintln!("*** Error analyzing streams info: {}", e),
     }
+
+    println!();
 }
 
 fn s(n: i32) -> &'static str {

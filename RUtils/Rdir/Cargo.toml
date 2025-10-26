@@ -6,8 +6,9 @@ authors = ["Pierre Violent"]
 edition = "2024"
 
 [dependencies]
-windows = { version = "0.62", features = ["Win32_Foundation", "Win32_Storage_FileSystem", "Win32_System_IO", "Win32_UI_Shell"] }
+myglob = { path = "../../Crates/MyGlob" }
 mymarkup = { path = "../../Crates/MyMarkup" }
+windows = { version = "0.62", features = ["Win32_Foundation", "Win32_Storage_FileSystem", "Win32_System_IO", "Win32_UI_Shell"] }
 getopt = "1.1.7"
 chrono = "0.4.40"
 numfmt = "1.2.0"
