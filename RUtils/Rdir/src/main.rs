@@ -52,29 +52,10 @@ const APP_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 
 #[derive(Debug, Default)]
 struct DataBag {
-    files_count: usize,
-    dirs_count: usize,
-    links_count: usize,
+    files_count: u32,
+    dirs_count: u32,
+    links_count: u32,
 }
-
-// fn main() {
-//     // Create a small test file
-//     let path = Path::new(r"S:\MultiLinks\inexistent_target.txt");
-//     println!("Path: {}", path.display());
-//     let filename = path.file_name().unwrap().to_str().unwrap().to_string();
-//     println!("Filename: {}", filename);
-//     let ext = path.extension().unwrap().to_str().unwrap().to_string();
-//     println!("Extension: {}", ext);
-
-//     let can = canonicalize_link(path).unwrap();
-//     println!("Canonical path: {}", can.display());
-
-//     let original_with_path = path.to_string_lossy().replace(r"\\?\", "");
-//     println!("Original with path: {}", original_with_path);
-//     let canonical_fullpath = path.canonicalize().unwrap().to_string_lossy().replace(r"\\?\", "");
-//     println!("Canonical fullpath: {}", canonical_fullpath);
-// }
-
 fn main() {
     // Process options
     let options = Options::new().unwrap_or_else(|err| {
@@ -108,20 +89,6 @@ fn main() {
 
     let mut b = DataBag { ..Default::default() };
 
-    // for source in options.sources.iter() {
-    //     let pb = Path::new(source);
-    //     if pb.is_file() {
-    //         process_path(&mut b, &pb, &options);
-    //     } else if pb.is_dir() {
-    //         process_path(&mut b, &pb, &options);
-    //     } else if pb.is_symlink() {
-    //         //println!("{} is a symbolic link with invalid target", source);
-    //         process_path(&mut b, &pb, &options);
-    //     } else {
-    //         println!("{}: Not found", source);
-    //     }
-    // }
-
     for gs in sources.iter() {
         for ma in gs.1.explore_iter() {
             match ma {
@@ -148,7 +115,21 @@ fn main() {
     }
 
     if options.verbose {
-        println!("{} files(s) analyzed in {:.3}s", b.files_count, duration.as_secs_f64());
+        let mut msg = Vec::<String>::new();
+        if b.files_count > 0 {
+            msg.push(format!("{} file{}", b.files_count, s(b.files_count)));
+        }
+        if b.dirs_count > 0 {
+            msg.push(format!("{} {}", b.dirs_count, if b.dirs_count > 1 { "directories" } else { "directory" }));
+        };
+        if b.links_count > 0 {
+            msg.push(format!("{} link{}", b.links_count, s(b.links_count)));
+        }
+        if msg.is_empty() {
+            msg.push("No file, no directory".to_string());
+        }
+
+        println!("{} analyzed in {:.3}s", msg.join(", "), duration.as_secs_f64());
     }
 }
 
@@ -346,7 +327,7 @@ fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
         Ok(s) => {
             if !s.streams.is_empty() {
                 print!("Alt Streams:    ");
-                let mut line1:bool = true;
+                let mut line1: bool = true;
                 for stream in s.streams {
                     let size = get_formatted_size(stream.size);
                     if !line1 {
@@ -364,7 +345,7 @@ fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
     println!();
 }
 
-fn s(n: i32) -> &'static str {
+fn s(n: u32) -> &'static str {
     if n > 1 { "s" } else { "" }
 }
 

@@ -19,9 +19,9 @@ use crate::Options;
 pub struct SizeInfo {
     pub size: u64,         // Apparent size, ignoring ADS, compression, sparse files and cluster counding
     pub size_on_disk: u64, // Total size including ADS, compression, sparse files and cluster rounding
-    pub dir_filescount: i32,
-    pub dir_dirscount: i32,
-    pub dir_linkscount: i32,
+    pub dir_filescount: u32,
+    pub dir_dirscount: u32,
+    pub dir_linkscount: u32,
 }
 
 pub fn get_size_information(path: &Path, options: &Options) -> core::result::Result<SizeInfo, String> {
