@@ -168,7 +168,7 @@ fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
     };
     println!("  [{}]", kind);
 
-    match get_names_information(path, &options) {
+    match get_names_information(path, options) {
         Ok(n) => {
             let label = format!("{kind2} name:");
             println!("{label:<15} {}", show_invisible_chars(n.filename.as_str()));
@@ -192,7 +192,7 @@ fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
         Err(e) => eprintln!("*** Error analyzing names info: {}", e),
     }
 
-    match get_size_information(path, &options) {
+    match get_size_information(path, options) {
         Ok(si) => {
             if path.is_file() {
                 let size = get_formatted_size(si.size);
@@ -200,32 +200,30 @@ fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
 
                 let size_on_disk = get_formatted_size(si.size_on_disk);
                 println!("   Size on disk: {}", size_on_disk);
+            } else if si.dir_filescount + si.dir_dirscount + si.dir_linkscount == 0 {
+                println!("Dir counts:     Empty directory");
             } else {
-                if si.dir_filescount + si.dir_dirscount + si.dir_linkscount == 0 {
-                    println!("Dir counts:     Empty directory");
-                } else {
-                    print!("Dir counts:     ");
-                    if si.dir_filescount > 0 {
-                        print!("{} file{} ", si.dir_filescount, s(si.dir_filescount));
-                    }
-                    if si.dir_dirscount > 0 {
-                        if si.dir_dirscount == 1 {
-                            print!("{} directory ", si.dir_dirscount);
-                        } else {
-                            print!("{} directories ", si.dir_dirscount);
-                        }
-                    }
-                    if si.dir_linkscount > 0 {
-                        print!("{} link{} ", si.dir_linkscount, s(si.dir_linkscount));
-                    }
-                    println!();
+                print!("Dir counts:     ");
+                if si.dir_filescount > 0 {
+                    print!("{} file{} ", si.dir_filescount, s(si.dir_filescount));
                 }
+                if si.dir_dirscount > 0 {
+                    if si.dir_dirscount == 1 {
+                        print!("{} directory ", si.dir_dirscount);
+                    } else {
+                        print!("{} directories ", si.dir_dirscount);
+                    }
+                }
+                if si.dir_linkscount > 0 {
+                    print!("{} link{} ", si.dir_linkscount, s(si.dir_linkscount));
+                }
+                println!();
             }
         }
         Err(e) => eprintln!("*** Error analyzing size info: {}", e),
     }
 
-    match get_dates_information(path, &options) {
+    match get_dates_information(path, options) {
         Ok(d) => {
             println!(
                 "Dates:          Creation: {}  Modification: {}  Access: {}",
@@ -237,7 +235,7 @@ fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
         Err(e) => eprintln!("*** Error analyzing dates info: {}", e),
     }
 
-    match get_attributes_information(path, &options) {
+    match get_attributes_information(path, options) {
         Ok(ai) => {
             let mut at: Vec<&str> = Vec::new();
             if ai.normal {
@@ -305,16 +303,16 @@ fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
         Err(e) => eprintln!("*** Error analyzing attributes info: {}", e),
     }
 
-    match get_reparsepoints_information(path, &options) {
+    match get_reparsepoints_information(path, options) {
         Ok(r) => {
-            if r.kind != ReparseType::NO_REPARSE {
+            if r.kind != ReparseType::No_reparse {
                 println!("Reparse point:  {:#?}: {}", r.kind, r.detail);
             }
         }
         Err(e) => eprintln!("*** Error analyzing reparse info: {}", e),
     }
 
-    match get_hardlinks_information(path, &options) {
+    match get_hardlinks_information(path, options) {
         Ok(h) => {
             if h.hardlinks_count > 1 {
                 println!("Hardlink count: {}", h.hardlinks_count);
@@ -323,7 +321,7 @@ fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
         Err(e) => eprintln!("*** Error analyzing hardlinks info: {}", e),
     }
 
-    match get_streams_information(path, &options) {
+    match get_streams_information(path, options) {
         Ok(s) => {
             if !s.streams.is_empty() {
                 print!("Alt Streams:    ");
@@ -381,7 +379,7 @@ fn get_formatted_size(size: u64) -> String {
             .suffix("B")
             .unwrap();
         let size_scaled = fmt_scaled.fmt2(size).replace(' ', "\u{00A0}");
-        res = res + format!(" ({})", size_scaled).as_str();
+        res += format!(" ({})", size_scaled).as_str();
     }
     res
 }

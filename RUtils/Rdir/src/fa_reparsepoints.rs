@@ -46,7 +46,7 @@ pub fn get_reparsepoints_information(path: &Path, _options: &Options) -> Result<
     match reparse_type(path) {
         //Ok(kind) => println!("Reparse point type: {:?}  at1={:08X}  at2={:08X}", kind, attributes1(path),attributes2(path)),
         Ok((kind, detail)) => Ok(ReparseInfo { kind, detail }),
-        Err(e) => return Err(e),
+        Err(e) => Err(e),
     }
 }
 
@@ -55,10 +55,10 @@ pub fn get_reparsepoints_information(path: &Path, _options: &Options) -> Result<
 #[repr(u32)]
 #[allow(non_camel_case_types)]
 pub enum ReparseType {
-    NO_REPARSE = 0,
-    SYMLINK = 2,
-    JUNCTION = 3,
-    OTHER = 4,
+    No_reparse = 0,
+    Symlink = 2,
+    Junction = 3,
+    Other = 4,
 }
 
 #[repr(C)]
@@ -81,7 +81,7 @@ pub fn reparse_type(path: &Path) -> Result<(ReparseType, String), String> {
         return Err(io::Error::last_os_error().to_string());
     }
     if attributes & FILE_ATTRIBUTE_REPARSE_POINT.0 == 0 {
-        return Ok((ReparseType::NO_REPARSE, String::new())); // Not a reparse point
+        return Ok((ReparseType::No_reparse, String::new())); // Not a reparse point
     }
 
     // Open file handle to query reparse data
@@ -136,9 +136,9 @@ pub fn reparse_type(path: &Path) -> Result<(ReparseType, String), String> {
     let msg = format!("{}: {}", tcode, tdesc);
 
     match tag {
-        IO_REPARSE_TAG_SYMLINK => Ok((ReparseType::SYMLINK, link_string)),
-        IO_REPARSE_TAG_MOUNT_POINT => Ok((ReparseType::JUNCTION, link_string)),
-        _ => Ok((ReparseType::OTHER, msg)),
+        IO_REPARSE_TAG_SYMLINK => Ok((ReparseType::Symlink, link_string)),
+        IO_REPARSE_TAG_MOUNT_POINT => Ok((ReparseType::Junction, link_string)),
+        _ => Ok((ReparseType::Other, msg)),
     }
 }
 

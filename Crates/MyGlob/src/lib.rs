@@ -175,15 +175,12 @@ Case-sensitive option only apply to filters such as ⟦*.JPG⟧ or ⟦*Eric*⟧,
                     } else if p.is_dir() || ft.is_symlink_dir() {
                         stack.insert(0, SearchPendingData::Dir(p.to_path_buf(), p.is_symlink()));
                     } else {
-                        let e = IOError::new(std::io::ErrorKind::Other, format!("Can't find or access file or folder {}", p.display()));
+                        let e = IOError::other(format!("Can't find or access file or folder {}", p.display()));
                         stack.insert(0, SearchPendingData::Error(e));
                     }
                 }
                 Err(e) => {
-                    let f = IOError::new(
-                        std::io::ErrorKind::Other,
-                        format!("Can't find or access file or folder {}: {e}", p.display()),
-                    );
+                    let f = IOError::other(format!("Can't find or access file or folder {}: {e}", p.display()));
                     stack.insert(0, SearchPendingData::Error(f));
                 }
             }
@@ -646,21 +643,19 @@ impl Iterator for MyGlobIteratorState<'_> {
                                                 let pb = entry.path();
                                                 let fname = entry.file_name().to_string_lossy().to_string();
 
-                                                if ft.is_file() || ft.is_symlink_file() {
-                                                    if ft.is_file() || self.link_mode > 0 {
-                                                        if depth == self.segments.len() - 1 && re.is_match(&fname) {
-                                                            if TRACE {
-                                                                println!(
-                                                                    "$5a: Push File {}  max_depth={} depth={} recurse_depth={}",
-                                                                    pb.display(),
-                                                                    self.max_depth,
-                                                                    depth,
-                                                                    recurse_depth
-                                                                );
-                                                            }
-
-                                                            self.queue.insert(0, SearchPendingData::File(pb, ft.is_symlink()));
+                                                if (ft.is_file() || ft.is_symlink_file()) && (ft.is_file() || self.link_mode > 0) {
+                                                    if depth == self.segments.len() - 1 && re.is_match(&fname) {
+                                                        if TRACE {
+                                                            println!(
+                                                                "$5a: Push File {}  max_depth={} depth={} recurse_depth={}",
+                                                                pb.display(),
+                                                                self.max_depth,
+                                                                depth,
+                                                                recurse_depth
+                                                            );
                                                         }
+
+                                                        self.queue.insert(0, SearchPendingData::File(pb, ft.is_symlink()));
                                                     }
                                                 } else if ft.is_dir() || ft.is_symlink_dir() {
                                                     if ft.is_dir() || self.link_mode > 0 {
@@ -697,27 +692,28 @@ impl Iterator for MyGlobIteratorState<'_> {
                                                                 }
                                                             }
 
-                                                            if self.max_depth == 0 || recurse_depth < self.max_depth - 1 {
-                                                                if ft.is_dir() || self.link_mode > 1 {
-                                                                    if TRACE {
-                                                                        println!(
-                                                                            "$6: Add to dirs {}  max_depth={} depth={} recurse_depth={}",
-                                                                            pb.display(),
-                                                                            self.max_depth,
-                                                                            depth,
-                                                                            recurse_depth
-                                                                        );
-                                                                    }
-                                                                    dirs.push(pb);
+                                                            if (self.max_depth == 0 || recurse_depth < self.max_depth - 1)
+                                                                && (ft.is_dir() || self.link_mode > 1)
+                                                            {
+                                                                if TRACE {
+                                                                    println!(
+                                                                        "$6: Add to dirs {}  max_depth={} depth={} recurse_depth={}",
+                                                                        pb.display(),
+                                                                        self.max_depth,
+                                                                        depth,
+                                                                        recurse_depth
+                                                                    );
                                                                 }
+                                                                dirs.push(pb);
                                                             }
                                                         }
                                                     }
                                                 } else {
-                                                    let e = IOError::new(
-                                                        std::io::ErrorKind::Other,
-                                                        format!("Unknown directory entry type while enumerating {}: {:#?}", pb.display(), entry),
-                                                    );
+                                                    let e = IOError::other(format!(
+                                                        "Unknown directory entry type while enumerating {}: {:#?}",
+                                                        pb.display(),
+                                                        entry
+                                                    ));
                                                     self.queue.insert(0, SearchPendingData::Error(e));
                                                 }
                                             }

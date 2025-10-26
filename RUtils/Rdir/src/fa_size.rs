@@ -171,7 +171,7 @@ pub fn get_bytes_per_cluster(path: &Path) -> io::Result<u64> {
     let bytes_per_cluster = (sectors_per_cluster as u64) * (bytes_per_sector as u64);
 
     if bytes_per_cluster == 0 {
-        Err(io::Error::new(io::ErrorKind::Other, "FileSystem reported 0 bytes per cluster"))
+        Err(io::Error::other("FileSystem reported 0 bytes per cluster"))
     } else {
         Ok(bytes_per_cluster)
     }
@@ -194,18 +194,19 @@ pub fn get_explorer_size_on_disk(path: &Path) -> io::Result<u64> {
     let bytes_per_cluster = get_bytes_per_cluster(path)?;
 
     // 3. Round the compressed size up to the nearest cluster
-    // This integer math is a standard way to do "ceiling division"
-    let total_clusters = (compressed_size + bytes_per_cluster - 1) / bytes_per_cluster;
+    // let total_clusters = (compressed_size + bytes_per_cluster - 1) / bytes_per_cluster;
+    let total_clusters = compressed_size.div_ceil(bytes_per_cluster);
     let size_on_disk = total_clusters * bytes_per_cluster;
 
     Ok(size_on_disk)
 }
 
 pub fn get_size_on_disk_with_ads(path: &Path) -> core::result::Result<u64, String> {
-    let streams = match crate::fa_streams::get_streams_list(path, true) {
-        Ok(si) => si,
-        Err(e) => return Err(e),
-    };
+    // let streams = match crate::fa_streams::get_streams_list(path, true) {
+    //     Ok(si) => si,
+    //     Err(e) => return Err(e),
+    // };
+    let streams = crate::fa_streams::get_streams_list(path, true)?;
 
     let bytes_per_cluster = match get_bytes_per_cluster(path) {
         Ok(bpc) => bpc,
@@ -213,7 +214,7 @@ pub fn get_size_on_disk_with_ads(path: &Path) -> core::result::Result<u64, Strin
     };
 
     let path_str = path.as_os_str().to_str().unwrap();
-    let mut total_size_on_disk = 0 as u64;
+    let mut total_size_on_disk = 0_u64;
     for si in streams {
         let streampath = path_str.to_string() + si.name.as_str();
         let streampath_path = Path::new(&streampath);
@@ -224,7 +225,8 @@ pub fn get_size_on_disk_with_ads(path: &Path) -> core::result::Result<u64, Strin
 
         // round to cluster size
         let size_on_disk = if compressed_size != 0 {
-            let total_clusters = (compressed_size + bytes_per_cluster - 1) / bytes_per_cluster;
+            //let total_clusters = (compressed_size + bytes_per_cluster - 1) / bytes_per_cluster;
+            let total_clusters = compressed_size.div_ceil(bytes_per_cluster);
             total_clusters * bytes_per_cluster
         } else {
             0

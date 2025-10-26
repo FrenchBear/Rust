@@ -33,6 +33,7 @@ fn main() {
 }
 
 // Entry point for testing
+#[allow(clippy::too_many_arguments)]
 pub fn test_myglob(
     pattern: &str,
     autorecurse: bool,
