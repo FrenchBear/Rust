@@ -9,6 +9,7 @@ use crate::Options;
 #[derive(Debug)]
 pub struct AttributesInfo {
     // Standard attributes
+    pub normal: bool,
     pub archive: bool,
     pub readonly: bool,
     pub hidden: bool,
@@ -56,10 +57,10 @@ const FILE_ATTRIBUTE_RECALL_ON_OPEN: u32 = 0x00040000; // This attribute only ap
 const FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS: u32 = 0x00400000; // When this attribute is set, it means that the file or directory is not fully present locally. For a file that means that not all of its data is on local storage (e.g. it may be sparse with some data still in remote storage). For a directory it means that some of the directory contents are being virtualized from another location.
 
 pub fn get_attributes_information(path: &Path, options: &Options) -> Result<AttributesInfo, String> {
-    if !path.exists() {
+    if !path.is_dir() && !path.is_file() && !path.is_symlink() {
         return Err(format!("{}: Not found", path.display()));
     }
-
+    
     let meta_res = if path.is_symlink() && !options.show_link_target_info 
     {
         fs::symlink_metadata(path)
@@ -72,27 +73,28 @@ pub fn get_attributes_information(path: &Path, options: &Options) -> Result<Attr
         Err(e) => return Err(e.to_string()),
     };
 
-    // This should't work for directories
+    let at = meta.file_attributes();
     let ai = AttributesInfo {
-        readonly: meta.file_attributes() & FILE_ATTRIBUTE_READONLY != 0,
-        hidden: meta.file_attributes() & FILE_ATTRIBUTE_HIDDEN != 0,
-        system: meta.file_attributes() & FILE_ATTRIBUTE_SYSTEM != 0,
-        directory: meta.file_attributes() & FILE_ATTRIBUTE_DIRECTORY != 0,
-        archive: meta.file_attributes() & FILE_ATTRIBUTE_ARCHIVE != 0,
-        tempoary: meta.file_attributes() & FILE_ATTRIBUTE_TEMPORARY != 0,
-        sparse_file: meta.file_attributes() & FILE_ATTRIBUTE_SPARSE_FILE != 0,
-        reparse_point: meta.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT_TYPE != 0,
-        compressed: meta.file_attributes() & FILE_ATTRIBUTE_COMPRESSED != 0,
-        offline: meta.file_attributes() & FILE_ATTRIBUTE_OFFLINE != 0,
-        not_content_indexed: meta.file_attributes() & FILE_ATTRIBUTE_NOT_CONTENT_INDEXED != 0,
-        encrypted: meta.file_attributes() & FILE_ATTRIBUTE_ENCRYPTED != 0,
-        integrity_stream: meta.file_attributes() & FILE_ATTRIBUTE_INTEGRITY_STREAM != 0,
-        isvirtual: meta.file_attributes() & FILE_ATTRIBUTE_VIRTUAL != 0,
-        no_scrub_data: meta.file_attributes() & FILE_ATTRIBUTE_NO_SCRUB_DATA != 0,
-        pinned: meta.file_attributes() & FILE_ATTRIBUTE_PINNED != 0,
-        unpinned: meta.file_attributes() & FILE_ATTRIBUTE_UNPINNED != 0,
-        recall_on_open: meta.file_attributes() & FILE_ATTRIBUTE_RECALL_ON_OPEN != 0,
-        recall_on_data_access: meta.file_attributes() & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS !=0,
+        normal: at & FILE_ATTRIBUTE_NORMAL != 0,
+        readonly: at & FILE_ATTRIBUTE_READONLY != 0,
+        hidden: at & FILE_ATTRIBUTE_HIDDEN != 0,
+        system: at & FILE_ATTRIBUTE_SYSTEM != 0,
+        directory: at & FILE_ATTRIBUTE_DIRECTORY != 0,
+        archive: at & FILE_ATTRIBUTE_ARCHIVE != 0,
+        tempoary: at & FILE_ATTRIBUTE_TEMPORARY != 0,
+        sparse_file: at & FILE_ATTRIBUTE_SPARSE_FILE != 0,
+        reparse_point: at & FILE_ATTRIBUTE_REPARSE_POINT_TYPE != 0,
+        compressed: at & FILE_ATTRIBUTE_COMPRESSED != 0,
+        offline: at & FILE_ATTRIBUTE_OFFLINE != 0,
+        not_content_indexed: at & FILE_ATTRIBUTE_NOT_CONTENT_INDEXED != 0,
+        encrypted: at & FILE_ATTRIBUTE_ENCRYPTED != 0,
+        integrity_stream: at & FILE_ATTRIBUTE_INTEGRITY_STREAM != 0,
+        isvirtual: at & FILE_ATTRIBUTE_VIRTUAL != 0,
+        no_scrub_data: at & FILE_ATTRIBUTE_NO_SCRUB_DATA != 0,
+        pinned: at & FILE_ATTRIBUTE_PINNED != 0,
+        unpinned: at & FILE_ATTRIBUTE_UNPINNED != 0,
+        recall_on_open: at & FILE_ATTRIBUTE_RECALL_ON_OPEN != 0,
+        recall_on_data_access: at & FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS !=0,
     };
 
     Ok(ai)

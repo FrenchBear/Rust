@@ -108,7 +108,10 @@ impl Options {
         }
 
         // For dev/debug
-        options.sources.push(r"S:Streams\f1.pdf".to_string());
+        // options.sources.push(r"S:\Streams\f1.pdf".to_string());
+        // options.sources.push(r"S:\Multilinks\link1.txt".to_string());
+        // options.sources.push(r"S:\MultiLinks\inexistent_target.txt".to_string());
+        options.sources.push(r"S:\MultiLinks".to_string());
 
         if options.sources.is_empty() {
             return Err("No source provided".into());

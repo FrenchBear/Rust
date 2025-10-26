@@ -20,10 +20,17 @@ pub struct HardlinksInfo {
 }
 
 pub fn get_hardlinks_information(path: &Path, options: &Options) -> Result<HardlinksInfo, String> {
-    if !path.exists() {
+    // Special cases: inexistent link don't have a hard count, and this code doesn't work with directories
+    if path.is_symlink() || path.is_dir() {
+        return Ok(HardlinksInfo {
+            hardlinks_count: 1,
+        });
+    }
+    
+    if !path.is_file() {
         return Err(format!("{}: Not found", path.display()));
     }
-
+    
     // 1. Open the file to get a handle.
     let file = File::open(path).unwrap();
     let handle = HANDLE(file.as_raw_handle());

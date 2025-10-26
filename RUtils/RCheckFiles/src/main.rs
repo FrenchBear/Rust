@@ -68,8 +68,13 @@ const APP_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 // Non-ANSI characters not reported as invalid chars
 const SPECIAL_CHARS: &str = "€®™©–—…×·•∶⧹⧸／⚹†‽¿🎜🎝♫♪“”‹›⚡♥";
 
+// PV rules
 const CHARS_NO_SPACE_AFTER: &str = "([{«‹";
 const CHARS_NO_SPACE_BEFORE: &str = ")]}»›¿!‽.,…";
+
+// CR rules
+// const CHARS_NO_SPACE_AFTER: &str = "([{‹";
+// const CHARS_NO_SPACE_BEFORE: &str = ")]}›‽.,…";
 
 // Confusables for space (note that U+FEFF ZERO WIDTH NO-BREAK SPACE is always removed)
 const SPACE_CONFUSABLES: [char; 14] = [

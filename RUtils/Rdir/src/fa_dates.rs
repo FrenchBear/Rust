@@ -25,7 +25,7 @@ pub struct DatesInfo {
 }
 
 pub fn get_dates_information(path: &Path, options: &Options) -> Result<DatesInfo, String> {
-    if !path.exists() {
+    if !path.is_dir() && !path.is_file() && !path.is_symlink(){
         return Err(format!("{}: Not found", path.display()));
     }
 

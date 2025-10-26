@@ -28,6 +28,22 @@ pub struct StreamsInfo {
 /// Enumerate Alternate Data Streams for a given path.
 /// The default `::$DATA` stream is excluded from the results.
 pub fn get_streams_information(path: &Path, _options: &Options) -> core::result::Result<StreamsInfo, String> {
+    // No streams for directories or invalid links
+    if path.is_dir() || path.is_symlink() {
+        return  Ok(StreamsInfo { streams: Vec::new() });
+    }
+
+    if !path.is_file() {
+        return Err(format!("{}: Not found", path.display()));
+    }
+
+    match get_streams_list(path, false) {
+        Ok(streams) => Ok(StreamsInfo { streams }),
+        Err(e) => Err(e),
+    }
+}
+
+pub fn get_streams_list(path: &Path, include_main_stream: bool) -> core::result::Result<Vec<StreamInfo>, String> {
     let wide_path: Vec<u16> = path.as_os_str().encode_wide().chain(std::iter::once(0)).collect();
     let mut find_stream_data = WIN32_FIND_STREAM_DATA {
         cStreamName: [0; 296],
@@ -59,7 +75,7 @@ pub fn get_streams_information(path: &Path, _options: &Options) -> core::result:
             let stream_size = find_stream_data.StreamSize;
 
             // Exclude the default data stream
-            if stream_name != "::$DATA" {
+            if include_main_stream || stream_name != "::$DATA" {
                 streams.push(StreamInfo {
                     name: stream_name.to_string(),
                     size: stream_size as u64,
@@ -74,7 +90,7 @@ pub fn get_streams_information(path: &Path, _options: &Options) -> core::result:
         }
     }
 
-    Ok(StreamsInfo { streams })
+    Ok(streams)
 }
 
 // RAII guard to ensure the handle is closed.

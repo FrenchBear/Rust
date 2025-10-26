@@ -54,6 +54,24 @@ struct DataBag {
     files_count: usize,
 }
 
+// fn main() {
+//     // Create a small test file
+//     let path = Path::new(r"S:\MultiLinks\inexistent_target.txt");
+//     println!("Path: {}", path.display());
+//     let filename = path.file_name().unwrap().to_str().unwrap().to_string();
+//     println!("Filename: {}", filename);
+//     let ext = path.extension().unwrap().to_str().unwrap().to_string();
+//     println!("Extension: {}", ext);
+
+//     let can = canonicalize_link(path).unwrap();
+//     println!("Canonical path: {}", can.display());
+
+//     let original_with_path = path.to_string_lossy().replace(r"\\?\", "");
+//     println!("Original with path: {}", original_with_path);
+//     let canonical_fullpath = path.canonicalize().unwrap().to_string_lossy().replace(r"\\?\", "");
+//     println!("Canonical fullpath: {}", canonical_fullpath);
+// }
+
 fn main() {
     // Process options
     let options = Options::new().unwrap_or_else(|err| {
@@ -72,11 +90,12 @@ fn main() {
     for source in options.sources.iter() {
         let pb = Path::new(source);
         if pb.is_file() {
-            process_file(&mut b, &pb, &options);
+            process_path(&mut b, &pb, &options);
         } else if pb.is_dir() {
-            process_directory(&mut b, &pb, &options);
+            process_path(&mut b, &pb, &options);
         } else if pb.is_symlink() {
-            println!("{} is a symbolic link with invalid target", source);
+            //println!("{} is a symbolic link with invalid target", source);
+            process_path(&mut b, &pb, &options);
         } else {
             println!("{}: Not found", source);
         }
@@ -96,36 +115,75 @@ fn main() {
     }
 }
 
-fn process_directory(b: &mut DataBag, path: &Path, options: &Options) {
-    println!("Process directory {}: ToDo", path.display());
-}
-
-fn process_file(b: &mut DataBag, path: &Path, options: &Options) {
+fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
     b.files_count += 1;
 
     println!("\n-----------------");
-    println!("File: {}", path.display());
+    print!("Path: {}", path.display());
+
+    let (kind, kind2) = if path.is_file() {
+        if path.is_symlink() { ("File symbolic link", "Link") } else { ("File", "File") }
+    } else if path.is_dir() {
+        if path.is_symlink() { ("Directory symbolic link", "Link") } else { ("Directory", "Directory") }
+    } else if path.is_symlink() {
+        ("Symbolic link (inxistent target)", "Link")
+    } else {
+        ("Unknown", "Unknown")
+    };
+    println!("  [{}]", kind);
 
     match get_names_information(path, &options) {
         Ok(n) => {
-            println!("File name: {}", show_invisible_chars(n.filename.as_str()));
+            println!("{kind2} name: {}", show_invisible_chars(n.filename.as_str()));
+            println!("Parent: {}", show_invisible_chars(n.parent.as_str()));
             if n.original_with_path != n.canonical_fullpath {
                 println!("Canonical path: {}", show_invisible_chars(n.canonical_fullpath.as_str())); // For links, get target...
             }
+            let mut pr = false;
             if let Some(typ) = n.file_type_description {
-                println!("File type: {}", typ);
+                print!("File type: {}", typ);
+                pr = true;
             }
             if let Some(app) = n.opens_with {
-                println!("Opens with: {}", app);
+                print!("  Opens with: {}", app);
+                pr = true;
+            }
+            if pr {
+                println!();
             }
         }
         Err(e) => println!("Error analyzing names info: {}", e),
     }
 
     match get_size_information(path, &options) {
-        Ok(s) => {
-            let size = get_formatted_size(s.size);
-            println!("Size: {}", size);
+        Ok(si) => {
+            if path.is_file() {
+                let size = get_formatted_size(si.size);
+                print!("Apparent size: {}", size);
+
+                let size_on_disk = get_formatted_size(si.size_on_disk);
+                println!("   Size on disk: {}", size_on_disk);
+            } else {
+                if si.dir_filescount + si.dir_dirscount + si.dir_linkscount == 0 {
+                    print!("Empty directory");
+                } else {
+                    print!("Dir counts: ");
+                    if si.dir_filescount > 0 {
+                        print!("{} file{} ", si.dir_filescount, s(si.dir_filescount));
+                    }
+                    if si.dir_dirscount > 0 {
+                        if si.dir_dirscount == 1 {
+                            print!("{} directory ", si.dir_dirscount);
+                        } else {
+                            print!("{} directories ", si.dir_dirscount);
+                        }
+                    }
+                    if si.dir_linkscount > 0 {
+                        print!("{} link{} ", si.dir_linkscount, s(si.dir_linkscount));
+                    }
+                    println!();
+                }
+            }
         }
         Err(e) => println!("Error analyzing size info: {}", e),
     }
@@ -145,6 +203,9 @@ fn process_file(b: &mut DataBag, path: &Path, options: &Options) {
     match get_attributes_information(path, &options) {
         Ok(ai) => {
             print!("Attributes: ");
+            if ai.normal {
+                print!("normal (no attributes) ");
+            }
             if ai.archive {
                 print!("archive ");
             }
@@ -222,7 +283,7 @@ fn process_file(b: &mut DataBag, path: &Path, options: &Options) {
                 println!("Hard links count: {}", h.hardlinks_count);
             }
         }
-        Err(e) => println!("Error analyzing reparse info: {}", e),
+        Err(e) => println!("Error analyzing hardlinks info: {}", e),
     }
 
     match get_streams_information(path, &options) {
@@ -237,6 +298,10 @@ fn process_file(b: &mut DataBag, path: &Path, options: &Options) {
         }
         Err(e) => println!("Error analyzing streams info: {}", e),
     }
+}
+
+fn s(n: i32) -> &'static str {
+    if n > 1 { "s" } else { "" }
 }
 
 fn show_invisible_chars(s: &str) -> String {
@@ -255,7 +320,8 @@ fn get_formatted_size(size: u64) -> String {
     // numfmt formatter
     let mut fmt_bytes = Formatter::new()
         .scales(Scales::none())
-        .separator(' ').unwrap()
+        .separator(' ')
+        .unwrap()
         .precision(Precision::Decimals(0))
         .suffix("\u{00A0}B")
         .unwrap();
@@ -264,7 +330,8 @@ fn get_formatted_size(size: u64) -> String {
     if size >= 1024 {
         let mut fmt_scaled = Formatter::new()
             .scales(Scales::binary())
-            .separator(' ').unwrap()
+            .separator(' ')
+            .unwrap()
             .precision(Precision::Significance(3))
             .suffix("B")
             .unwrap();
