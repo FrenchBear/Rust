@@ -194,14 +194,18 @@ fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
 
     match get_size_information(path, options) {
         Ok(si) => {
-            if path.is_file() {
+            if path.is_symlink() && !path.exists() {
+                // Do nothing
+            } else if path.is_file() {
                 let size = get_formatted_size(si.size);
                 print!("Apparent size:  {}", size);
 
                 let size_on_disk = get_formatted_size(si.size_on_disk);
                 println!("   Size on disk: {}", size_on_disk);
             } else if si.dir_filescount + si.dir_dirscount + si.dir_linkscount == 0 {
-                println!("Dir counts:     Empty directory");
+                if !path.is_symlink() || options.show_link_target_info {
+                    println!("Dir counts:     Empty directory");
+                }
             } else {
                 print!("Dir counts:     ");
                 if si.dir_filescount > 0 {

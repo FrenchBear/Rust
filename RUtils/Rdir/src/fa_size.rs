@@ -26,7 +26,7 @@ pub struct SizeInfo {
 
 pub fn get_size_information(path: &Path, options: &Options) -> core::result::Result<SizeInfo, String> {
     // Special case, link to invalid target
-    if path.is_symlink() {
+    if path.is_symlink() && !options.show_link_target_info {
         return Ok(SizeInfo {
             size: 0,
             size_on_disk: 0,
