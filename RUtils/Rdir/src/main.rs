@@ -1,6 +1,7 @@
 // rdir: Show detailed file info
 //
 // 2025-10-24	PV      First version
+// 2025-10-24	PV      1.0.1 Cur treams names at first \0; process prefix \\?\UNC\ correctly
 
 #![allow(unused)]
 

@@ -1,0 +1,4 @@
+@echo off
+for %%f in ("W:\Livres\@Springer\Biomedical and Life Sciences\ENZYMES", "W:\Livres\@Springer\Biomedical and Life Sciences\Epidemiological Research", "W:\Livres\@Springer\Chemistry and Materials Science\Brewing Science", "W:\Livres\@Springer\Chemistry and Materials Science\Exam Survival Guide", "W:\Livres\@Springer\Chemistry and Materials Science\Nanotechnology", "W:\Livres\@Springer\Chemistry and Materials Science\Polymer Synthesis", "W:\Livres\@Springer\Earth and Environmental Science\Climate Change Science", "W:\Livres\@Springer\Intelligent Technologies and Robotics\Control Engineering", "W:\Livres\@Springer\Religion and Philosophy\Argumentation Theory") do (
+    call run.bat %%f
+)

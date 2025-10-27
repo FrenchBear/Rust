@@ -13,6 +13,7 @@
 // 2025-20-22   PV      Clippy review
 // 2025-20-22   PV      links options, reorg usage message
 // 2025-20-23   PV      no_glob_filtering
+// 2027-20-23   PV      Generic filters with options.filters_names; ADS filter
 
 // Application imports
 use crate::*;
@@ -36,13 +37,14 @@ pub struct CommandToRun {
 pub struct Options {
     pub sources: Vec<String>,
     pub actions_names: HashSet<&'static str>,
+    pub filters_names: HashSet<&'static str>,
     pub exec_commands: Vec<CommandToRun>,
     pub xargs_commands: Vec<CommandToRun>,
     pub search_files: bool,
     pub search_dirs: bool,
     pub names: Vec<String>,
     pub maxdepth: usize,
-    pub isempty: bool,
+    //pub isempty: bool,
     pub recycle: bool,
     pub case_sensitive: bool,
     pub autorecurse: bool,
@@ -83,6 +85,8 @@ impl Options {
 ⦃-f⦄|⦃-type f⦄       ¬Search for files
 ⦃-d⦄|⦃-type d⦄       ¬Search for directories
 ⦃-e⦄|⦃-empty⦄        ¬Only find empty files or directories
+⦃-ads⦄             ¬Select files with alternate data streams
+⦃-adsx⦄            ¬Select files with alternate data streams of 2KB or more (typically ignore Zone.identification, AFP_Resource, ms-properties...)
 
 ⌊Actions⌋:
 ⦃-print⦄           ¬Default, print matching files names and dir names
@@ -95,7 +99,6 @@ impl Options {
 ⦃-yaml⦄            ¬Generate old/new yaml data for matches, to be edited and used by rcheckfiles -F
 
 ⟨source⟩           ¬File or directory to search (glob pattern)";
-
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }
@@ -213,7 +216,15 @@ impl Options {
                     "cs" | "cs+" => options.case_sensitive = true,
                     "cs-" => options.case_sensitive = false,
 
-                    "e" | "empty" => options.isempty = true,
+                    "e" | "empty" => {
+                        options.filters_names.insert("empty");
+                    }
+                    "ads" => {
+                        options.filters_names.insert("ads");
+                    }
+                    "adsx" => {
+                        options.filters_names.insert("adsx");
+                    }
 
                     "r+" | "recycle" => options.recycle = true,
                     "r-" | "norecycle" => options.recycle = false,

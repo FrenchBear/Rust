@@ -1,15 +1,15 @@
 // fa_streams.rs - File analysis for Alternate Data Streams
 //
 // 2025-10-26   PV      First version, ChatGPT+Gemini and *a lot* of me to make IA code correct (and that is no trivial matter!)
+// 2025-10-27   PV      Fixed stream name trimming at first \0
 
-use std::io;
 use std::path::Path;
 
 use windows::Win32::Foundation::*;
 use windows::Win32::Storage::FileSystem::*;
 use windows::core::*;
 
-use std::ffi::{OsString, c_void};
+use std::ffi::c_void;
 use std::os::windows::ffi::OsStrExt;
 
 use crate::Options;
@@ -69,10 +69,20 @@ pub fn get_streams_list(path: &Path, include_main_stream: bool) -> core::result:
 
         loop {
             let stream_name = String::from_utf16_lossy(&find_stream_data.cStreamName);
-            let stream_name = stream_name.trim_end_matches(char::from(0)); // remove null terminator
+            let mut cut = 0;
+            for ix in 0..stream_name.len() {
+                if stream_name.as_bytes()[ix] == 0 {
+                    cut = ix;
+                    break;
+                }
+            }
+            let stream_name = &stream_name[..cut];
 
             // Print the stream name and size
             let stream_size = find_stream_data.StreamSize;
+
+            // Note that each stream also maintains its own state for compression, encryption, and sparseness
+            // in the dwFileAttributes member, but here we don't care about this level of detail
 
             // Exclude the default data stream
             if include_main_stream || stream_name != "::$DATA" {

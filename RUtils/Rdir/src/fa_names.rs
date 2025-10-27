@@ -1,6 +1,7 @@
 // fa_name.rs - File analysis for name
 //
 // 2025-10-25   PV      First version
+// 2025-10-27   PV      Process correctly \\?\UNC\terazalt\books\...
 
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
@@ -33,12 +34,9 @@ pub fn get_names_information(path: &Path, options: &Options) -> Result<NamesInfo
 
     let (original_with_path, canonical_fullpath) = if path.is_symlink() {
         let can = canonicalize_link(path).unwrap();
-        (can.to_string_lossy().replace(r"\\?\", ""), can.to_string_lossy().replace(r"\\?\", ""))
+        (prp(&can), prp(&can))
     } else {
-        (
-            path.to_string_lossy().replace(r"\\?\", ""),
-            path.canonicalize().unwrap().to_string_lossy().replace(r"\\?\", ""),
-        )
+        (prp(path), prp(&path.canonicalize().unwrap()))
     };
 
     let (file_type_description, opens_with) = match path.extension() {
@@ -57,6 +55,10 @@ pub fn get_names_information(path: &Path, options: &Options) -> Result<NamesInfo
         file_type_description,
         opens_with,
     })
+}
+
+fn prp(s: &Path) -> String {
+    s.to_string_lossy().replace(r"\\?\UNC", r"\").replace(r"\\?\", "")
 }
 
 /// A helper function to call the `AssocQueryStringW` Windows API function.

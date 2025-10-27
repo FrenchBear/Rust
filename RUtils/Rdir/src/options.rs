@@ -116,7 +116,7 @@ impl Options {
         }
 
         // For dev/debug
-        // options.sources.push(r"S:\Links\dir_*".to_string());
+        options.sources.push(r"W:\Livres\Divers\La géographie nouvelle (1907) - E. Toutey.pdf".to_string());
 
         if options.sources.is_empty() {
             return Err("No source provided".into());

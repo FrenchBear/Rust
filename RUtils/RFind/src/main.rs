@@ -29,6 +29,7 @@
 // 2025-20-23   PV      2.3.1 Handle correctly links to non-existent targets; no_glob_filtering option -ngf
 // 2025-20-24   PV      2.3.2 Fixed MyGlob bug C:\**\thumbs.db
 // 2025-20-25   PV      2.3.3 ActionDir separated from ActionPrint
+// 2025-20-27   PV      2.4.0 Generic filters
 
 // Notes:
 // - Finding denormalized paths is handled by rcheckfiles and checknnn, no need for a third version :-)
@@ -43,7 +44,7 @@
 // Standard library imports
 use std::fmt::Debug;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process;
 use std::time::Instant;
 
@@ -55,8 +56,10 @@ use windows as _;
 // -----------------------------------
 // Submodules
 
+mod filters;
 mod actions;
 mod options;
+mod fa_streams;
 
 use options::*;
 
@@ -75,6 +78,12 @@ trait Action: Debug {
     fn action(&mut self, lw: &mut LogWriter, path: &Path, noaction: bool, verbose: bool);
     fn conclusion(&mut self, lw: &mut LogWriter, noaction: bool, verbose: bool);
 }
+
+trait Filter: Debug {
+    fn name(&self) -> &'static str;
+    fn filter(&mut self, lw: &mut LogWriter, path: &Path, verbose: bool) -> bool;
+}
+
 
 // ==============================================================================================
 // Main
@@ -175,6 +184,17 @@ fn main() {
         }
     }
 
+    let mut filters = Vec::<Box<dyn Filter>>::new();
+    for &filter_name in options.filters_names.iter() {
+        match filter_name {
+            "empty" => filters.push(Box::new(filters::FilterEmpty::new())),
+            "ads" => filters.push(Box::new(filters::FilterADS::new(false))),
+            "adsx" => filters.push(Box::new(filters::FilterADS::new(true))),
+            _ => panic!("{APP_NAME}: Internal error, unknown filter_name {filter_name}"),
+        }
+    }
+
+
     let mut actions = Vec::<Box<dyn Action>>::new();
     for action_name in options.actions_names.iter() {
         match *action_name {
@@ -210,10 +230,14 @@ fn main() {
         for ba in actions.iter() {
             logln(&mut writer, format!("- {}", (**ba).name()).as_str());
         }
-        logln(&mut writer, "");
-        if options.isempty {
-            logln(&mut writer, "Only search for empty files or directories");
+
+        if !filters.is_empty() {
+            logln(&mut writer, "\nFilter(s): ");
+            for ba in filters.iter() {  
+                logln(&mut writer, format!("- {}", (**ba).name()).as_str());
+            }
         }
+        logln(&mut writer, "");
     }
 
     let mut files_count = 0;
@@ -223,7 +247,18 @@ fn main() {
         for ma in gs.1.explore_iter() {
             match ma {
                 MyGlobMatch::File(pb) => {
-                    if options.search_files && (!options.isempty || is_file_empty(&pb)) {
+                    if !options.search_files {
+                        continue;
+                    }
+
+                    let mut include = true;
+                    for f in filters.iter_mut() {
+                        if !(**f).filter(&mut writer, &pb, options.verbose) {
+                            include = false;
+                            break;
+                        }
+                    }
+                    if include {
                         files_count += 1;
                         for ba in actions.iter_mut() {
                             (**ba).action(&mut writer, &pb, options.noaction, options.verbose);
@@ -232,7 +267,18 @@ fn main() {
                 }
 
                 MyGlobMatch::Dir(pb) => {
-                    if options.search_dirs && (!options.isempty || !is_dir_empty(&pb)) {
+                    if !options.search_dirs {
+                        continue;
+                    }
+
+                    let mut include = true;
+                    for f in filters.iter_mut() {
+                        if !(**f).filter(&mut writer, &pb, options.verbose) {
+                            include = false;
+                            break;
+                        }
+                    }
+                    if include {
                         dirs_count += 1;
                         for ba in actions.iter_mut() {
                             (**ba).action(&mut writer, &pb, options.noaction, options.verbose);
@@ -288,16 +334,5 @@ fn main() {
             msg.push_str(format!("{errs_count} error{}", s(errs_count)).as_str());
         }
         logln(&mut writer, format!("\n{msg} found in {:.3}s", duration.as_secs_f64()).as_str());
-    }
-}
-
-fn is_file_empty(path: &PathBuf) -> bool {
-    fs::metadata(path).unwrap().len() == 0
-}
-
-fn is_dir_empty(path: &PathBuf) -> bool {
-    match fs::read_dir(path) {
-        Ok(mut p) => p.next().is_some(),
-        Err(_) => false,
     }
 }
