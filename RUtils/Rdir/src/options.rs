@@ -11,7 +11,7 @@ use std::error::Error;
 
 // External crates imports
 use getopt::Opt;
-use myglob::{MyGlobBuilder, MyGlobSearch};
+use myglob::MyGlobSearch;
 use mymarkup::MyMarkup;
 
 // Dedicated struct to store command line arguments
@@ -116,7 +116,7 @@ impl Options {
         }
 
         // For dev/debug
-        options.sources.push(r"W:\Livres\Divers\La géographie nouvelle (1907) - E. Toutey.pdf".to_string());
+        //options.sources.push(r"W:\Livres\Divers\La géographie nouvelle (1907) - E. Toutey.pdf".to_string());
 
         if options.sources.is_empty() {
             return Err("No source provided".into());

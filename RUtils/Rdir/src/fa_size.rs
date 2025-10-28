@@ -2,9 +2,7 @@
 //
 // 2025-10-25   PV      First version
 
-use std::{fs, os::windows::fs::MetadataExt};
-
-use std::ffi::{OsString, c_void};
+use std::fs;
 use std::io;
 use std::os::windows::ffi::OsStrExt;
 use std::path::Path;
@@ -177,29 +175,29 @@ pub fn get_bytes_per_cluster(path: &Path) -> io::Result<u64> {
     }
 }
 
-/// Calculates the "Size on disk" as shown in Windows Explorer.
-///
-/// This accounts for compression, sparse files, and cluster rounding.
-/// It does NOT account for Alternate Data Streams (ADS).
-pub fn get_explorer_size_on_disk(path: &Path) -> io::Result<u64> {
-    // 1. Get the compressed/sparse size
-    let compressed_size = get_stream_size_on_disk(path)?;
+// /// Calculates the "Size on disk" as shown in Windows Explorer.
+// ///
+// /// This accounts for compression, sparse files, and cluster rounding.
+// /// It does NOT account for Alternate Data Streams (ADS).
+// pub fn get_explorer_size_on_disk(path: &Path) -> io::Result<u64> {
+//     // 1. Get the compressed/sparse size
+//     let compressed_size = get_stream_size_on_disk(path)?;
 
-    // Handle the simple case
-    if compressed_size == 0 {
-        return Ok(0);
-    }
+//     // Handle the simple case
+//     if compressed_size == 0 {
+//         return Ok(0);
+//     }
 
-    // 2. Get the cluster size for the drive
-    let bytes_per_cluster = get_bytes_per_cluster(path)?;
+//     // 2. Get the cluster size for the drive
+//     let bytes_per_cluster = get_bytes_per_cluster(path)?;
 
-    // 3. Round the compressed size up to the nearest cluster
-    // let total_clusters = (compressed_size + bytes_per_cluster - 1) / bytes_per_cluster;
-    let total_clusters = compressed_size.div_ceil(bytes_per_cluster);
-    let size_on_disk = total_clusters * bytes_per_cluster;
+//     // 3. Round the compressed size up to the nearest cluster
+//     // let total_clusters = (compressed_size + bytes_per_cluster - 1) / bytes_per_cluster;
+//     let total_clusters = compressed_size.div_ceil(bytes_per_cluster);
+//     let size_on_disk = total_clusters * bytes_per_cluster;
 
-    Ok(size_on_disk)
-}
+//     Ok(size_on_disk)
+// }
 
 pub fn get_size_on_disk_with_ads(path: &Path) -> core::result::Result<u64, String> {
     // let streams = match crate::fa_streams::get_streams_list(path, true) {
@@ -218,7 +216,7 @@ pub fn get_size_on_disk_with_ads(path: &Path) -> core::result::Result<u64, Strin
     for si in streams {
         let streampath = path_str.to_string() + si.name.as_str();
         let streampath_path = Path::new(&streampath);
-        let mut compressed_size = match get_stream_size_on_disk(streampath_path) {
+        let compressed_size = match get_stream_size_on_disk(streampath_path) {
             Ok(size) => size,
             Err(e) => return Err(e.to_string()),
         };

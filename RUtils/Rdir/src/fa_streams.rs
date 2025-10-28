@@ -108,7 +108,7 @@ struct HandleGuard(HANDLE);
 impl Drop for HandleGuard {
     fn drop(&mut self) {
         if self.0 != INVALID_HANDLE_VALUE {
-            unsafe { FindClose(self.0) };
+            unsafe { let _ = FindClose(self.0); };
         }
     }
 }

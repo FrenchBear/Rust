@@ -5,10 +5,10 @@
 
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
-use std::{fs, io};
+use std::io;
 use windows::{
     Win32::UI::Shell::{ASSOCF_NONE, ASSOCSTR, ASSOCSTR_FRIENDLYAPPNAME, ASSOCSTR_FRIENDLYDOCNAME, AssocQueryStringW},
-    core::{PCWSTR, PWSTR, w},
+    core::{PCWSTR, PWSTR},
 };
 
 use crate::Options;
@@ -24,7 +24,7 @@ pub struct NamesInfo {
     pub opens_with: Option<String>,
 }
 
-pub fn get_names_information(path: &Path, options: &Options) -> Result<NamesInfo, String> {
+pub fn get_names_information(path: &Path, _options: &Options) -> Result<NamesInfo, String> {
     // if !path.exists() {
     //     return Err(format!("{}: Not found", path.display()));
     // }
@@ -65,7 +65,7 @@ fn prp(s: &Path) -> String {
 fn query_assoc_string(assoc_str: ASSOCSTR, ext: &OsStr) -> Option<String> {
     // Prepend a dot to the extension for the query.
     let assoc_str_with_dot = format!(".{}", ext.to_string_lossy());
-    let mut wide_assoc: Vec<u16> = assoc_str_with_dot.encode_utf16().chain(std::iter::once(0)).collect();
+    let wide_assoc: Vec<u16> = assoc_str_with_dot.encode_utf16().chain(std::iter::once(0)).collect();
     let assoc_pcwstr = PCWSTR(wide_assoc.as_ptr());
 
     unsafe {
@@ -73,16 +73,18 @@ fn query_assoc_string(assoc_str: ASSOCSTR, ext: &OsStr) -> Option<String> {
 
         // First call to get the required buffer size.
         // We check the result to handle errors, like an unknown extension.
-        AssocQueryStringW(ASSOCF_NONE, assoc_str, assoc_pcwstr, None, None, &mut cch);
-
-        if cch == 0 {
+        let res = AssocQueryStringW(ASSOCF_NONE, assoc_str, assoc_pcwstr, None, None, &mut cch);
+        if res.is_err() {
             return None;
         }
 
         let mut buffer: Vec<u16> = vec![0; cch as usize];
         let buffer_pwstr = PWSTR(buffer.as_mut_ptr());
         // Second call to get the actual string.
-        AssocQueryStringW(ASSOCF_NONE, assoc_str, assoc_pcwstr, None, Some(buffer_pwstr), &mut cch);
+        let res = AssocQueryStringW(ASSOCF_NONE, assoc_str, assoc_pcwstr, None, Some(buffer_pwstr), &mut cch);
+        if res.is_err() {
+            return None;
+        }
 
         String::from_utf16(&buffer[..cch as usize - 1]).ok()
     }

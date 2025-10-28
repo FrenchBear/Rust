@@ -14,6 +14,7 @@ use crate::Options;
 // ---------------------------------
 
 #[derive(Debug)]
+#[allow(unused)]
 pub struct DatesInfo {
     pub created_utc: DateTime<Utc>,
     pub modified_utc: DateTime<Utc>,

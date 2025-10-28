@@ -2,7 +2,6 @@
 //
 // 2025-10-25   PV      First version
 
-use std::fs;
 use std::fs::File;
 use std::io;
 use std::mem;
@@ -19,7 +18,7 @@ pub struct HardlinksInfo {
     pub hardlinks_count: u32,
 }
 
-pub fn get_hardlinks_information(path: &Path, options: &Options) -> Result<HardlinksInfo, String> {
+pub fn get_hardlinks_information(path: &Path, _options: &Options) -> Result<HardlinksInfo, String> {
     // Special cases: inexistent link don't have a hard count, and this code doesn't work with directories
     if path.is_symlink() || path.is_dir() {
         return Ok(HardlinksInfo {

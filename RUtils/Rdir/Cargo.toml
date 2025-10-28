@@ -1,17 +1,29 @@
 [package]
 name = "rdir"
 description = "Show detailed information on files"
-version = "1.0.1"
+version = "1.0.2"
 authors = ["Pierre Violent"]
 edition = "2024"
 
 [dependencies]
 myglob = { path = "../../Crates/MyGlob" }
 mymarkup = { path = "../../Crates/MyMarkup" }
-windows = { version = "0.62", features = ["Win32_Foundation", "Win32_Storage_FileSystem", "Win32_System_IO", "Win32_UI_Shell"] }
+#windows = { version = "0.62", features = ["Win32_Foundation", "Win32_Storage_FileSystem", "Win32_System_IO", "Win32_UI_Shell"] }
 getopt = "1.1.7"
 chrono = "0.4.40"
 numfmt = "1.2.0"
+
+[dependencies.windows]
+version = "0.62.0"
+features = [
+    "Win32_Foundation",
+    "Win32_Storage_FileSystem", 
+    "Win32_System_IO", 
+    "Win32_UI_Shell",
+    "Win32_Security",
+    "Win32_System_Memory",
+    "Win32_Security_Authorization",
+]
 
 [build-dependencies]
 toml = "0.9"

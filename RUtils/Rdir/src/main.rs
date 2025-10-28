@@ -1,12 +1,12 @@
 // rdir: Show detailed file info
 //
 // 2025-10-24	PV      First version
-// 2025-10-24	PV      1.0.1 Cur treams names at first \0; process prefix \\?\UNC\ correctly
+// 2025-10-24	PV      1.0.1 Cur streams names at first \0; process prefix \\?\UNC\ correctly
+// 2025-10-28	PV      1.0.2 Added file owner
 
-#![allow(unused)]
+//#![allow(unused)]
 
 // Standard library imports
-use std::io::{self, Write};
 use std::path::Path;
 use std::process;
 use std::time::Instant;
@@ -25,6 +25,7 @@ mod fa_names;
 mod fa_reparsepoints;
 mod fa_size;
 mod fa_streams;
+mod fa_owner;
 mod options;
 
 use fa_attributes::*;
@@ -34,6 +35,7 @@ use fa_names::*;
 use fa_reparsepoints::*;
 use fa_size::*;
 use fa_streams::*;
+use fa_owner::*;
 use options::*;
 
 // -----------------------------------
@@ -345,6 +347,14 @@ fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
         Err(e) => eprintln!("*** Error analyzing streams info: {}", e),
     }
 
+    match get_owner_information(path, options) {
+        Ok(oi) => {
+            println!("Owner:          {}", oi.owner);
+        }
+        Err(e) => eprintln!("*** Error analyzing owner info: {}", e),
+    }
+
+    
     println!();
 }
 
