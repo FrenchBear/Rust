@@ -59,6 +59,7 @@ impl Options {
         println!("- chrono: {}", env!("DEP_CHRONO_VERSION"));
         println!("- numfmt: {}", env!("DEP_NUMFMT_VERSION"));
         println!();
+        MyMarkup::render_markup(MyGlobSearch::glob_syntax());
     }
 
     /// Build a new struct Options analyzing command line parameters.<br/>
@@ -116,7 +117,7 @@ impl Options {
         }
 
         // For dev/debug
-        //options.sources.push(r"W:\Livres\Divers\La géographie nouvelle (1907) - E. Toutey.pdf".to_string());
+        //options.sources.push(r"\\wsl.localhost\Ubuntu-22.04\tmp\jl_7aRYRShS5y.pdf".to_string());
 
         if options.sources.is_empty() {
             return Err("No source provided".into());

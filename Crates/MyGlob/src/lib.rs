@@ -142,7 +142,7 @@ impl MyGlobSearch {
 Case-sensitive option only apply to filters such as ⟦*.JPG⟧ or ⟦*Eric*⟧, ⟦**⟧ ignore folders case, and constant parts such as ⟦C:\\Development⟧ depend on the OS and the filesystem: typically case-insensitive on Windows, and case-sensitive on Linux, MacOS or case-sensitive volumes on Windows (Cryptomator, WSL volummes, ...).
 
 ⌊Note⌋:
-Pattern ⟦*.*⟧ explicitly refers to segments containing a dot. This is different from traditional command line pattern ⟦*.*⟧ that matches any file, with or without a dot.
+Pattern ⟦*.*⟧ explicitly refers to segments containing a dot. This is different than the Windows/Dos traditional command line pattern ⟦*.*⟧ that matches any file, with or without a dot.
 "
     }
 

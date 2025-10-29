@@ -1,11 +1,13 @@
 // fa_size.rs - File analysis for size
 //
 // 2025-10-25   PV      First version
+// 2025-10-29   PV      If streams are not supported on path volume, just include file size
 
 use std::fs;
 use std::io;
 use std::os::windows::ffi::OsStrExt;
 use std::path::Path;
+use std::path::PathBuf;
 
 use windows::Win32::Foundation::*;
 use windows::Win32::Storage::FileSystem::*;
@@ -15,8 +17,8 @@ use crate::Options;
 
 #[derive(Debug)]
 pub struct SizeInfo {
-    pub size: u64,         // Apparent size, ignoring ADS, compression, sparse files and cluster counding
-    pub size_on_disk: u64, // Total size including ADS, compression, sparse files and cluster rounding
+    pub size: u64,                 // Apparent size, ignoring ADS, compression, sparse files and cluster counding
+    pub size_on_disk: Option<u64>, // Total size including ADS, compression, sparse files and cluster rounding. Not supported on some volumes
     pub dir_filescount: u32,
     pub dir_dirscount: u32,
     pub dir_linkscount: u32,
@@ -27,7 +29,7 @@ pub fn get_size_information(path: &Path, options: &Options) -> core::result::Res
     if path.is_symlink() && !options.show_link_target_info {
         return Ok(SizeInfo {
             size: 0,
-            size_on_disk: 0,
+            size_on_disk: None,
             dir_filescount: 0,
             dir_dirscount: 0,
             dir_linkscount: 0,
@@ -55,8 +57,7 @@ pub fn get_size_information(path: &Path, options: &Options) -> core::result::Res
             if pe.is_symlink() {
                 // Includes files links, dir links and invalid links
                 dir_linkscount += 1;
-            }
-            else if pe.is_dir() {
+            } else if pe.is_dir() {
                 dir_dirscount += 1;
             } else if pe.is_file() {
                 dir_filescount += 1;
@@ -65,7 +66,7 @@ pub fn get_size_information(path: &Path, options: &Options) -> core::result::Res
 
         return Ok(SizeInfo {
             size: 0,
-            size_on_disk: 0,
+            size_on_disk: None,
             dir_filescount,
             dir_dirscount,
             dir_linkscount,
@@ -77,8 +78,8 @@ pub fn get_size_information(path: &Path, options: &Options) -> core::result::Res
         Err(e) => return Err(e.to_string()),
     };
 
-    // Get size as shown by internet explorer
-    let size_on_disk = get_size_on_disk_with_ads(path)?;
+    // Get size as shown by internet explorer. Not supported on WSL volumes for instance
+    let size_on_disk = get_size_on_disk_with_ads(path).ok();    // .ok() converts a Result<T, _> in Option<T>
 
     // This should't work for directories
     Ok(SizeInfo {
@@ -176,23 +177,25 @@ pub fn get_bytes_per_cluster(path: &Path) -> io::Result<u64> {
 }
 
 pub fn get_size_on_disk_with_ads(path: &Path) -> core::result::Result<u64, String> {
-    // let streams = match crate::fa_streams::get_streams_list(path, true) {
-    //     Ok(si) => si,
-    //     Err(e) => return Err(e),
-    // };
-    let streams = crate::fa_streams::get_streams_list(path, true)?;
+    let path_str = path.as_os_str().to_str().unwrap();
+
+    // Streams can fail (ex: WSL volume), so we just get main path size
+    let contents = match crate::fa_streams::get_streams_list(path, true) {
+        Ok(s) => s.into_iter().map(|si| PathBuf::from(&(path_str.to_string() + si.name.as_str()))).collect::<Vec<PathBuf>>(),
+        Err(_) => vec![path.to_path_buf()],
+    };
 
     let bytes_per_cluster = match get_bytes_per_cluster(path) {
         Ok(bpc) => bpc,
         Err(e) => return Err(e.to_string()),
     };
 
-    let path_str = path.as_os_str().to_str().unwrap();
     let mut total_size_on_disk = 0_u64;
-    for si in streams {
-        let streampath = path_str.to_string() + si.name.as_str();
-        let streampath_path = Path::new(&streampath);
-        let compressed_size = match get_stream_size_on_disk(streampath_path) {
+    for cont in contents {
+        // let streampath = path_str.to_string() + si.name.as_str();
+        // let streampath_path = Path::new(&streampath);
+        //let compressed_size = match get_stream_size_on_disk(streampath_path) {
+        let compressed_size = match get_stream_size_on_disk(&cont) {
             Ok(size) => size,
             Err(e) => return Err(e.to_string()),
         };

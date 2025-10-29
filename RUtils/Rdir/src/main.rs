@@ -4,6 +4,7 @@
 // 2025-10-24	PV      1.0.1 Cur streams names at first \0; process prefix \\?\UNC\ correctly
 // 2025-10-28	PV      1.0.2 Added file owner
 // 2025-10-29	PV      1.1.0 Simplifiy names; Better processing of constant globs, and folders . and ..
+// 2025-10-29	PV      1.1.1 No more errors in WSL volumes
 
 //#![allow(unused)]
 
@@ -208,8 +209,11 @@ fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
                 let size = get_formatted_size(si.size);
                 print!("Size:           File: {}", size);
 
-                let size_on_disk = get_formatted_size(si.size_on_disk);
-                println!(", Disk space used: {}", size_on_disk);
+                if let Some(sod) = si.size_on_disk {
+                    let size_on_disk = get_formatted_size(sod);
+                    print!(", Disk space used: {}", size_on_disk);
+                }
+                println!();
             } else if si.dir_filescount + si.dir_dirscount + si.dir_linkscount == 0 {
                 if !path.is_symlink() || options.show_link_target_info {
                     println!("Dir counts:     Empty directory");
@@ -313,7 +317,9 @@ fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
                 at.push("Recall on data access (STUB)");
             }
 
-            if !options.verbose && ( at.len() == 1 && (at[0] == "Normal (no attributes)" || at[0] == "Archive")) {
+            // Some abvious attributes are not shown if not in verbose mode: files with no attributes (Normal) or just Archive,
+            // and directories with only Directory attribute
+            if !options.verbose && (at.len() == 1 && (at[0] == "Normal (no attributes)" || at[0] == "Archive" || at[0]=="Directory")) {
                 at.clear();
             }
 
@@ -358,7 +364,11 @@ fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
                 }
             }
         }
-        Err(e) => eprintln!("*** Error analyzing streams info: {}", e),
+        Err(e) => {
+            if options.verbose {
+                eprintln!("*** Error analyzing streams info: {}", e);
+            }
+        }
     }
 
     // Only show mapped owner info, for network files, SID string is generally useless
@@ -370,7 +380,11 @@ fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
                 println!("Owner:          {}", oi.sid_string);
             }
         }
-        Err(e) => eprintln!("*** Error analyzing owner info: {}", e),
+        Err(e) => {
+            if options.verbose {
+                eprintln!("*** Error analyzing owner info: {}", e);
+            }
+        }
     }
 
     println!();
