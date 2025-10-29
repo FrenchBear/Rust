@@ -3,6 +3,7 @@
 // 2025-10-24	PV      First version
 // 2025-10-24	PV      1.0.1 Cur streams names at first \0; process prefix \\?\UNC\ correctly
 // 2025-10-28	PV      1.0.2 Added file owner
+// 2025-10-29	PV      1.1.0 Simplifiy names; Better processing of constant globs, and folders . and ..
 
 //#![allow(unused)]
 
@@ -22,20 +23,20 @@ mod fa_attributes;
 mod fa_dates;
 mod fa_hardlinks;
 mod fa_names;
+mod fa_owner;
 mod fa_reparsepoints;
 mod fa_size;
 mod fa_streams;
-mod fa_owner;
 mod options;
 
 use fa_attributes::*;
 use fa_dates::*;
 use fa_hardlinks::*;
 use fa_names::*;
+use fa_owner::*;
 use fa_reparsepoints::*;
 use fa_size::*;
 use fa_streams::*;
-use fa_owner::*;
 use options::*;
 
 // -----------------------------------
@@ -60,6 +61,13 @@ struct DataBag {
     links_count: u32,
 }
 fn main() {
+    // let pp = Path::new("...");
+    // println!("is_file: {}", pp.is_file());
+    // println!("is_dir: {}", pp.is_dir());
+    // println!("is_symlink: {}", pp.is_symlink());
+    // println!("exists: {}", pp.exists());
+    // process::exit(0);
+
     // Process options
     let options = Options::new().unwrap_or_else(|err| {
         let msg = format!("{}", err);
@@ -91,17 +99,25 @@ fn main() {
     let start = Instant::now();
 
     let mut b = DataBag { ..Default::default() };
-
     for gs in sources.iter() {
-        for ma in gs.1.explore_iter() {
-            match ma {
-                MyGlobMatch::File(pb) => process_path(&mut b, &pb, &options),
+        if gs.1.is_constant() {
+            let p = Path::new(&gs.0);
+            if !p.exists() {
+                eprintln!("{}: Not found", p.display());
+            } else {
+                process_path(&mut b, p, &options);
+            }
+        } else {
+            for ma in gs.1.explore_iter() {
+                match ma {
+                    MyGlobMatch::File(pb) => process_path(&mut b, &pb, &options),
 
-                MyGlobMatch::Dir(pb) => process_path(&mut b, &pb, &options),
+                    MyGlobMatch::Dir(pb) => process_path(&mut b, &pb, &options),
 
-                MyGlobMatch::Error(err) => {
-                    if options.verbose {
-                        eprintln!("{APP_NAME}: MyGlobMatch error {}", err);
+                    MyGlobMatch::Error(err) => {
+                        if options.verbose {
+                            eprintln!("{APP_NAME}: MyGlobMatch error {}", err);
+                        }
                     }
                 }
             }
@@ -152,32 +168,21 @@ fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
 
     print!("Path:           {}", path.display());
 
-    let (kind, kind2) = if path.is_file() {
-        if path.is_symlink() {
-            ("File symbolic link", "Link")
-        } else {
-            ("File", "File")
-        }
+    let kind = if path.is_file() {
+        if path.is_symlink() { "File symbolic link" } else { "File" }
     } else if path.is_dir() {
-        if path.is_symlink() {
-            ("Directory symbolic link", "Link")
-        } else {
-            ("Directory", "Directory")
-        }
+        if path.is_symlink() { "Directory symbolic link" } else { "Directory" }
     } else if path.is_symlink() {
-        ("Symbolic link (inxistent target)", "Link")
+        "Symbolic link (inxistent target)"
     } else {
-        ("Unknown", "Unknown")
+        unreachable!()
     };
     println!("  [{}]", kind);
 
     match get_names_information(path, options) {
         Ok(n) => {
-            let label = format!("{kind2} name:");
-            println!("{label:<15} {}", show_invisible_chars(n.filename.as_str()));
-            println!("Parent:         {}", show_invisible_chars(n.parent.as_str()));
-            if n.original_with_path != n.canonical_fullpath {
-                println!("Canonical path: {}", show_invisible_chars(n.canonical_fullpath.as_str())); // For links, get target...
+            if path.to_string_lossy().to_string().to_lowercase() != n.canonical_fullpath.to_lowercase() {
+                println!("Canonical path: {}", show_invisible_chars(n.canonical_fullpath.as_str()));
             }
             let mut pr = false;
             if let Some(typ) = n.file_type_description {
@@ -185,7 +190,7 @@ fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
                 pr = true;
             }
             if let Some(app) = n.opens_with {
-                print!("  Opens with: {}", app);
+                print!(", Opens with {}", app);
                 pr = true;
             }
             if pr {
@@ -201,30 +206,31 @@ fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
                 // Do nothing
             } else if path.is_file() {
                 let size = get_formatted_size(si.size);
-                print!("Apparent size:  {}", size);
+                print!("Size:           File: {}", size);
 
                 let size_on_disk = get_formatted_size(si.size_on_disk);
-                println!("   Size on disk: {}", size_on_disk);
+                println!(", Disk space used: {}", size_on_disk);
             } else if si.dir_filescount + si.dir_dirscount + si.dir_linkscount == 0 {
                 if !path.is_symlink() || options.show_link_target_info {
                     println!("Dir counts:     Empty directory");
                 }
             } else {
                 print!("Dir counts:     ");
+                let mut v = Vec::<String>::new();
                 if si.dir_filescount > 0 {
-                    print!("{} file{} ", si.dir_filescount, s(si.dir_filescount));
+                    v.push(format!("{} file{}", si.dir_filescount, s(si.dir_filescount)));
                 }
                 if si.dir_dirscount > 0 {
                     if si.dir_dirscount == 1 {
-                        print!("{} directory ", si.dir_dirscount);
+                        v.push(format!("{} directory", si.dir_dirscount));
                     } else {
-                        print!("{} directories ", si.dir_dirscount);
+                        v.push(format!("{} directories", si.dir_dirscount));
                     }
                 }
                 if si.dir_linkscount > 0 {
-                    print!("{} link{} ", si.dir_linkscount, s(si.dir_linkscount));
+                    v.push(format!("{} link{}", si.dir_linkscount, s(si.dir_linkscount)));
                 }
-                println!();
+                println!("{}", v.join(", "));
             }
         }
         Err(e) => eprintln!("*** Error analyzing size info: {}", e),
@@ -233,7 +239,7 @@ fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
     match get_dates_information(path, options) {
         Ok(d) => {
             println!(
-                "Dates:          Creation: {}  Modification: {}  Access: {}",
+                "Dates:          Creation: {}, Modification: {}, Access: {}",
                 d.created_local.format("%d/%m/%Y %H:%M:%S"),
                 d.modified_local.format("%d/%m/%Y %H:%M:%S"),
                 d.accessed_local.format("%d/%m/%Y %H:%M:%S")
@@ -242,6 +248,7 @@ fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
         Err(e) => eprintln!("*** Error analyzing dates info: {}", e),
     }
 
+    // By default, we don't show "Normal" (no attribute) and "Archive"-only attributes
     match get_attributes_information(path, options) {
         Ok(ai) => {
             let mut at: Vec<&str> = Vec::new();
@@ -305,7 +312,14 @@ fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
             if ai.recall_on_data_access {
                 at.push("Recall on data access (STUB)");
             }
-            println!("Attributes:     {}", at.join(", "));
+
+            if !options.verbose && ( at.len() == 1 && (at[0] == "Normal (no attributes)" || at[0] == "Archive")) {
+                at.clear();
+            }
+
+            if !at.is_empty() {
+                println!("Attributes:     {}", at.join(", "));
+            }
         }
         Err(e) => eprintln!("*** Error analyzing attributes info: {}", e),
     }
@@ -313,7 +327,7 @@ fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
     match get_reparsepoints_information(path, options) {
         Ok(r) => {
             if r.kind != ReparseType::No_reparse {
-                println!("Reparse point:  {:#?}: {}", r.kind, r.detail);
+                println!("Reparse point:  {:#?} {}", r.kind, r.detail);
             }
         }
         Err(e) => eprintln!("*** Error analyzing reparse info: {}", e),
@@ -347,14 +361,18 @@ fn process_path(b: &mut DataBag, path: &Path, options: &Options) {
         Err(e) => eprintln!("*** Error analyzing streams info: {}", e),
     }
 
+    // Only show mapped owner info, for network files, SID string is generally useless
     match get_owner_information(path, options) {
         Ok(oi) => {
-            println!("Owner:          {}", oi.owner);
+            if let Some(owner) = oi.mapped_owner {
+                println!("Owner:          {}", owner);
+            } else if options.verbose {
+                println!("Owner:          {}", oi.sid_string);
+            }
         }
         Err(e) => eprintln!("*** Error analyzing owner info: {}", e),
     }
 
-    
     println!();
 }
 

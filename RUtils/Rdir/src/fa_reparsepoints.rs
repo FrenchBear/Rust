@@ -157,183 +157,183 @@ fn get_tag_description(tag: u32) -> (&'static str, &'static str) {
         0x80000006 => ("IO_REPARSE_TAG_HSM2", "Obsolete. Used by legacy Hierarchical Storage Management Product."),
         0x80000007 => (
             "IO_REPARSE_TAG_SIS",
-            "Used by single-instance storage (SIS) filter driver. Server-side interpretation only, not meaningful over the wire.",
+            "Used by single-instance storage (SIS) filter driver.",
         ),
         0x80000008 => (
             "IO_REPARSE_TAG_WIM",
-            "Used by the WIM Mount filter. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the WIM Mount filter.",
         ),
         0x80000009 => (
             "IO_REPARSE_TAG_CSV",
-            "Obsolete. Used by Clustered Shared Volumes (CSV) version 1 in Windows Server 2008 R2 operating system. Server-side interpretation only, not meaningful over the wire.",
+            "Obsolete. Used by Clustered Shared Volumes (CSV) version 1 in Windows Server 2008 R2 operating system.",
         ),
         0x8000000A => (
             "IO_REPARSE_TAG_DFS",
-            "Used by the DFS filter. The DFS is described in the Distributed File System (DFS): Referral Protocol Specification [MS-DFSC]. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Distributed File System (DFS) filter.",
         ),
         0x8000000B => ("IO_REPARSE_TAG_FILTER_MANAGER", "Used by filter manager test harness.<4>"),
-        0xA000000C => ("IO_REPARSE_TAG_SYMLINK", "Used for symbolic link support. See section 2.1.2.4."),
+        0xA000000C => ("IO_REPARSE_TAG_SYMLINK", "Used for symbolic link support."),
         0xA0000010 => (
             "IO_REPARSE_TAG_IIS_CACHE",
-            "Used by Microsoft Internet Information Services (IIS) caching. Server-side interpretation only, not meaningful over the wire.",
+            "Used by Microsoft Internet Information Services (IIS) caching.",
         ),
         0x80000012 => (
             "IO_REPARSE_TAG_DFSR",
-            "Used by the DFS filter. The DFS is described in [MS-DFSC]. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Distributed File System (DFS) filter.",
         ),
         0x80000013 => (
             "IO_REPARSE_TAG_DEDUP",
-            "Used by the Data Deduplication (Dedup) filter. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Data Deduplication (Dedup) filter.",
         ),
         0xC0000014 => ("IO_REPARSE_TAG_APPXSTRM", "Not used."),
         0x80000014 => (
             "IO_REPARSE_TAG_NFS",
-            "Used by the Network File System (NFS) component. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Network File System (NFS) component.",
         ),
         0x80000015 => (
             "IO_REPARSE_TAG_FILE_PLACEHOLDER",
-            "Obsolete. Used by Windows Shell for legacy placeholder files in Windows 8.1. Server-side interpretation only, not meaningful over the wire.",
+            "Obsolete. Used by Windows Shell for legacy placeholder files in Windows 8.1.",
         ),
         0x80000016 => (
             "IO_REPARSE_TAG_DFM",
-            "Used by the Dynamic File filter. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Dynamic File filter.",
         ),
         0x80000017 => (
             "IO_REPARSE_TAG_WOF",
-            "Used by the Windows Overlay filter, for either WIMBoot or single-file compression. Server-side interpretation only, not meaningful over the wire. ",
+            "Used by the Windows Overlay filter, for either WIMBoot or single-file compression.",
         ),
         0x80000018 => (
             "IO_REPARSE_TAG_WCI",
-            "Used by the Windows Container Isolation filter. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Windows Container Isolation filter.",
         ),
         0x90001018 => (
             "IO_REPARSE_TAG_WCI_1",
-            "Used by the Windows Container Isolation filter. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Windows Container Isolation filter.",
         ),
         0xA0000019 => (
             "IO_REPARSE_TAG_GLOBAL_REPARSE",
-            "Used by NPFS to indicate a named pipe symbolic link from a server silo into the host silo. Server-side interpretation only, not meaningful over the wire.",
+            "Used by NPFS to indicate a named pipe symbolic link from a server silo into the host silo.",
         ),
         0x9000001A => (
             "IO_REPARSE_TAG_CLOUD",
-            "Used by the Cloud Files filter, for files managed by a sync engine such as Microsoft OneDrive. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Cloud Files filter, for files managed by a sync engine such as Microsoft OneDrive.",
         ),
         0x9000101A => (
             "IO_REPARSE_TAG_CLOUD_1",
-            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive.",
         ),
         0x9000201A => (
             "IO_REPARSE_TAG_CLOUD_2",
-            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive.",
         ),
         0x9000301A => (
             "IO_REPARSE_TAG_CLOUD_3",
-            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive.",
         ),
         0x9000401A => (
             "IO_REPARSE_TAG_CLOUD_4",
-            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive.",
         ),
         0x9000501A => (
             "IO_REPARSE_TAG_CLOUD_5",
-            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive.",
         ),
         0x9000601A => (
             "IO_REPARSE_TAG_CLOUD_6",
-            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive.",
         ),
         0x9000701A => (
             "IO_REPARSE_TAG_CLOUD_7",
-            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive.",
         ),
         0x9000801A => (
             "IO_REPARSE_TAG_CLOUD_8",
-            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive.",
         ),
         0x9000901A => (
             "IO_REPARSE_TAG_CLOUD_9",
-            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive.",
         ),
         0x9000A01A => (
             "IO_REPARSE_TAG_CLOUD_A",
-            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive.",
         ),
         0x9000B01A => (
             "IO_REPARSE_TAG_CLOUD_B",
-            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive.",
         ),
         0x9000C01A => (
             "IO_REPARSE_TAG_CLOUD_C",
-            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive.",
         ),
         0x9000D01A => (
             "IO_REPARSE_TAG_CLOUD_D",
-            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive.",
         ),
         0x9000E01A => (
             "IO_REPARSE_TAG_CLOUD_E",
-            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive.",
         ),
         0x9000F01A => (
             "IO_REPARSE_TAG_CLOUD_F",
-            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Cloud Files filter, for files managed by a sync engine such as OneDrive.",
         ),
         0x8000001B => (
             "IO_REPARSE_TAG_APPEXECLINK",
-            "Used by Universal Windows Platform (UWP) packages to encode information that allows the application to be launched by CreateProcess. Server-side interpretation only, not meaningful over the wire.",
+            "Used by Universal Windows Platform (UWP) packages to encode information that allows the application to be launched by CreateProcess.",
         ),
         0x9000001C => (
             "IO_REPARSE_TAG_PROJFS",
-            "Used by the Windows Projected File System filter, for files managed by a user mode provider such as VFS for Git. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Windows Projected File System filter, for files managed by a user mode provider such as VFS for Git.",
         ),
         0xA000001D => (
             "IO_REPARSE_TAG_LX_SYMLINK",
-            "Used by the Windows Subsystem for Linux (WSL) to represent a UNIX symbolic link. section 2.1.2.7.",
+            "Used by the Windows Subsystem for Linux (WSL) to represent a UNIX symbolic link.",
         ),
         0x8000001E => (
             "IO_REPARSE_TAG_STORAGE_SYNC",
-            "Used by the Azure File Sync (AFS) filter. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Azure File Sync (AFS) filter.",
         ),
         0x90000027 => (
             "IO_REPARSE_TAG_STORAGE_SYNC_FOLDER",
-            "Used by the Azure File Sync (AFS) filter for folder. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Azure File Sync (AFS) filter for folder.",
         ),
         0xA000001F => (
             "IO_REPARSE_TAG_WCI_TOMBSTONE",
-            "Used by the Windows Container Isolation filter. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Windows Container Isolation filter.",
         ),
         0x80000020 => (
             "IO_REPARSE_TAG_UNHANDLED",
-            "Used by the Windows Container Isolation filter. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Windows Container Isolation filter.",
         ),
         0x80000021 => ("IO_REPARSE_TAG_ONEDRIVE", "Not used."),
         0xA0000022 => (
             "IO_REPARSE_TAG_PROJFS_TOMBSTONE",
-            "Used by the Windows Projected File System filter, for files managed by a user mode provider such as VFS for Git. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Windows Projected File System filter, for files managed by a user mode provider such as VFS for Git.",
         ),
         0x80000023 => (
             "IO_REPARSE_TAG_AF_UNIX",
-            "Used to represent a UNIX domain socket. Server-side interpretation only, not meaningful over the wire. No defined structure.",
+            "Used to represent a UNIX domain socket. No defined structure.",
         ),
         0x80000024 => (
             "IO_REPARSE_TAG_LX_FIFO",
-            "Used by the Windows Subsystem for Linux (WSL) to represent a UNIX FIFO (named pipe). Server-side interpretation only, not meaningful over the wire. No defined structure.",
+            "Used by the Windows Subsystem for Linux (WSL) to represent a UNIX FIFO (named pipe). No defined structure.",
         ),
         0x80000025 => (
             "IO_REPARSE_TAG_LX_CHR",
-            "Used by the Windows Subsystem for Linux (WSL) to represent a UNIX character special file. Server-side interpretation only, not meaningful over the wire. No defined structure.",
+            "Used by the Windows Subsystem for Linux (WSL) to represent a UNIX character special file. No defined structure.",
         ),
         0x80000026 => (
             "IO_REPARSE_TAG_LX_BLK",
-            "Used by the Windows Subsystem for Linux (WSL) to represent a UNIX block special file. Server-side interpretation only, not meaningful over the wire. No defined structure.",
+            "Used by the Windows Subsystem for Linux (WSL) to represent a UNIX block special file. No defined structure.",
         ),
         0xA0000027 => (
             "IO_REPARSE_TAG_WCI_LINK",
-            "Used by the Windows Container Isolation filter. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Windows Container Isolation filter.",
         ),
         0xA0001027 => (
             "IO_REPARSE_TAG_WCI_LINK_1",
-            "Used by the Windows Container Isolation filter. Server-side interpretation only, not meaningful over the wire.",
+            "Used by the Windows Container Isolation filter.",
         ),
         _ => ("IO_REPARSE_TAG_UNKNOWN", "Unknown reparse tag."),
     }

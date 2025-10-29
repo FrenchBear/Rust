@@ -3,7 +3,7 @@
 //
 // 2025-03-25   PV      First version
 // 2025-10-17   PV      Case sensitive
-// 2025-20-22   PV      Clippy review
+// 2025-10-22   PV      Clippy review
 
 #![allow(unused)]
 

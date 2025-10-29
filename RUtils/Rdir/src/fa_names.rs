@@ -2,10 +2,11 @@
 //
 // 2025-10-25   PV      First version
 // 2025-10-27   PV      Process correctly \\?\UNC\terazalt\books\...
+// 2025-10-29   PV      Simplification: remove filename, parent and original_with_path from NamesInfo
 
 use std::ffi::OsStr;
-use std::path::{Path, PathBuf};
 use std::io;
+use std::path::{Path, PathBuf};
 use windows::{
     Win32::UI::Shell::{ASSOCF_NONE, ASSOCSTR, ASSOCSTR_FRIENDLYAPPNAME, ASSOCSTR_FRIENDLYDOCNAME, AssocQueryStringW},
     core::{PCWSTR, PWSTR},
@@ -15,42 +16,32 @@ use crate::Options;
 
 #[derive(Debug)]
 pub struct NamesInfo {
-    pub filename: String,
-    pub parent: String,
-    pub original_with_path: String,
     pub canonical_fullpath: String,
-
     pub file_type_description: Option<String>,
     pub opens_with: Option<String>,
 }
 
 pub fn get_names_information(path: &Path, _options: &Options) -> Result<NamesInfo, String> {
-    // if !path.exists() {
-    //     return Err(format!("{}: Not found", path.display()));
-    // }
-
-    let filename = path.file_name().unwrap().to_str().unwrap().to_string();
-    let parent = path.parent().unwrap_or_else(|| Path::new(".")).to_str().unwrap().to_string();
-
-    let (original_with_path, canonical_fullpath) = if path.is_symlink() {
-        let can = canonicalize_link(path).unwrap();
-        (prp(&can), prp(&can))
+    let canonical_fullpath = if path.is_symlink() {
+        prp(&canonicalize_link(path).unwrap())
     } else {
-        (prp(path), prp(&path.canonicalize().unwrap()))
+        prp(&path.canonicalize().unwrap())
     };
 
-    let (file_type_description, opens_with) = match path.extension() {
-        Some(ext) => (
-            query_assoc_string(ASSOCSTR_FRIENDLYDOCNAME, ext),
-            query_assoc_string(ASSOCSTR_FRIENDLYAPPNAME, ext),
-        ),
-        None => (None, None),
-    };
+    let mut file_type_description: Option<String> = None;
+    let mut opens_with: Option<String> = None;
+
+    if path.is_file() {
+        match path.extension() {
+            Some(ext) => {
+                file_type_description = query_assoc_string(ASSOCSTR_FRIENDLYDOCNAME, ext);
+                opens_with = query_assoc_string(ASSOCSTR_FRIENDLYAPPNAME, ext);
+            }
+            None => {}
+        }
+    }
 
     Ok(NamesInfo {
-        filename,
-        parent,
-        original_with_path,
         canonical_fullpath,
         file_type_description,
         opens_with,

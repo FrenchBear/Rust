@@ -6,30 +6,32 @@ use std::ffi::OsStr;
 use std::io;
 use std::os::windows::ffi::OsStrExt;
 use std::path::Path;
-use windows::Win32::Foundation::{ERROR_INSUFFICIENT_BUFFER, ERROR_NONE_MAPPED, GetLastError, LocalFree, HLOCAL, WIN32_ERROR};
+use windows::Win32::Foundation::{ERROR_INSUFFICIENT_BUFFER, ERROR_NONE_MAPPED, GetLastError, HLOCAL, LocalFree, WIN32_ERROR};
 use windows::Win32::Security::Authorization::{ConvertSidToStringSidW, GetNamedSecurityInfoW, SE_FILE_OBJECT};
 use windows::Win32::Security::LookupAccountSidW;
 use windows::Win32::Security::OWNER_SECURITY_INFORMATION;
-use windows::Win32::Security::SID_NAME_USE;
 use windows::Win32::Security::PSECURITY_DESCRIPTOR;
 use windows::Win32::Security::PSID;
+use windows::Win32::Security::SID_NAME_USE;
 use windows::core::{PCWSTR, PWSTR};
 
 use crate::Options;
 
 #[derive(Debug)]
+#[allow(unused)]
 pub struct OwnerInfo {
-    pub owner: String,
+    pub sid_string: String,
+    pub mapped_owner: Option<String>,
 }
 
 pub fn get_owner_information(path: &Path, _options: &Options) -> core::result::Result<OwnerInfo, String> {
     match get_file_owner(path) {
-        Ok(owner) => Ok(OwnerInfo { owner }),
+        Ok((sid_string, mapped_owner)) => Ok(OwnerInfo { sid_string, mapped_owner }),
         Err(e) => Err(format!("{}", e)),
     }
 }
 
-/// Gets the owner of a file at a given path.
+/// Gets the owner of a file at a given path, and whether this is
 ///
 /// Returns the owner in `DOMAIN\User` format.
 /// If the name cannot be resolved, it returns the owner's SID string
@@ -38,7 +40,7 @@ pub fn get_owner_information(path: &Path, _options: &Options) -> core::result::R
 /// # Errors
 ///
 /// Returns an `io::Error` if any Windows API call fails.
-pub fn get_file_owner(path: &Path) -> io::Result<String> {
+pub fn get_file_owner(path: &Path) -> io::Result<(String, Option<String>)> {
     // 1. Convert the Rust path to a null-terminated wide string (UTF-16)
     //    that the Windows API expects.
     let path_wide: Vec<u16> = OsStr::new(path).encode_wide().chain(std::iter::once(0)).collect();
@@ -94,7 +96,7 @@ pub fn get_file_owner(path: &Path) -> io::Result<String> {
         )
     };
 
-    match unsafe { GetLastError()} {
+    match unsafe { GetLastError() } {
         // This error is expected because our buffers are 0-sized.
         ERROR_INSUFFICIENT_BUFFER => {
             let mut name_buf: Vec<u16> = vec![0; name_size as usize];
@@ -116,8 +118,9 @@ pub fn get_file_owner(path: &Path) -> io::Result<String> {
                 // Name resolution failed. This can happen for SIDs that
                 // don't map to an account (e.g., deleted user).
                 // Fall back to returning the SID string.
-                if unsafe { GetLastError()} == ERROR_NONE_MAPPED {
-                    return get_sid_string(psid_owner);
+                if unsafe { GetLastError() } == ERROR_NONE_MAPPED {
+                    let sid_string = get_sid_string(psid_owner)?;
+                    return Ok((sid_string, None));
                 } else {
                     return Err(io::Error::last_os_error());
                 }
@@ -127,17 +130,23 @@ pub fn get_file_owner(path: &Path) -> io::Result<String> {
             let name = String::from_utf16_lossy(&name_buf[..name_size as usize]);
             let domain = String::from_utf16_lossy(&domain_buf[..domain_size as usize]);
 
+            let sid_string = get_sid_string(psid_owner)?;
+
             // For local accounts (like "SYSTEM"), the domain is "NT AUTHORITY"
             // For built-in accounts, the domain is "BUILTIN"
             // For user accounts, it's the computer or domain name.
             if domain.is_empty() {
-                Ok(name)
+                Ok((sid_string, Some(name)))
             } else {
-                Ok(format!("{}\\{}", domain, name))
+                Ok((sid_string, Some(format!("{}\\{}", domain, name))))
             }
         }
+
         // This can happen for well-known SIDs that don't have a name.
-        ERROR_NONE_MAPPED => get_sid_string(psid_owner),
+        ERROR_NONE_MAPPED => {
+            let sid_string = get_sid_string(psid_owner)?;
+            Ok((sid_string, None))
+        }
         // Any other error.
         err => Err(io::Error::from_raw_os_error(err.0 as i32)),
     }
@@ -187,8 +196,7 @@ struct LocalFreeGuard(isize);
 impl Drop for LocalFreeGuard {
     fn drop(&mut self) {
         if self.0 != 0 {
-
-            let zer = Some(HLOCAL(self.0 as *mut _)) ;
+            let zer = Some(HLOCAL(self.0 as *mut _));
             unsafe { LocalFree(zer) };
         }
     }

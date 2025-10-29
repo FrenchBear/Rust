@@ -71,3 +71,19 @@ fn tgr(pat: &str, root: &str, rem: &str) {
     assert_eq!(r, root);
     assert_eq!(s, rem);
 }
+
+
+#[test]
+fn test_is_constant() {
+    let res = MyGlobSearch::new(r"C:\Temp\File.txt").compile().unwrap();
+    assert!(res.is_constant());
+    assert_eq!(res.root(), r"C:\Temp\File.txt");
+
+    let res = MyGlobSearch::new(r"C:\Temp\File.*").compile().unwrap();
+    assert!(!res.is_constant());
+    assert_eq!(res.root(), r"C:\Temp\");
+
+    let res = MyGlobSearch::new(r"\\server\share").compile().unwrap();
+    assert!(res.is_constant());
+    assert_eq!(res.root(), r"\\server\share");
+}

@@ -50,15 +50,15 @@ pub fn get_size_information(path: &Path, options: &Options) -> core::result::Res
         let mut dir_dirscount = 0;
         let mut dir_linkscount = 0;
 
-        for entry in fs::read_dir(path).unwrap() {
-            let path = entry.unwrap().path();
-            if path.is_symlink() {
+        for entry in fs::read_dir(path.canonicalize().unwrap().as_path()).unwrap() {
+            let pe = entry.unwrap().path();
+            if pe.is_symlink() {
                 // Includes files links, dir links and invalid links
                 dir_linkscount += 1;
             }
-            else if path.is_dir() {
+            else if pe.is_dir() {
                 dir_dirscount += 1;
-            } else if path.is_file() {
+            } else if pe.is_file() {
                 dir_filescount += 1;
             }
         }
@@ -174,30 +174,6 @@ pub fn get_bytes_per_cluster(path: &Path) -> io::Result<u64> {
         Ok(bytes_per_cluster)
     }
 }
-
-// /// Calculates the "Size on disk" as shown in Windows Explorer.
-// ///
-// /// This accounts for compression, sparse files, and cluster rounding.
-// /// It does NOT account for Alternate Data Streams (ADS).
-// pub fn get_explorer_size_on_disk(path: &Path) -> io::Result<u64> {
-//     // 1. Get the compressed/sparse size
-//     let compressed_size = get_stream_size_on_disk(path)?;
-
-//     // Handle the simple case
-//     if compressed_size == 0 {
-//         return Ok(0);
-//     }
-
-//     // 2. Get the cluster size for the drive
-//     let bytes_per_cluster = get_bytes_per_cluster(path)?;
-
-//     // 3. Round the compressed size up to the nearest cluster
-//     // let total_clusters = (compressed_size + bytes_per_cluster - 1) / bytes_per_cluster;
-//     let total_clusters = compressed_size.div_ceil(bytes_per_cluster);
-//     let size_on_disk = total_clusters * bytes_per_cluster;
-
-//     Ok(size_on_disk)
-// }
 
 pub fn get_size_on_disk_with_ads(path: &Path) -> core::result::Result<u64, String> {
     // let streams = match crate::fa_streams::get_streams_list(path, true) {

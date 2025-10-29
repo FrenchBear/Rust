@@ -31,6 +31,7 @@
 // 2025-20-23   PV      2.0.1 Don't add two consecutive recurse segments in glob_to_segments, it's useless and inefficient
 // 2025-20-23   PV      2.1.0 Rollback and use again std::os::windows::fs::FileTypeExt, because dir entry .is_dir() is different than path .is_dir() (for dir link, first is false, second is true)
 // 2025-20-24   PV      2.1.1 Fixed bug C:\**\thumbs.db stopping search at first file not found
+// 2025-10-29   PV      2.2.0 MyGlobSearch::root()
 
 //#![allow(unused_variables, dead_code, unused_imports)]
 
@@ -139,6 +140,9 @@ impl MyGlobSearch {
 
 ⌊Case sensitive option⌋:
 Case-sensitive option only apply to filters such as ⟦*.JPG⟧ or ⟦*Eric*⟧, ⟦**⟧ ignore folders case, and constant parts such as ⟦C:\\Development⟧ depend on the OS and the filesystem: typically case-insensitive on Windows, and case-sensitive on Linux, MacOS or case-sensitive volumes on Windows (Cryptomator, WSL volummes, ...).
+
+⌊Note⌋:
+Pattern ⟦*.*⟧ explicitly refers to segments containing a dot. This is different from traditional command line pattern ⟦*.*⟧ that matches any file, with or without a dot.
 "
     }
 
@@ -158,6 +162,16 @@ Case-sensitive option only apply to filters such as ⟦*.JPG⟧ or ⟦*Eric*⟧,
 
     pub fn build(glob_pattern: &str) -> Result<Self, MyGlobError> {
         Self::new(glob_pattern).compile()
+    }
+
+    /// Returns true if glob is valid, but it's just a constant, no filter segment and no recurse segment
+    pub fn is_constant(&self) -> bool {
+        self.segments.is_empty()
+    }
+
+    /// Returns root part of the glob expression
+    pub fn root(&self) -> &str {
+        &self.root
     }
 
     /// Iterator returning all files matching glob pattern
@@ -207,11 +221,6 @@ Case-sensitive option only apply to filters such as ⟦*.JPG⟧ or ⟦*Eric*⟧,
         }
     }
 
-    /// Returns true if glob is valid, but it's just a constant, no filter segment and no recurse segment
-    /// Note that this should always be called on a compiled MyGlob; calling on a non-compiled MyGlob will always return false
-    pub fn is_constant(&self) -> bool {
-        self.segments.is_empty()
-    }
 }
 
 impl MyGlobBuilder {
@@ -261,7 +270,7 @@ impl MyGlobBuilder {
 
     // Helper to separate constant root prefix from segments
     // Was initially part of compile, but it's better to put in a separate function for careful testing
-    pub fn get_root(glob_pattern: &str) -> (String, String) {
+    fn get_root(glob_pattern: &str) -> (String, String) {
         let mut glob = glob_pattern.to_string();
         // Instead of raising an error in case of empty pattern, just consider it's equivalent to *, similar to dir/ls commands behavior
         if glob.is_empty() {
