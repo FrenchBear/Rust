@@ -46,7 +46,7 @@ pub fn get_streams_list(path: &Path, include_main_stream: bool) -> io::Result<Ve
         ) {
             Ok(h) => h,
             Err(e) => {
-                return Err(io::Error::from_raw_os_error(e.code().0).into());
+                return Err(io::Error::from_raw_os_error(e.code().0));
             }
         };
         let find_stream_data = &*p_find_stream_data;
@@ -59,8 +59,8 @@ pub fn get_streams_list(path: &Path, include_main_stream: bool) -> io::Result<Ve
             // Cut at first \0
             let mut cut = stream_name.len();
             let bytes = stream_name.as_bytes();
-            for ix in 0..cut {
-                if bytes[ix] == 0 {
+            for (ix, &b) in bytes.iter().enumerate() {
+                if b == 0 {
                     cut = ix;
                     break;
                 }

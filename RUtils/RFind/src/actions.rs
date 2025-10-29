@@ -8,11 +8,13 @@
 // 2025-10-13   PV      ActionExec, ActionXargs
 // 2025-10-17   PV      ActionYaml
 // 2025-10-22   PV      to_yaml_single_quoted for Yaml action
-// 2025-20-22   PV      Clippy review
-// 2025-20-22   PV      PrintAction 'Dir' shows Windows files attributes, and more generally, links
-// 2025-20-23   PV      PrintAction 'Dir' processes links, when target of a link does not exist. Show attributes of directories
-// 2025-20-25   PV      ActionDir separated from ActionPrint
+// 2025-19-22   PV      Clippy review
+// 2025-19-22   PV      PrintAction 'Dir' shows Windows files attributes, and more generally, links
+// 2025-19-23   PV      PrintAction 'Dir' processes links, when target of a link does not exist. Show attributes of directories
+// 2025-19-25   PV      ActionDir separated from ActionPrint
+// 2027-10-29   PV      ActionXargs renamed ActionExec1 and entirely rewritten to limit command size at 7800 UTF-16 chars
 
+// Crate imports
 use super::*;
 
 // Standard library imports
@@ -21,12 +23,11 @@ use std::{fs, process::Command};
 // External library imports
 use chrono::{DateTime, Local, Utc};
 use num_format::{Locale, ToFormattedString};
+use trash::delete;
 
 // Retrieve files/dirs attributes on Windows
 #[cfg(target_os = "windows")]
 use std::os::windows::fs::MetadataExt;
-
-use trash::delete;
 
 // ===============================================================
 // Print action
@@ -334,7 +335,7 @@ impl Action for ActionExec {
         format!("Exec «{}» {}", self.ctr.command, self.ctr.args.join(" "))
     }
 
-    fn action(&mut self, lw: &mut LogWriter, path: &Path, _noaction: bool, _verbose: bool) {
+    fn action(&mut self, lw: &mut LogWriter, path: &Path, _noaction: bool, verbose: bool) {
         let pp = quoted_path(path);
         let mut args = self.ctr.args.clone();
         for refarg in args.iter_mut() {
@@ -343,10 +344,14 @@ impl Action for ActionExec {
             }
         }
 
-        logln(lw, format!("exec {} {}", quoted_string(&self.ctr.command), args.join(" ")).as_str());
+        if verbose {
+            logln(lw, format!("exec {} {}", quoted_string(&self.ctr.command), args.join(" ")).as_str());
+        }
         if !_noaction {
-            let _status = Command::new(self.ctr.command.as_str()).args(&args).spawn();
-            //println!("Status: {:#?}", _status);
+            let status = Command::new(self.ctr.command.as_str()).args(&args).spawn();
+            if let Err(e) = status {
+                logln(lw, format!("*** Error: {}", e).as_str());
+            }
         }
     }
 
@@ -354,49 +359,127 @@ impl Action for ActionExec {
 }
 
 // ===============================================================
-// Xargs action
+// Exec1 action (formerly Xargs)
 
 #[derive(Debug)]
-pub struct ActionXargs {
+pub struct ActionExec1 {
     ctr: CommandToRun,
-    paths: Vec<String>,
+    args: Vec<String>,
 }
 
-impl ActionXargs {
+impl ActionExec1 {
     pub fn new(ctr: &CommandToRun) -> Self {
-        ActionXargs {
+        ActionExec1 {
             ctr: (*ctr).clone(),
-            paths: Vec::new(),
+            args: Vec::new(),
         }
     }
 }
 
-impl Action for ActionXargs {
+impl Action for ActionExec1 {
     fn name(&self) -> String {
-        format!("Xargs «{}» {}", self.ctr.command, self.ctr.args.join(" "))
+        format!("Exec1 «{}» {}", self.ctr.command, self.ctr.args.join(" "))
     }
 
+    // arguments are already quoted if needed in paths
     fn action(&mut self, _lw: &mut LogWriter, path: &Path, _noaction: bool, _verbose: bool) {
-        self.paths.push(quoted_string(&path.display().to_string()));
+        self.args.push(quoted_string(&path.display().to_string()));
     }
 
-    fn conclusion(&mut self, lw: &mut LogWriter, _noaction: bool, _verbose: bool) {
-        let mut args = Vec::new();
-        for arg in self.ctr.args.iter() {
-            if arg.contains("{}") {
-                for pp in self.paths.iter() {
-                    args.push(arg.replace("{}", pp));
+    fn conclusion(&mut self, lw: &mut LogWriter, _noaction: bool, verbose: bool) {
+        // For now we hardcode command limit size at 7800 UTF-16 chars despite win32 CreateProcess 32K limit since cmd /c has a limit of 8000
+        // Maybe I'll add an option later to control this size since it's command-dependent
+        let chunks = make_chunks(&self.ctr, &self.args, 7500);
+        for chunk in chunks.iter() {
+            if verbose {
+                logln(lw, format!("exec1 {} {}", quoted_string(&chunk.command), chunk.args.join(" ")).as_str());
+            }
+            if !_noaction {
+                let status = Command::new(&chunk.command).args(chunk.args.as_slice()).spawn();
+                if let Err(e) = status {
+                    logln(lw, format!("*** Error: {}", e).as_str());
+                }
+            }
+        }
+    }
+}
+
+// Helpers for Exec1, breaking a parameters replacement into one or more RunCommands to ensure that an individual
+// command will not exceed len16_max UTF-16 characters
+// This code is not trivial...
+fn make_chunks(ctr: &CommandToRun, paths: &[String], len16_max: usize) -> Vec<CommandToRun> {
+    let mut res = Vec::<CommandToRun>::new();
+    let mut braces_args = Vec::<Vec<String>>::new();
+
+    fn transform_path(arg: &str, path: &str) -> String {
+        // For now, we just support {}, but in the future, we may support transformations between {}
+        arg.replace("{}", path)
+    }
+
+    // First pass, prepare transformations, calculate sizes of fixed args (without {})
+    let mut len16_fixed: usize = 0;
+    for arg in ctr.args.iter() {
+        if arg.contains('{') {
+            let ba = paths.iter().map(|pa| transform_path(arg, pa)).collect::<Vec<String>>();
+            braces_args.push(ba);
+        } else {
+            len16_fixed += 1 + arg.encode_utf16().count();
+        }
+    }
+
+    // Second pass, we build chunks
+    let mut startixpath = 0; // We will add paths starting from this index
+    let mut l16 = len16_fixed; // Cumulated length of command until previous ixpath
+
+    fn add_chunk(res: &mut Vec<CommandToRun>, ctr: &CommandToRun, startixpath: usize, ixpath: usize, braces_args: &[Vec<String>]) {
+        // Otherwise it's time to generate a new chunk
+        let mut ctrchunk = CommandToRun {
+            command: ctr.command.clone(),
+            args: Vec::<String>::new(),
+        };
+
+        let mut ixba = 0; // Follows progression in braces_args, firs arg with {} is at index 0
+        // We process args in sequence
+        for arg in ctr.args.iter() {
+            if arg.contains('{') {
+                let ba = &braces_args[ixba];
+                ixba += 1;
+                #[allow(clippy::needless_range_loop)]       // Clippy suggestion is actually less efficient:  for <item> in ba.iter().take(ixpath).skip(startixpath) {
+                for j in startixpath..ixpath {
+                    ctrchunk.args.push(ba[j].clone());
                 }
             } else {
-                args.push(arg.clone());
+                ctrchunk.args.push(arg.clone());
             }
         }
 
-        logln(lw, format!("xargs {} {}", quoted_string(&self.ctr.command), args.join(" ")).as_str());
-        if !_noaction {
-            let _status = Command::new(self.ctr.command.as_str()).args(&args).spawn();
-        }
+        res.push(ctrchunk);
     }
+
+    // We iterate over all paths since we need to add them all
+    for ixpath in 0..paths.len() {
+        // First calculate in l16next the size of processed arguments
+        let mut l16cur: usize = 0; // Length of processed paths for current ixpath
+        for ba in braces_args.iter() {
+            l16cur += 1 + ba[ixpath].encode_utf16().count();
+        }
+
+        // if it still fits, we continue (but we force the first one anyway)
+        if l16 + l16cur < len16_max || startixpath == ixpath {
+            l16 += l16cur;
+            continue;
+        }
+
+        add_chunk(&mut res, ctr, startixpath, ixpath, &braces_args);
+
+        startixpath = ixpath;
+        l16 = len16_fixed + l16cur;
+    }
+
+    // There is always a last chunk
+    add_chunk(&mut res, ctr, startixpath, paths.len(), &braces_args);
+
+    res
 }
 
 // ===============================================================

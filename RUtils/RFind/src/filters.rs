@@ -28,7 +28,7 @@ impl Filter for FilterEmpty {
             fs::metadata(path).unwrap().len() == 0
         } else if path.is_dir() {
             match fs::read_dir(path) {
-                Ok(mut p) => !p.next().is_some(),
+                Ok(mut p) => p.next().is_none(),
                 Err(_) => true,
             }
         } else if path.is_symlink() {
@@ -80,7 +80,9 @@ impl Filter for FilterADS {
 
             // Only included if there is at least one stream of 2KB or more
             for stream in streams.iter() {
-                if stream.size>=2048 {return true;}
+                if stream.size >= 2048 {
+                    return true;
+                }
             }
             false
         } else {
