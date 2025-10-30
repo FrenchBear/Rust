@@ -262,13 +262,17 @@ impl Options {
                             }
                             // For now we just support {}, but in the future, maybe variants (basename, to lowercase, ...)
                             // Will be updated when needed
-                            if arg.contains("{}") {        
+                            if arg.contains("{}") {
                                 placeholder_found = true;
                             }
                             args.push(arg.clone());
                         }
                         if !placeholder_found {
-                            args.push("{}".into());
+                            if arglc == "exec" {
+                                args.push("{}".into());
+                            } else {
+                                return Err("Command to execute is required for option execg".into());
+                            }
                         }
                         // Since we add a {} at the end if no {} has been provided, error message is not needed
                         // Command can be empty, meaning, execute the command -- why not?

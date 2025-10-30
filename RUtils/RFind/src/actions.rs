@@ -335,7 +335,7 @@ impl Action for ActionExec {
                 }
             }
             Err(e) => {
-                logln(lw, format!("*** Error: {}", e).as_str());
+                logln(lw, e.as_str());
             }
         }
     }

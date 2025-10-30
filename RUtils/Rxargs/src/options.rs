@@ -7,18 +7,11 @@
 use crate::*;
 
 // Standard library imports
-use std::error::Error;
+use std::{arch::x86_64::CpuidResult, error::Error};
 
 // External crates imports
 use getopt::Opt;
 use mymarkup::MyMarkup;
-
-
-#[derive(Debug, Default, Clone)]
-pub struct CommandToRun {
-    pub command: String,
-    pub args: Vec<String>,
-}
 
 // Dedicated struct to store command line arguments
 #[derive(Debug, Default)]
@@ -43,12 +36,12 @@ impl Options {
         let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄|⦃-??⦄] [-⦃t1⦄] [-⦃a⦄ ⟨file⟩] [-⦃v⦄] ⟨command⟩
 
 ⌊Options⌋:
-⦃?⦄|⦃-?⦄|⦃-h⦄  ¬Show this message
-⦃??⦄|⦃-??⦄   ¬Show advanced usage notes
-⦃-1⦄       ¬Group arguments and execute one instance per group of arguments length <= 7800 characters
+⦃?⦄|⦃-?⦄|⦃-h⦄   ¬Show this message
+⦃??⦄|⦃-??⦄    ¬Show advanced usage notes
+⦃-1⦄        ¬Group arguments and execute one instance per group of arguments length <= 7800 characters
 [-⦃a⦄ ⟨file⟩] ¬Read arguments from ⟨file⟩ instead of standard input
-⦃-v⦄       ¬Verbose output, print the command line on the standard error output before executing it and show final stats
-⟨command⟩ ¬Command to execute, {} is replaced by auto-quoted arguments (or added at the end without {})";
+⦃-v⦄        ¬Verbose output, print the command line on the standard error output before executing it and show final stats
+⟨command⟩   ¬Command to execute, {} is replaced by auto-quoted arguments (or added at the end without {})";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }
@@ -66,7 +59,7 @@ impl Options {
 
         let text = "⟪⌊Advanced usage notes⌋⟫
 
-(ToDo)";
+Command starts at the first argument that does not start with - so a command cannot start with -";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }
@@ -88,6 +81,7 @@ impl Options {
         }
 
         let mut options = Options { ..Default::default() };
+
         let mut opts = getopt::Parser::new(&args, "h?1va:");
 
         loop {
@@ -116,17 +110,27 @@ impl Options {
 
         // Process extra arguments, the command itself
         let mut placeholder_found = false;
+
+        let mut ctrargs: Vec<String> = Vec::new();
         for arg in args.split_off(opts.index()) {
             // For now we just support {}, but in the future, maybe variants (basename, to lowercase, ...)
             // Will be updated when needed
             if arg.contains("{}") {
                 placeholder_found = true;
             }
-            options.command.push(arg);
+            ctrargs.push(arg);
         }
         if !placeholder_found {
-            options.command.push("{}".into());
+            if !options.group_args {
+                ctrargs.push("{}".into());
+            } else {
+                return Err("With option -g, command to execute is required".into());
+            }
         }
+
+        options.ctr.command = ctrargs[0].clone();
+        options.ctr.args = ctrargs[1..].to_vec();
+
         Ok(options)
     }
 }

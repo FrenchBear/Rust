@@ -16,9 +16,11 @@ use textautodecode::{TextAutoDecode, TextFileEncoding};
 // -----------------------------------
 // Submodules
 
+mod command_to_run;
 mod options;
 pub mod tests;
 
+use command_to_run::*;
 use options::*;
 
 // -----------------------------------
@@ -107,7 +109,6 @@ fn process_file(path: &Path, options: &Options, b: &mut DataBag) -> io::Result<(
     Ok(())
 }
 
-
 fn process_line(line: &str, options: &Options, b: &mut DataBag) {
     // By convention, we skip empty lines
     if line.is_empty() {
@@ -121,7 +122,16 @@ fn process_line(line: &str, options: &Options, b: &mut DataBag) {
         return;
     }
 
-    let pp = quoted_path(path);
-
-
+    let ql = quoted_string(line);
+    let pp = Path::new(&ql);
+    match options.ctr.exec1(pp, false) {
+        Ok(s) => {
+            if options.verbose {
+                println!("{}", s);
+            }
+        }
+        Err(e) => {
+            println!("{}", e);
+        }
+    }
 }
