@@ -1,22 +1,16 @@
-// rwc: Rust version of wc
+// rxargs: Rust version of wc
 //
-// 2025-04-21	PV      First version
-// 2025-04-22	PV      1.1.0 Always show bytes; option -a+|- to control autorecurse
-// 2025-05-02   PV      1.2.0 Use crate textautodecode instead of decode_encoding module. Also use file length instead of string bytes count to include BOM size
-// 2025-05-04   PV      1.2.1 Use MyMarkup crate to format usage and extended help
-// 2025-05-05   PV      1.2.2 Linux compatibility; Ignore files larger than 1GB
-// 2025-07-10   PV      1.2.3 Get information from Cargo.toml, and use build script build.rs
+// 2025-10-30	PV      First version
 
-//#![allow(unused)]
+#![allow(unused)]
 
 // Standard library imports
-use std::io;
-use std::path::Path;
+use std::io::BufRead;
 use std::process;
 use std::time::Instant;
+use std::{io, path::Path};
 
 // External crates imports
-use myglob::{MyGlobMatch, MyGlobSearch};
 use textautodecode::{TextAutoDecode, TextFileEncoding};
 
 // -----------------------------------
@@ -39,11 +33,8 @@ const APP_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 
 #[derive(Debug, Default)]
 struct DataBag {
-    files_count: usize,
-    lines_count: usize,
-    words_count: usize,
-    chars_count: usize,
-    bytes_count: usize,
+    line_count: usize,
+    lines: Vec<String>,
 }
 
 fn main() {
@@ -61,114 +52,76 @@ fn main() {
 
     let mut b = DataBag { ..Default::default() };
 
-    for source in options.sources.iter() {
-        let resgs = MyGlobSearch::new(source).autorecurse(options.autorecurse).compile();
-        match resgs {
-            Ok(gs) => {
-                for ma in gs.explore_iter() {
-                    match ma {
-                        MyGlobMatch::File(pb) => {
-                            process_file(&mut b, &pb, &options);
-                        }
+    // If option -1, just accumulate args, otherwise prepare and run command
+    // For now, just accumulate args with option -1 ang execute at the end, but maybe later when option -s max_chars is implemented,
+    // execute command as soon as args buffer is full without waiting for the end
 
-                        // We ignore matching directories in rgrep, we only look for files
-                        MyGlobMatch::Dir(_) => {}
+    if let Some(ref f) = options.input_file {
+        process_file(Path::new(f), &options, &mut b);
+    } else {
+        // If no source has been provided, use stdin
 
-                        MyGlobMatch::Error(err) => {
-                            if options.verbose {
-                                eprintln!("{APP_NAME}: error {}", err);
-                            }
-                        }
-                    }
-                }
-            }
-
-            Err(e) => {
-                eprintln!("{APP_NAME}: Error building MyGlob: {:?}", e);
-            }
-        }
-    }
-
-    // If no source has been provided, use stdin
-    if options.sources.is_empty() {
         if options.verbose {
             println!("Reading from stdin");
         }
-        let s = io::read_to_string(io::stdin()).unwrap();
-        process_text(&mut b, s.as_str(), "(stdin)", &options, s.len());
+        loop {
+            let line = io::stdin().lines().next();
+            if line.is_none() {
+                break;
+            }
+            match line.unwrap() {
+                Ok(s) => {
+                    process_line(&s, &options, &mut b);
+                }
+                Err(e) => {
+                    if options.verbose {
+                        eprintln!("*** Error reading from stdin: {}", e);
+                    }
+                }
+            }
+        }
     }
+
     let duration = start.elapsed();
 
-    if b.files_count > 1 || options.show_only_total {
-        let mut name = String::from("total");
-        if b.files_count > 1 {
-            name += format!(" ({} files)", b.files_count).as_str();
-        }
-        print_line(b.lines_count, b.words_count, b.chars_count, b.bytes_count, name.as_str());
-    }
-
     if options.verbose {
-        println!("{} files(s) searched in {:.3}s", b.files_count, duration.as_secs_f64());
+        println!("{} lines(s) processed in {:.3}s", b.line_count, duration.as_secs_f64());
     }
 }
 
-fn print_line(lines_count: usize, words_count: usize, chars_count: usize, bytes_count: usize, filename: &str) {
-    println!("{:7} {:7} {:8} {:8}  {}", lines_count, words_count, chars_count, bytes_count, filename);
+fn process_file(path: &Path, options: &Options, b: &mut DataBag) -> io::Result<()> {
+    if options.verbose {
+        println!("Reading arguments from file {}", path.display());
+    }
+
+    // Delegate text file decoding to TextAutoDecode for simplicity
+    let tad = TextAutoDecode::read_text_file(path)?;
+    if tad.encoding == TextFileEncoding::NotText {
+        return Err(io::Error::other(format!("{APP_NAME}: {} is not a text file", path.display())));
+    }
+
+    for line in tad.text.unwrap().lines() {
+        process_line(line, options, b);
+    }
+
+    Ok(())
 }
 
-/// First step processing a file, read text content from path and call process_text.
-fn process_file(b: &mut DataBag, path: &Path, options: &Options) {
-    let res = TextAutoDecode::read_text_file(path);
-    match res {
-        Ok(tad) => {
-            if tad.encoding == TextFileEncoding::NotText {
-                // Non-text files are ignored
-                if options.verbose {
-                    println!("{APP_NAME}: ignored non-text file {}", path.display());
-                }
-            } else {
-                let filesize = path.metadata().unwrap().len();
-                // Anything above 1GB is ignored
-                if filesize >= 1024u64 * 1024u64 * 1024u64 {    
-                    if options.verbose {
-                        println!("{APP_NAME}: ignored very large file {}, size: {}", path.display(), filesize);
-                    }
-                } else {
-                    let filename = path.display().to_string();
-                    process_text(b, tad.text.unwrap().as_str(), filename.as_str(), options, filesize as usize);
-                }
-            }
-        }
-        Err(e) => {
-            eprintln!("*** Error reading file {}: {}", path.display(), e);
-        }
-    }
-}
 
-/// Core rwc process, compute counts for a string
-fn process_text(b: &mut DataBag, txt: &str, filename: &str, options: &Options, filesize: usize) {
-    let mut lines = 0;
-    let mut words = 0;
-    let chars = txt.chars().count();
-
-    for line in txt.lines() {
-        lines += 1;
-        // Don't want to use Unicode-aware split_whitespace() because of too many fancy spaces
-        // split_ascii_whitespace() is Ok, it includes space, tab, LF, CR and FF, but just space and tab are enough
-        for word in line.trim().split([' ', '\t']) {
-            if !word.is_empty() {
-                words += 1;
-            }
-        }
+fn process_line(line: &str, options: &Options, b: &mut DataBag) {
+    // By convention, we skip empty lines
+    if line.is_empty() {
+        return;
     }
 
-    if !options.show_only_total {
-        print_line(lines, words, chars, filesize, filename);
+    b.line_count += 1;
+
+    if options.group_args {
+        b.lines.push(line.into());
+        return;
     }
 
-    b.files_count += 1;
-    b.lines_count += lines;
-    b.words_count += words;
-    b.chars_count += chars;
-    b.bytes_count += filesize;
+    let pp = quoted_path(path);
+
+
 }

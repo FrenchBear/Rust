@@ -1,2 +1,2 @@
 cargo build --release
-COPY /Y target\release\rwc.exe C:\Utils
+COPY /Y target\release\rxargs.exe C:\Utils

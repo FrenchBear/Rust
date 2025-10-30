@@ -23,14 +23,15 @@
 // 2025-10-13 	PV 		2.0.1 Option -xargs cmd ;
 // 2025-10-17   PV      2.1.0 Options -yaml and -cs
 // 2025-10-22   PV      2.1.1 to_yaml_single_quoted for ActionYaml to avoid problems with filenames containing special yaml values/characters
-// 2025-19-22   PV      Clippy review
-// 2025-19-22   PV      2.2.0 Option -dir show Windows files attributes
-// 2025-19-22   PV      2.3.0 Support of links (with MyGlob 2.0)
-// 2025-19-23   PV      2.3.1 Handle correctly links to non-existent targets; no_glob_filtering option -ngf
-// 2025-19-24   PV      2.3.2 Fixed MyGlob bug C:\**\thumbs.db
-// 2025-19-25   PV      2.3.3 ActionDir separated from ActionPrint
-// 2025-19-27   PV      2.4.0 Generic filters
-// 2025-19-27   PV      2.4.1 Added {} final for -exec/-exec1 if there is no {} in command
+// 2025-10-22   PV      2.1.2 Clippy review
+// 2025-10-22   PV      2.2.0 Option -dir show Windows files attributes
+// 2025-10-22   PV      2.3.0 Support of links (with MyGlob 2.0)
+// 2025-10-23   PV      2.3.1 Handle correctly links to non-existent targets; no_glob_filtering option -ngf
+// 2025-10-24   PV      2.3.2 Fixed MyGlob bug C:\**\thumbs.db
+// 2025-10-25   PV      2.3.3 ActionDir separated from ActionPrint
+// 2025-10-27   PV      2.4.0 Generic filters
+// 2025-10-27   PV      2.4.1 Added {} final for -exec/-execg if there is no {} in command
+// 2025-10-30   PV      2.5.0 Refactored CommandToRun and related methods to a separate source file for sharing
 
 // Notes:
 // - Finding denormalized paths is handled by rcheckfiles and checknnn, no need for a third version :-)
@@ -38,7 +39,6 @@
 // ToDo:
 // - Accent insensitive search (actually maybe not useful, but everything does it)
 // - Option -rename with a simplified sed syntax
-// - Separate ActionDir and ActionPrint
 
 //#![allow(unused)]
 
@@ -61,8 +61,15 @@ mod filters;
 mod actions;
 mod options;
 mod fa_streams;
+mod command_to_run;
+
+mod tests;
+
+// -----------------------------------
+// Modules
 
 use options::*;
+use command_to_run::*;
 
 // -----------------------------------
 // Global constants
@@ -217,8 +224,8 @@ fn main() {
     for ctr in options.exec_commands.iter() {
         actions.push(Box::new(actions::ActionExec::new(ctr)));
     }
-    for ctr in options.exec1_commands.iter() {
-        actions.push(Box::new(actions::ActionExec1::new(ctr)));
+    for ctr in options.execg_commands.iter() {
+        actions.push(Box::new(actions::ActionExecg::new(ctr)));
     }
 
     if options.verbose {

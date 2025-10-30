@@ -28,6 +28,8 @@ fn main() {
     generate_variable(packages, "chrono");
     generate_variable(packages, "num-format");
 
+    println!("cargo:CARGO_BIN_EXE_rfind=target/debug/rfind");
+
     // Tell cargo to re-run the build script if Cargo.lock changes.
     println!("cargo:rerun-if-changed=Cargo.lock");
 }

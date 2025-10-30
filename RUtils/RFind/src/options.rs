@@ -14,8 +14,8 @@
 // 2025-10-22   PV      links options, reorg usage message
 // 2025-10-23   PV      no_glob_filtering
 // 2025-10-23   PV      no_glob_filtering
-// 2027-10-29   PV      -xargs replaced by -exec1
-// 2025-19-27   PV      Added {} final for -exec/-exec1 if there is no {} in command
+// 2027-10-29   PV      -xargs replaced by -execg
+// 2025-19-27   PV      Added {} final for -exec/-execg if there is no {} in command
 
 // Application imports
 use crate::*;
@@ -28,12 +28,6 @@ use std::fmt::Debug;
 // External crates imports
 use mymarkup::MyMarkup;
 
-#[derive(Debug, Default, Clone)]
-pub struct CommandToRun {
-    pub command: String,
-    pub args: Vec<String>,
-}
-
 // Dedicated struct to store command line arguments
 #[derive(Debug, Default)]
 pub struct Options {
@@ -41,7 +35,7 @@ pub struct Options {
     pub actions_names: HashSet<&'static str>,
     pub filters_names: HashSet<&'static str>,
     pub exec_commands: Vec<CommandToRun>,
-    pub exec1_commands: Vec<CommandToRun>,
+    pub execg_commands: Vec<CommandToRun>,
     pub search_files: bool,
     pub search_dirs: bool,
     pub names: Vec<String>,
@@ -96,7 +90,7 @@ impl Options {
 ⦃-delete⦄          ¬Delete matching files
 ⦃-rmdir⦄           ¬Delete matching directories, whether empty or not
 ⦃-exec⦄ ⟨cmd⟩ [⦃;⦄]    ¬Execute command ⟨cmd⟩ for each path found, {} replaced by the path or added at the end. A single semicolon marks the end of the command
-⦃-exec1⦄ ⟨cmd⟩ [⦃;⦄]   ¬Execute command ⟨cmd⟩ at the end, {} replaced by all the paths found or added at the end. A single semicolon marks the end of the command
+⦃-execg⦄ ⟨cmd⟩ [⦃;⦄]   ¬Execute grouped command ⟨cmd⟩ at the end, {} replaced by all the paths found or added at the end. A single semicolon marks the end of the command
 ⦃-yaml⦄            ¬Generate old/new yaml data for matches, to be edited and used by rcheckfiles -F
 
 ⟨source⟩           ¬File or directory to search (glob pattern)";
@@ -258,7 +252,7 @@ impl Options {
                         options.actions_names.insert("rmdir");
                     }
 
-                    "exec" | "exec1" => {
+                    "exec" | "execg" => {
                         let mut args: Vec<String> = Vec::new();
                         let mut placeholder_found = false;
                         // while let Some(arg) = args_iter.next() {     // Clippy suggested to replace this
@@ -290,7 +284,7 @@ impl Options {
                         if arglc == "exec" {
                             options.exec_commands.push(ctr);
                         } else {
-                            options.exec1_commands.push(ctr);
+                            options.execg_commands.push(ctr);
                         }
                     }
 
@@ -324,7 +318,7 @@ impl Options {
         }
 
         // If no action is specified, then print action is default
-        if options.actions_names.is_empty() && options.exec_commands.is_empty() && options.exec1_commands.is_empty() {
+        if options.actions_names.is_empty() && options.exec_commands.is_empty() && options.execg_commands.is_empty() {
             options.actions_names.insert("print");
         }
 

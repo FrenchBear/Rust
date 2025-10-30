@@ -1,9 +1,7 @@
-// rwc - Module options
+// rxargs - Module options
 // Options processing
 //
-// 2025-04-21   PV      First version
-// 2025-05-04   PV      Use MyMarkup crate to format usage and extended help
-// 2025-07-10   PV      Use APP_DESCRIPTION variable
+// 2025-10-30   PV      First version
 
 // Application imports
 use crate::*;
@@ -15,12 +13,19 @@ use std::error::Error;
 use getopt::Opt;
 use mymarkup::MyMarkup;
 
+
+#[derive(Debug, Default, Clone)]
+pub struct CommandToRun {
+    pub command: String,
+    pub args: Vec<String>,
+}
+
 // Dedicated struct to store command line arguments
 #[derive(Debug, Default)]
 pub struct Options {
-    pub sources: Vec<String>,
-    pub autorecurse: bool,
-    pub show_only_total: bool,
+    pub ctr: CommandToRun,
+    pub input_file: Option<String>,
+    pub group_args: bool,
     pub verbose: bool,
 }
 
@@ -35,15 +40,15 @@ impl Options {
     fn usage() {
         Options::header();
         println!();
-        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄|⦃-??⦄] [⦃-a+⦄|⦃-a-⦄] [-⦃t⦄] [-⦃v⦄] [⟨source⟩...]
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄|⦃-??⦄] [-⦃t1⦄] [-⦃a⦄ ⟨file⟩] [-⦃v⦄] ⟨command⟩
 
 ⌊Options⌋:
 ⦃?⦄|⦃-?⦄|⦃-h⦄  ¬Show this message
 ⦃??⦄|⦃-??⦄   ¬Show advanced usage notes
-⦃-a+|-a-⦄  ¬Enable (default) or disable glob autorecurse mode (see extended usage)
-⦃-t⦄       ¬Only show total line
-⦃-v⦄       ¬Verbose output
-⟨source⟩   ¬File or directory to search, glob syntax supported (see extended usage). Without source, search stdin.";
+⦃-1⦄       ¬Group arguments and execute one instance per group of arguments length <= 7800 characters
+[-⦃a⦄ ⟨file⟩] ¬Read arguments from ⟨file⟩ instead of standard input
+⦃-v⦄       ¬Verbose output, print the command line on the standard error output before executing it and show final stats
+⟨command⟩ ¬Command to execute, {} is replaced by auto-quoted arguments (or added at the end without {})";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }
@@ -54,7 +59,6 @@ impl Options {
         println!();
 
         MyMarkup::render_markup("⌊Dependencies⌋:");
-        println!("- MyGlob: {}", MyGlobSearch::version());
         println!("- MyMarkup: {}", MyMarkup::version());
         println!("- TextAutoDecode: {}", TextAutoDecode::version());
         println!("- getopt: {}", env!("DEP_GETOPT_VERSION"));
@@ -62,15 +66,9 @@ impl Options {
 
         let text = "⟪⌊Advanced usage notes⌋⟫
 
-The four numerical fields report lines, words, characters and bytes counts. For UTF-8 or UTF-16 encoded files, a character is a Unicode codepoint, so bytes and characters counts may be different. Characters count neither include line terminators, nor BOM if present. Bytes count is the total file size as reported by the operating system, including line terminators and BOM if present.
-
-Words are series of character(s) separated by space(s), spaces are either ASCII 9 (tab) or 32 (regular space).  Unicode \"fancy spaces\" are not considered.
-
-Lines end with ⟦\\r⟧, ⟦\\n⟧ or ⟦\\r\\n⟧. If the last line of the file ends with such termination character, an extra empty line is counted.";
+(ToDo)";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
-        println!();
-        MyMarkup::render_markup(MyGlobSearch::glob_syntax());
     }
 
     /// Build a new struct Options analyzing command line parameters.<br/>
@@ -89,11 +87,8 @@ Lines end with ⟦\\r⟧, ⟦\\n⟧ or ⟦\\r\\n⟧. If the last line of the fil
             }
         }
 
-        let mut options = Options {
-            autorecurse: true,
-            ..Default::default()
-        };
-        let mut opts = getopt::Parser::new(&args, "h?tva:");
+        let mut options = Options { ..Default::default() };
+        let mut opts = getopt::Parser::new(&args, "h?1va:");
 
         loop {
             match opts.next().transpose()? {
@@ -104,15 +99,11 @@ Lines end with ⟦\\r⟧, ⟦\\n⟧ or ⟦\\r\\n⟧. If the last line of the fil
                         return Err("".into());
                     }
 
-                    Opt('a', attr) => match attr.unwrap().as_str() {
-                        "+" => options.autorecurse = true,
-                        "-" => options.autorecurse = false,
-                        _ => return Err("Only -a+ and -a- (enable/disable autorecurse) are supported".into()),
-                    },
-
-                    Opt('t', None) => {
-                        options.show_only_total = true;
+                    Opt('1', None) => {
+                        options.group_args = true;
                     }
+
+                    Opt('a', attr) => options.input_file = attr,
 
                     Opt('v', None) => {
                         options.verbose = true;
@@ -123,15 +114,19 @@ Lines end with ⟦\\r⟧, ⟦\\n⟧ or ⟦\\r\\n⟧. If the last line of the fil
             }
         }
 
-        // Check for extra argument
+        // Process extra arguments, the command itself
+        let mut placeholder_found = false;
         for arg in args.split_off(opts.index()) {
-            if arg.starts_with("-") {
-                return Err(format!("Invalid/unsupported option {}", arg).into());
+            // For now we just support {}, but in the future, maybe variants (basename, to lowercase, ...)
+            // Will be updated when needed
+            if arg.contains("{}") {
+                placeholder_found = true;
             }
-
-            options.sources.push(arg);
+            options.command.push(arg);
         }
-
+        if !placeholder_found {
+            options.command.push("{}".into());
+        }
         Ok(options)
     }
 }
