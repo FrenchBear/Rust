@@ -30,6 +30,7 @@
 // 2025-19-24   PV      2.3.2 Fixed MyGlob bug C:\**\thumbs.db
 // 2025-19-25   PV      2.3.3 ActionDir separated from ActionPrint
 // 2025-19-27   PV      2.4.0 Generic filters
+// 2025-19-27   PV      2.4.1 Added {} final for -exec/-exec1 if there is no {} in command
 
 // Notes:
 // - Finding denormalized paths is handled by rcheckfiles and checknnn, no need for a third version :-)

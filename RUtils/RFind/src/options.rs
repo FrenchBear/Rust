@@ -15,6 +15,7 @@
 // 2025-10-23   PV      no_glob_filtering
 // 2025-10-23   PV      no_glob_filtering
 // 2027-10-29   PV      -xargs replaced by -exec1
+// 2025-19-27   PV      Added {} final for -exec/-exec1 if there is no {} in command
 
 // Application imports
 use crate::*;
@@ -94,8 +95,8 @@ impl Options {
 ⦃-nop[rint]⦄       ¬Do nothing, useful to replace default action ⦃-print⦄ to count files and folders with option ⦃-v⦄
 ⦃-delete⦄          ¬Delete matching files
 ⦃-rmdir⦄           ¬Delete matching directories, whether empty or not
-⦃-exec⦄ ⟨cmd⟩ [⦃;⦄]    ¬Execute command ⟨cmd⟩ for each path found, {} replaced by the path. A single semicolon marks the end of the command
-⦃-exec1⦄ ⟨cmd⟩ [⦃;⦄]   ¬Execute command ⟨cmd⟩ at the end, {} replaced by all the paths found. A single semicolon marks the end of the command
+⦃-exec⦄ ⟨cmd⟩ [⦃;⦄]    ¬Execute command ⟨cmd⟩ for each path found, {} replaced by the path or added at the end. A single semicolon marks the end of the command
+⦃-exec1⦄ ⟨cmd⟩ [⦃;⦄]   ¬Execute command ⟨cmd⟩ at the end, {} replaced by all the paths found or added at the end. A single semicolon marks the end of the command
 ⦃-yaml⦄            ¬Generate old/new yaml data for matches, to be edited and used by rcheckfiles -F
 
 ⟨source⟩           ¬File or directory to search (glob pattern)";
@@ -259,16 +260,27 @@ impl Options {
 
                     "exec" | "exec1" => {
                         let mut args: Vec<String> = Vec::new();
+                        let mut placeholder_found = false;
                         // while let Some(arg) = args_iter.next() {     // Clippy suggested to replace this
                         for arg in args_iter.by_ref() {
                             if arg == ";" {
                                 break;
                             }
+                            // For now we just support {}, but in the future, maybe variants (basename, to lowercase, ...)
+                            // Will be updated when needed
+                            if arg.contains("{}") {        
+                                placeholder_found = true;
+                            }
                             args.push(arg.clone());
                         }
-                        if args.is_empty() {
-                            return Err(format!("Option -{arglc} requires an argument").into());
+                        if !placeholder_found {
+                            args.push("{}".into());
                         }
+                        // Since we add a {} at the end if no {} has been provided, error message is not needed
+                        // Command can be empty, meaning, execute the command -- why not?
+                        // if args.is_empty() {
+                        //     return Err(format!("Option -{arglc} requires an argument").into());
+                        // }
 
                         // For now, simplified analysis
                         let ctr = CommandToRun {
