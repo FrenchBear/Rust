@@ -57,12 +57,10 @@ fn main() {
     // If option -1, just accumulate args, otherwise prepare and run command
     // For now, just accumulate args with option -1 ang execute at the end, but maybe later when option -s max_chars is implemented,
     // execute command as soon as args buffer is full without waiting for the end
-
     if let Some(ref f) = options.input_file {
         process_file(Path::new(f), &options, &mut b);
     } else {
         // If no source has been provided, use stdin
-
         if options.verbose {
             println!("Reading from stdin");
         }
@@ -79,6 +77,23 @@ fn main() {
                     if options.verbose {
                         eprintln!("*** Error reading from stdin: {}", e);
                     }
+                }
+            }
+        }
+    }
+
+    // For grouped execution, we process all lines at the end for now
+    if options.group_args {
+        let chunks = options.ctr.make_chunks(&b.lines, 7500);
+        for chunk in chunks.iter() {
+            match chunk.exec(false) {
+                Ok(s) => {
+                    if options.verbose {
+                        println!("{}", s);
+                    }
+                }
+                Err(e) => {
+                    println!("{}", e);
                 }
             }
         }

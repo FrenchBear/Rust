@@ -33,7 +33,7 @@ impl Options {
     fn usage() {
         Options::header();
         println!();
-        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄|⦃-??⦄] [-⦃t1⦄] [-⦃a⦄ ⟨file⟩] [-⦃v⦄] ⟨command⟩
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄|⦃-??⦄] [-⦃1⦄] [-⦃a⦄ ⟨file⟩] [-⦃v⦄] ⟨command⟩
 
 ⌊Options⌋:
 ⦃?⦄|⦃-?⦄|⦃-h⦄   ¬Show this message
@@ -120,12 +120,12 @@ Command starts at the first argument that does not start with - so a command can
             }
             ctrargs.push(arg);
         }
+
         if !placeholder_found {
-            if !options.group_args {
-                ctrargs.push("{}".into());
-            } else {
+            if options.group_args && ctrargs.is_empty() {
                 return Err("With option -g, command to execute is required".into());
             }
+            ctrargs.push("{}".into());
         }
 
         options.ctr.command = ctrargs[0].clone();

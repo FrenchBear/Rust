@@ -376,28 +376,16 @@ impl Action for ActionExecg {
         // Maybe I'll add an option later to control this size since it's command-dependent
         let chunks = self.ctr.make_chunks(&self.args, 7500);
         for chunk in chunks.iter() {
-        match chunk.exec(noaction) {
-            Ok(s) => {
-                if verbose {
-                    logln(lw, s.as_str());
+            match chunk.exec(noaction) {
+                Ok(s) => {
+                    if verbose {
+                        logln(lw, s.as_str());
+                    }
+                }
+                Err(e) => {
+                    logln(lw, format!("*** Error: {}", e).as_str());
                 }
             }
-            Err(e) => {
-                logln(lw, format!("*** Error: {}", e).as_str());
-            }
-        }
-
-
-
-            // if verbose {
-            //     logln(lw, format!("execg {} {}", quoted_string(&chunk.command), chunk.args.join(" ")).as_str());
-            // }
-            // if !noaction {
-            //     let status = Command::new(&chunk.command).args(chunk.args.as_slice()).spawn();
-            //     if let Err(e) = status {
-            //         logln(lw, format!("*** Error: {}", e).as_str());
-            //     }
-            // }
         }
     }
 }
