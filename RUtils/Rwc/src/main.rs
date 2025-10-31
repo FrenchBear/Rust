@@ -6,6 +6,7 @@
 // 2025-05-04   PV      1.2.1 Use MyMarkup crate to format usage and extended help
 // 2025-05-05   PV      1.2.2 Linux compatibility; Ignore files larger than 1GB
 // 2025-07-10   PV      1.2.3 Get information from Cargo.toml, and use build script build.rs
+// 2025-10-31   PV      1.2.4 fn s(n)
 
 //#![allow(unused)]
 
@@ -108,8 +109,12 @@ fn main() {
     }
 
     if options.verbose {
-        println!("{} files(s) searched in {:.3}s", b.files_count, duration.as_secs_f64());
+        println!("{} file{} searched in {:.3}s", b.files_count, s(b.files_count), duration.as_secs_f64());
     }
+}
+
+fn s(n: usize) -> &'static str {
+    if n > 1 { "s" } else { "" }
 }
 
 fn print_line(lines_count: usize, words_count: usize, chars_count: usize, bytes_count: usize, filename: &str) {
@@ -129,7 +134,7 @@ fn process_file(b: &mut DataBag, path: &Path, options: &Options) {
             } else {
                 let filesize = path.metadata().unwrap().len();
                 // Anything above 1GB is ignored
-                if filesize >= 1024u64 * 1024u64 * 1024u64 {    
+                if filesize >= 1024u64 * 1024u64 * 1024u64 {
                     if options.verbose {
                         println!("{APP_NAME}: ignored very large file {}, size: {}", path.display(), filesize);
                     }

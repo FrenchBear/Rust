@@ -372,7 +372,7 @@ fn main() {
     }
 }
 
-// Helper
+// Helper for plurals
 fn s(n: u32) -> &'static str {
     if n > 1 { "s" } else { "" }
 }

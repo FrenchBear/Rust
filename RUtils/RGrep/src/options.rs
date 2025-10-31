@@ -5,6 +5,7 @@
 // 2025-07-10   PV      Use APP_DESCRIPTION variable
 // 2025-09-15   PV      Option -d for debugging
 // 2025-09-22   PV      Option -v -> -t to show execution time. Option -v to invert the sense of matching, to select non-matching lines
+// 2025-10-31   PV      Option -n to force hide path
 
 // Application imports
 use crate::*;
@@ -21,6 +22,7 @@ pub struct Options {
     pub whole_word: bool,
     pub fixed_string: bool,
     pub autorecurse: bool,
+    pub hide_path: bool, // Force ignore show_path
     pub show_path: bool, // Set to true by main if there is more than 1 file to search from
     pub out_level: u8, // 0: normal output, 1: (-l) matching filenames only, 2: (-c) filenames and matching lines count, 3: (-c -l) only matching filenames and matching lines count
     pub verbose: bool,
@@ -30,16 +32,13 @@ pub struct Options {
 
 impl Options {
     fn header() {
-        println!(
-            "{APP_NAME} {APP_VERSION}\n\
-            {APP_DESCRIPTION}"
-        );
+        println!("{APP_NAME} {APP_VERSION}\n{APP_DESCRIPTION}");
     }
 
     fn usage() {
         Options::header();
         println!();
-        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄|⦃-??⦄] [⦃-i⦄] [⦃-w⦄] [⦃-F⦄] [⦃-v⦄] [⦃-t⦄] [⦃-c⦄] [⦃-l⦄] ⟨pattern⟩ [⟨source⟩...]
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄|⦃-??⦄] [⦃-i⦄] [⦃-w⦄] [⦃-F⦄] [⦃-v⦄] [⦃-t⦄] [⦃-n⦄] [⦃-c⦄] [⦃-l⦄] ⟨pattern⟩ [⟨source⟩...]
 
 ⌊Options⌋:
 ⦃?⦄|⦃-?⦄|⦃-h⦄  ¬Show this message
@@ -49,6 +48,7 @@ impl Options {
 ⦃-F⦄       ¬Fixed string search (no regexp interpretation), also for patterns starting with - ? or help
 ⦃-v⦄       ¬Invert the sense of matching, to select non-matching lines
 ⦃-t⦄       ¬Show execution time
+⦃-n⦄       ¬No path, hide path normally shown automatically when there is more than one file to search
 ⦃-c⦄       ¬Suppress normal output, show count of matching lines for each file
 ⦃-l⦄       ¬Suppress normal output, show matching file names only
 ⟨pattern⟩  ¬Regular expression to search
@@ -108,7 +108,7 @@ To search for the string help, use option ⦃-F⦄: {APP_NAME} ⦃-F⦄ help ⟦
             autorecurse: true,
             ..Default::default()
         };
-        let mut opts = getopt::Parser::new(&args, "h?12iwFra:vcld");
+        let mut opts = getopt::Parser::new(&args, "h?12iwFra:vcldn");
 
         loop {
             match opts.next().transpose()? {
@@ -118,7 +118,6 @@ To search for the string help, use option ⦃-F⦄: {APP_NAME} ⦃-F⦄ help ⟦
                         Self::usage();
                         return Err("".into());
                     }
-
                     Opt('i', None) => {
                         options.ignore_case = true;
                     }
@@ -140,16 +139,20 @@ To search for the string help, use option ⦃-F⦄: {APP_NAME} ⦃-F⦄ help ⟦
                         _ => return Err("Only -a+ and -a- (enable/disable autorecurse) are supported".into()),
                     },
 
-                    Opt('l', None) => {
-                        options.out_level |= 1;
+                    Opt('t', None) => {
+                        options.verbose = true;
+                    }
+
+                    Opt('n', None) => {
+                        options.hide_path = true;
                     }
 
                     Opt('c', None) => {
                         options.out_level |= 2;
                     }
 
-                    Opt('t', None) => {
-                        options.verbose = true;
+                    Opt('l', None) => {
+                        options.out_level |= 1;
                     }
 
                     Opt('v', None) => {

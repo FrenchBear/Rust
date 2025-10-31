@@ -72,7 +72,7 @@ pub fn get_file_owner(path: &Path) -> io::Result<(String, Option<String>)> {
     let _guard = SecurityDescriptorGuard(p_security_descriptor);
 
     if psid_owner.is_invalid() {
-        return Err(io::Error::new(io::ErrorKind::Other, "GetNamedSecurityInfoW returned an invalid SID"));
+        return Err(io::Error::other("GetNamedSecurityInfoW returned an invalid SID"));
     }
 
     // 3. Call LookupAccountSidW to resolve the SID to a name.

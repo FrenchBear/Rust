@@ -16,6 +16,7 @@
 // 2025-09-15   PV      1.7.2   Option -d for debugging, not used for now (I wanted to add it to rfind, not rgrep!!!)
 // 2025-09-21   PV      1.8.0   Option -v (verbose) renamed -t (show execution time); Option -v to invert the sense of matching, to select non-matching lines
 // 2025-10-01   PV      1.8.1   Use MyGlob 1.10 supporting !SOURCES macro
+// 2025-10-31   PV      1.8.2   Option -n to force hide path
 
 //#![allow(unused)]
 
@@ -203,69 +204,47 @@ fn process_text(re: &Regex, txt: &str, filename: &str, options: &Options) {
         }
         matchlinecount = non_matching_lines.len();
 
-        if options.out_level == 1 { // -l
+        if options.out_level == 1 {
+            // -l
             if matchlinecount > 0 {
                 println!("{}", filename);
             }
             return;
         }
 
-        if options.out_level == 0 { // normal
+        if options.out_level == 0 {
             for line in non_matching_lines {
-                if options.show_path {
-                    // if is_tty {
-                        print!("{}: ", filename.bright_black());
-                    // } else {
-                    //     print!("{}: ", filename);
-                    // }
+                if options.show_path && !options.hide_path {
+                    print!("{}: ", filename.bright_black());
                 }
                 println!("{}", line);
             }
         }
     } else {
-        // // Note that this test is actually useless since colored doesn't emit ANSI sequences when stdout is not a tty
-        // if is_tty {
-            for gi in grepiterator::GrepLineMatches::new(txt, re) {
-                matchlinecount += 1;
+        for gi in grepiterator::GrepLineMatches::new(txt, re) {
+            matchlinecount += 1;
 
-                if options.out_level == 1 {
-                    println!("{}", filename);
-                    return;
-                }
-
-                if options.out_level == 0 {
-                    if options.show_path {
-                        print!("{}: ", filename.bright_black());
-                    }
-
-                    let mut p: usize = 0;
-                    for ma in gi.ranges {
-                        if ma.start < gi.line.len() {
-                            let e = ma.end;
-                            print!("{}{}", &gi.line[p..ma.start], &gi.line[ma].red().bold());
-                            p = e;
-                        }
-                    }
-                    println!("{}", &gi.line[p..]);
-                }
+            if options.out_level == 1 {
+                println!("{}", filename);
+                return;
             }
-        // } else {
-        //     for gi in grepiterator::GrepLineMatches::new(txt, re) {
-        //         matchlinecount += 1;
 
-        //         if options.out_level == 1 {
-        //             println!("{}", filename);
-        //             return;
-        //         }
+            if options.out_level == 0 {
+                if options.show_path && !options.hide_path {
+                    print!("{}: ", filename.bright_black());
+                }
 
-        //         if options.out_level == 0 {
-        //             if options.show_path {
-        //                 print!("{}: ", filename);
-        //             }
-        //             println!("{}", gi.line);
-        //         }
-        //     }
-        //}
+                let mut p: usize = 0;
+                for ma in gi.ranges {
+                    if ma.start < gi.line.len() {
+                        let e = ma.end;
+                        print!("{}{}", &gi.line[p..ma.start], &gi.line[ma].red().bold());
+                        p = e;
+                    }
+                }
+                println!("{}", &gi.line[p..]);
+            }
+        }
     }
 
     // Note: Using together options -c and -l (out_level==3) is not supported by Linux grep command

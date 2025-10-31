@@ -1,4 +1,4 @@
-// rxargs: Rust version of wc
+// rxargs: Rust version of xargs
 //
 // 2025-10-30	PV      First version
 
@@ -102,8 +102,13 @@ fn main() {
     let duration = start.elapsed();
 
     if options.verbose {
-        println!("{} lines(s) processed in {:.3}s", b.line_count, duration.as_secs_f64());
+        println!("{} lines{} processed in {:.3}s", b.line_count, s(b.line_count), duration.as_secs_f64());
     }
+}
+
+// Helper for plurals
+fn s(n: usize) -> &'static str {
+    if n > 1 { "s" } else { "" }
 }
 
 fn process_file(path: &Path, options: &Options, b: &mut DataBag) -> io::Result<()> {

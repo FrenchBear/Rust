@@ -1,6 +1,7 @@
 // rcat: Rust version of cat
 //
 // 2025-10-24	PV      First version
+// 2025-10-31	PV      1.0.1 fn s(n)
 
 //#![allow(unused)]
 
@@ -50,7 +51,7 @@ fn main() {
 
     for source in options.sources.iter() {
         let pb = Path::new(source);
-        process_file(&mut b, &pb, &options);
+        process_file(&mut b, pb, &options);
     }
 
     // If no source has been provided, use stdin
@@ -84,8 +85,13 @@ fn main() {
     }
 
     if options.verbose {
-        println!("{} files(s) searched in {:.3}s", b.files_count, duration.as_secs_f64());
+        println!("{} file{} searched in {:.3}s", b.files_count, s(b.files_count), duration.as_secs_f64());
     }
+}
+
+// Helper for plurals
+fn s(n: usize) -> &'static str {
+    if n > 1 { "s" } else { "" }
 }
 
 /// First step processing a file, read text content from path and call process_text.

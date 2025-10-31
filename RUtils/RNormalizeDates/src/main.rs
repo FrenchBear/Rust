@@ -7,6 +7,7 @@
 // 2025-05-04   PV      1.1.3 Use MyMarkup crate to format usage and extended help
 // 2025-05-05	PV      1.1.4 Logging crate
 // 2025-05-07	PV      1.1.5 "Hors-Serie" -> "HS"
+// 2025-10-31	PV      1.1.6 fn s(n)
 
 //#![allow(unused)]
 
@@ -94,7 +95,7 @@ fn main() {
     }
 
     let duration = start.elapsed();
-    log(&mut writer, format!("{} file(s) found", b.files_count).as_str());
+    log(&mut writer, format!("{} file{} found", b.files_count, s(b.files_count)).as_str());
     if b.files_renamed_count > 0 {
         log(&mut writer, format!(", {} renamed", b.files_renamed_count).as_str());
         if options.no_action {
@@ -114,6 +115,11 @@ fn main() {
         let mut buffer = [0; 1];
         io::stdin().read_exact(&mut buffer).unwrap(); // Wait for a single byte (key press)
     }
+}
+
+// Helper for plurals
+fn s(n: usize) -> &'static str {
+    if n > 1 { "s" } else { "" }
 }
 
 fn process_file(lw: &mut LogWriter, pb: &Path, dp: &DatePatterns, opt: &Options, b: &mut DataBag) {

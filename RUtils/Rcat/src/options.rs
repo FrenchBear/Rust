@@ -17,16 +17,13 @@ use mymarkup::MyMarkup;
 #[derive(Debug, Default)]
 pub struct Options {
     pub sources: Vec<String>,
-    pub number_lines: bool,     // Unused for now
+    pub number_lines: bool, // Unused for now
     pub verbose: bool,
 }
 
 impl Options {
     fn header() {
-        println!(
-            "{APP_NAME} {APP_VERSION}\n\
-            {APP_DESCRIPTION}"
-        );
+        println!("{APP_NAME} {APP_VERSION}\n{APP_DESCRIPTION}");
     }
 
     fn usage() {
@@ -71,9 +68,7 @@ impl Options {
             }
         }
 
-        let mut options = Options {
-            ..Default::default()
-        };
+        let mut options = Options { ..Default::default() };
         let mut opts = getopt::Parser::new(&args, "h?nv");
 
         loop {

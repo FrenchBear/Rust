@@ -31,14 +31,11 @@ pub fn get_names_information(path: &Path, _options: &Options) -> Result<NamesInf
     let mut file_type_description: Option<String> = None;
     let mut opens_with: Option<String> = None;
 
-    if path.is_file() {
-        match path.extension() {
-            Some(ext) => {
-                file_type_description = query_assoc_string(ASSOCSTR_FRIENDLYDOCNAME, ext);
-                opens_with = query_assoc_string(ASSOCSTR_FRIENDLYAPPNAME, ext);
-            }
-            None => {}
-        }
+    if path.is_file()
+        && let Some(ext) = path.extension()
+    {
+        file_type_description = query_assoc_string(ASSOCSTR_FRIENDLYDOCNAME, ext);
+        opens_with = query_assoc_string(ASSOCSTR_FRIENDLYAPPNAME, ext);
     }
 
     Ok(NamesInfo {

@@ -4,6 +4,7 @@
 // 2025-03-25   PV      First version
 // 2025-10-17   PV      Case sensitive
 // 2025-10-22   PV      Clippy review
+// 2025-10-31   PV      fn s(n)
 
 #![allow(unused)]
 
@@ -87,8 +88,8 @@ pub fn test_myglob(
                 }
                 let duration = start.elapsed();
                 println!();
-                println!("{nf} file(s) found");
-                println!("{nd} dir(s) found");
+                println!("{nf} file{} found", s(nf));
+                println!("{nd} dir{} found", s(nd));
                 println!("Iterator search in {:.3}s\n", duration.as_secs_f64());
                 durations.push(duration.as_secs_f64());
             }
@@ -102,6 +103,12 @@ pub fn test_myglob(
         println!("Median time: {:.3}", median(&durations));
     }
 }
+
+// Helper for plurals
+fn s(n: usize) -> &'static str {
+    if n > 1 { "s" } else { "" }
+}
+
 
 fn median(v: &[f64]) -> f64 {
     let l = v.len();

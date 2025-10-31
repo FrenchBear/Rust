@@ -25,10 +25,7 @@ pub struct Options {
 
 impl Options {
     fn header() {
-        println!(
-            "{APP_NAME} {APP_VERSION}\n\
-            {APP_DESCRIPTION}"
-        );
+        println!("{APP_NAME} {APP_VERSION}\n{APP_DESCRIPTION}");
     }
 
     fn usage() {
@@ -94,7 +91,7 @@ impl Options {
                         options.show_link_target_info = true;
                     }
 
-                                        Opt('s', None) => {
+                    Opt('s', None) => {
                         options.autorecurse = true;
                     }
 

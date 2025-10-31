@@ -3,7 +3,8 @@
 // 2025-05-03	PV      First version
 // 2025-05-04   PV      1.0.1 Use MyMarkup crate to format usage and extended help
 // 2025-10-01   PV      1.0.2 Updated list of text extensions
-// 2025-20-22   PV      Clippy review
+// 2025-20-22   PV      1.0.3 Clippy review
+// 2025-10-31   PV      1.0.4 fn s(n)
 
 //#![allow(unused)]
 
@@ -248,8 +249,18 @@ fn main() {
         print_files_types_counts(&b.files_types);
         print_eol_styles_counts(&b.eol_styles);
 
-        println!("\n{} files(s) searched in {:.3}s", b.files_types.total, duration.as_secs_f64());
+        println!(
+            "\n{} file{} searched in {:.3}s",
+            b.files_types.total,
+            s(b.files_types.total),
+            duration.as_secs_f64()
+        );
     }
+}
+
+// Helper for plurals
+fn s(n: usize) -> &'static str {
+    if n > 1 { "s" } else { "" }
 }
 
 fn process_stdin(b: &mut DataBag, options: &Options) -> Result<(), io::Error> {

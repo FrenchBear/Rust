@@ -53,10 +53,7 @@ pub struct Options {
 
 impl Options {
     fn header() {
-        println!(
-            "{APP_NAME} {APP_VERSION}\n\
-            {APP_DESCRIPTION}"
-        );
+        println!("{APP_NAME} {APP_VERSION}\n{APP_DESCRIPTION}");
     }
 
     fn usage() {

@@ -25,8 +25,7 @@ pub struct Options {
 impl Options {
     fn header() {
         println!(
-            "{APP_NAME} {APP_VERSION}\n\
-            {APP_DESCRIPTION}"
+            "{APP_NAME} {APP_VERSION}\n{APP_DESCRIPTION}"
         );
     }
 
