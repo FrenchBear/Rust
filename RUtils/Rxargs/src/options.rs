@@ -58,7 +58,9 @@ impl Options {
 
         let text = "⟪⌊Advanced usage notes⌋⟫
 
-Command starts at the first argument that does not start with - so a command cannot start with -";
+Command starts at the first argument that does not start with - so a command name cannot start with -
+When reading arguments from a file using -⦃a⦄ option, text format is automally detected and non-text files are rejected.
+When reading stdin, it's supposed to be valid ASCII or UTF-8 text, other text encoding and non-text input are not detected and rejected: garbage in, garbage out!";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }

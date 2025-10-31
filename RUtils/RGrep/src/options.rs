@@ -81,7 +81,9 @@ Options ⦃-c⦄ (show count of matching lines) and ⦃-l⦄ (show matching file
 Put special characters such as ⟦.⟧, ⟦*⟧ or ⟦?⟧ between brackets such as ⟦[.]⟧, ⟦[*]⟧ or ⟦[?]⟧ to search them as is.
 To search for ⟦[⟧ or ⟦]⟧, use ⟦[\\[]⟧ or ⟦[\\]]⟧.
 To search for a string containing double quotes, surround string by double quotes, and double individual double quotes inside. To search for ⟦\"msg\"⟧: {APP_NAME} ⟦\"\"\"msg\"\"\"⟧ ⟦C:\\Sources\\**\\*.rs⟧
-To search for the string help, use option ⦃-F⦄: {APP_NAME} ⦃-F⦄ help ⟦C:\\Sources\\**\\*.rs⟧";
+To search for the string help, use option ⦃-F⦄: {APP_NAME} ⦃-F⦄ help ⟦C:\\Sources\\**\\*.rs⟧
+
+There is no attempt to normalize or denormalize Unicode strings before search.";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
         println!();

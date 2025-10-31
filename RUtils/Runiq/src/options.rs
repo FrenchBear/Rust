@@ -64,10 +64,12 @@ impl Options {
 
         let text = "⟪⌊Advanced usage notes⌋⟫
 
-Case insensitive uses to_lowercase() before comparison, this may not be totally correct with some Unicode characters.
-There is no attempt to normalize or denormalize strings before comparison
-Empty lines are not filtered out (an option could be added for that in the future)
-Lines are not stripped (besides end-of-line characters), spaces at the end of a line are significant";
+⌊Current limitations⌋:
+There is no attempt to normalize or denormalize Unicode strings before comparison
+End-of-line is ignored during comparison
+Empty lines are not filtered out
+Lines are not stripped, spaces at the end of a line are significant
+No attempt is made to detect non-text standard input: garbage in, garbage out!";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }
