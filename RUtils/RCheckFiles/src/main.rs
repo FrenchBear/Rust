@@ -255,7 +255,7 @@ fn get_transformation_data() -> TransformationData {
 fn main() {
     // println!("{}", is_single_script_identifier("2πr"));
     // process::exit(0);
-    
+
     // Process options
     let options = Options::new().unwrap_or_else(|err| {
         let msg = format!("{}", err);
@@ -825,7 +825,7 @@ fn check_name(
         let mut pbchr = false;
         let mut to_fix = false;
         for c in file.chars() {
-            if !(c.is_alphanumeric() || (32..127).contains(&(c as i32)) || (160..256).contains(&(c as i32)) || SPECIAL_CHARS.contains(c)) {
+            if !(c.is_alphanumeric() || (32..=126).contains(&(c as i32)) || (0xA1..=0xBF).contains(&(c as i32)) || SPECIAL_CHARS.contains(c)) {
                 if !pbchr {
                     pbchr = true;
                     stats.car += 1;

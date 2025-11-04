@@ -69,7 +69,7 @@ das   ¬Incorrect dash
 car   ¬Maybe incorrect char
 sp2   ¬Double space
 lig   ¬Ligatures
-sba   ¬Space after opening bracket or before closing bracket
+sba   ¬Space before/after
 ewd   ¬Ends with dots
 dex   ¬Double extension
 mix   ¬Mixed scripts";

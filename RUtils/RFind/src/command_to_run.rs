@@ -2,6 +2,7 @@
 // Definition of a CommandToRun structure to make it convenient
 //
 // 2025-10-30   PV      Move structure to this separate file, including exec/exec1/make_chunks so it can be shared
+// 2025-11-04   PV      quoted_string doesn'r re-quote an already quoted string
 
 use std::path::Path;
 use std::process::Command;
@@ -15,8 +16,6 @@ pub struct CommandToRun {
 
 impl CommandToRun {
     pub fn exec1(&self, path: &Path, noaction: bool) -> Result<String, String> {
-        let pp = quoted_path(path);
-
         let mut ctr_final = self.clone();
 
         // Special case
@@ -26,7 +25,7 @@ impl CommandToRun {
 
         for refarg in ctr_final.args.iter_mut() {
             if refarg.contains("{}") {
-                *refarg = refarg.replace("{}", &pp);
+                *refarg = refarg.replace("{}", path.display().to_string().as_str());
             }
         }
 
@@ -124,12 +123,14 @@ impl CommandToRun {
     }
 }
 
+
+#[allow(unused)]
 pub fn quoted_path(path: &Path) -> String {
     quoted_string(&path.display().to_string())
 }
 
 pub fn quoted_string(string: &str) -> String {
-    if string.contains(' ') {
+    if string.contains(' ') && !(string.starts_with('"') && string.ends_with('"')) {
         format!("\"{}\"", string)
     } else {
         string.into()

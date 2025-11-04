@@ -1,11 +1,11 @@
 // rxargs: Rust version of xargs
 //
 // 2025-10-30	PV      First version
+// 2025-11-04	PV      1.0.1 Fixed arguments with space thet got "overquoted"
 
-#![allow(unused)]
+//#![allow(unused)]
 
 // Standard library imports
-use std::io::BufRead;
 use std::process;
 use std::time::Instant;
 use std::{io, path::Path};
@@ -58,7 +58,7 @@ fn main() {
     // For now, just accumulate args with option -1 ang execute at the end, but maybe later when option -s max_chars is implemented,
     // execute command as soon as args buffer is full without waiting for the end
     if let Some(ref f) = options.input_file {
-        process_file(Path::new(f), &options, &mut b);
+        let _ = process_file(Path::new(f), &options, &mut b);
     } else {
         // If no source has been provided, use stdin
         if options.verbose {
@@ -142,8 +142,7 @@ fn process_line(line: &str, options: &Options, b: &mut DataBag) {
         return;
     }
 
-    let ql = quoted_string(line);
-    let pp = Path::new(&ql);
+    let pp = Path::new(&line);
     match options.ctr.exec1(pp, false) {
         Ok(s) => {
             if options.verbose {

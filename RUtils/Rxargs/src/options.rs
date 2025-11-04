@@ -7,7 +7,7 @@
 use crate::*;
 
 // Standard library imports
-use std::{arch::x86_64::CpuidResult, error::Error};
+use std::error::Error;
 
 // External crates imports
 use getopt::Opt;

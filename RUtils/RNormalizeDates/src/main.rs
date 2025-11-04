@@ -567,8 +567,6 @@ fn apply_final_transformations(stem_original: &str) -> String {
     stem = ireplace(&stem, "What Hi-Fi France", "What Hi-Fi");
     stem = ireplace(&stem, "Windows Internet Pratique", "Windows & Internet Pratique");
     stem = ireplace(&stem, "01net", "01net");
-    stem = ireplace(&stem, "01net", "01net");
-    stem = ireplace(&stem, "01net", "01net");
 
     while stem.contains("  ") {
         stem = stem.replace("  ", " ")

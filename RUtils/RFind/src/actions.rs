@@ -216,8 +216,7 @@ impl Action for ActionDelete {
 
     fn action(&mut self, lw: &mut LogWriter, path: &Path, noaction: bool, verbose: bool) {
         if path.is_file() {
-            let s = quoted_path(path);
-            let qp = s.as_str();
+            let qp = quoted_path(path);
             if !self.recycle {
                 logln(lw, format!("DEL {}", qp).as_str());
                 if !noaction {
