@@ -1,7 +1,7 @@
 // Build script extracting dependencies versions at build time, add them to environment, so they can
 // be retrieved at compile-time in main app with env!() macro
 //
-// 2025-20-22   PV      Added to Recycle utility
+// 2025-10-22   PV      Added to Recycle utility
 
 use std::env;
 use std::fs;

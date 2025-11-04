@@ -5,7 +5,7 @@
 // 2025-05-05   PV      1.1.2 Use MyMarkup crate to format usage and extended help
 // 2025-05-05	PV      1.1.3 Logging crate
 // 2025-09-15	PV      1.1.4 logwriter_none
-// 2025-20-22   PV      1.2.0 Clippy review, separated options processing in options.rs, use build.rs and dependencies variables
+// 2025-10-22   PV      1.2.0 Clippy review, separated options processing in options.rs, use build.rs and dependencies variables
 
 //#![allow(unused)]
 

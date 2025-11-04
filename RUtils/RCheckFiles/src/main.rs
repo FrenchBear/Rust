@@ -21,10 +21,11 @@
 // 2025-10-19	PV      2.5.1 Do not separate basename from extension when processing a directory name
 // 2025-10-21	PV      3.0.0 Filtering on specific problems
 // 2025-10-21	PV      3.1.0 Detect double extensions; Protect strings in yaml output
-// 2025-20-22   PV      Clippy review
-// 2025-20-24   PV      3.2.0 Dash confusables and mixed scripts
-// 2025-20-25   PV      3.2.1 Space allowed before ¡
-// 2025-20-25   PV      3.2.2 πΔΩ allowed with other scripts
+// 2025-10-22   PV      Clippy review
+// 2025-10-24   PV      3.2.0 Dash confusables and mixed scripts
+// 2025-10-25   PV      3.2.1 Space allowed before ¡
+// 2025-10-25   PV      3.2.2 πΔΩ allowed with other scripts
+// 2025-11-04   PV      3.3.0 Test unbalanced spaces around dashes
 
 // Note: Can't use MyGlob crate since directories names can be updated during recursive enumeration, this is not a
 // supported use case of MyGlob, so hierarchical exploration is handled directly
@@ -216,6 +217,7 @@ struct Statistics {
     ewd: u32,   // Ends with dots
     dex: u32,   // Double extension
     mix: u32,   // Mixed scripts
+    usd: u32,   // Unbalanced spaces around dashes
     fix: u32,   // Number of path fixed
     err: u32,   // Number of errors
 
@@ -325,6 +327,9 @@ fn main() {
             }
             if stats.dex > 0 {
                 log(writer, &format!(", {} double extension", stats.dex));
+            }
+            if stats.usd > 0 {
+                log(writer, &format!(", {} unbalanced spaces around dashes", stats.usd));
             }
             if stats.mix > 0 {
                 log(writer, &format!(", {} mixed scripts", stats.mix));
@@ -631,6 +636,24 @@ fn check_name(
         }
     }
 
+    // Check for unbalanced spaces around dashes
+    if options.report_types.is_empty() || options.report_types.contains("usd") {
+        static DASHBEFOREAFTER: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"(.)-(.)").unwrap());
+        for ca in DASHBEFOREAFTER.captures_iter(&file) {
+            let b = ca[1].starts_with(' ');
+            let a = ca[2].starts_with(' ');
+            if (b && !a) || (!b && a) {
+                if options.yaml_output {
+                    add_problem(&mut problems, "Unbalanced spaces around -");
+                } else {
+                    logln(writer, &format!("Unbalanced spaces around - in {pt} name {fp}"));
+                }
+                stats.usd += 1;
+                break;
+            }
+        }
+    }
+
     // Unprotect (space).Net
     file = file.replace("*.", " .");
 
@@ -642,7 +665,7 @@ fn check_name(
     let mut pbdas = false;
     let mut pblig = false;
 
-    for c in &vc {
+    for c in vc.iter().peekable() {
         let mut pushed: bool = false;
 
         // Check for spaces

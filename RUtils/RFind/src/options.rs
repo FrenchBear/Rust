@@ -14,8 +14,8 @@
 // 2025-10-22   PV      links options, reorg usage message
 // 2025-10-23   PV      no_glob_filtering
 // 2025-10-23   PV      no_glob_filtering
-// 2027-10-29   PV      -xargs replaced by -execg
-// 2025-19-27   PV      Added {} final for -exec/-execg if there is no {} in command
+// 2025-10-29   PV      -xargs replaced by -execg
+// 2025-10-29   PV      Added {} final for -exec/-execg if there is no {} in command
 
 // Application imports
 use crate::*;

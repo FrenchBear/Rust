@@ -2,7 +2,7 @@
 // be retrieved at compile-time in main app with env!() macro
 //
 // 2025-07-05   PV      First version, with the help of Gemini
-// 2025-20-22   PV      Clippy review
+// 2025-10-22   PV      Clippy review
 
 use std::env;
 use std::fs;

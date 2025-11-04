@@ -6,7 +6,7 @@
 // 2025-05-06   PV      1.1.0 is_75percent_ascii is only for 8-bit files, use no_binary for other encodings
 // 2025-05-06   PV      1.2.0 check_eightbit fixed (was converting the whole buffer_1000 regardless of actual length)
 // 2025-06-24   PV      1.3.0 check_utf8 checks correctly for a possibly truncated UTF-8 sequence at the end of a 1000 bytes buffer
-// 2025-20-22   PV      1.3.1 Clippy review; fixed check_75percent_text bool variable bug
+// 2025-10-22   PV      1.3.1 Clippy review; fixed check_75percent_text bool variable bug
 
 #![allow(unused_variables, dead_code, unused_imports)]
 

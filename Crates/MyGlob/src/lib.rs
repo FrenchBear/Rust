@@ -26,11 +26,11 @@
 // 2025-09-13   PV      1.9.1 Check for unclosed brackets in glob expressions such as "C:\[a-z"
 // 2025-10-01   PV      1.10  Macro !SOURCES to represent common (for me) source files extensions. d is not in the list (also rust temp build files extension)
 // 2025-10-17   PV      1.11  Case sensitive option
-// 2025-20-22   PV      1.12  Clippy review; added MyGlobBuilder.clear_ignore_dirs()
-// 2025-20-22   PV      2.0   Option to follow links (hide them, include them but don't follow dir symlinks, include and follow links). max_depth fixed
-// 2025-20-23   PV      2.0.1 Don't add two consecutive recurse segments in glob_to_segments, it's useless and inefficient
-// 2025-20-23   PV      2.1.0 Rollback and use again std::os::windows::fs::FileTypeExt, because dir entry .is_dir() is different than path .is_dir() (for dir link, first is false, second is true)
-// 2025-20-24   PV      2.1.1 Fixed bug C:\**\thumbs.db stopping search at first file not found
+// 2025-10-22   PV      1.12  Clippy review; added MyGlobBuilder.clear_ignore_dirs()
+// 2025-10-22   PV      2.0   Option to follow links (hide them, include them but don't follow dir symlinks, include and follow links). max_depth fixed
+// 2025-10-23   PV      2.0.1 Don't add two consecutive recurse segments in glob_to_segments, it's useless and inefficient
+// 2025-10-23   PV      2.1.0 Rollback and use again std::os::windows::fs::FileTypeExt, because dir entry .is_dir() is different than path .is_dir() (for dir link, first is false, second is true)
+// 2025-10-24   PV      2.1.1 Fixed bug C:\**\thumbs.db stopping search at first file not found
 // 2025-10-29   PV      2.2.0 MyGlobSearch::root()
 
 //#![allow(unused_variables, dead_code, unused_imports)]

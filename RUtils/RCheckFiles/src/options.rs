@@ -4,8 +4,9 @@
 // 2025-10-15	PV      Refactoring, separated options module. Added extended options
 // 2025-10-21	PV      Filtering on problem types
 // 2025-10-21	PV      Specific type dex for double extension
-// 2025-20-22   PV      Clippy review
-// 2025-20-24   PV      Problem das for dashes confusables, and mex for mixed scripts
+// 2025-10-22   PV      Clippy review
+// 2025-10-24   PV      Problem das for dashes confusables, and mex for mixed scripts
+// 2025-11-03   PV      Problem usd for unbalanced spaces around dashes
 
 // Application imports
 use crate::*;
@@ -61,18 +62,19 @@ impl Options {
 ⟨source⟩      ¬File or directory to analyze (note: glob pattern is not supported)
 
 ⌊Types⌋⟫:
-nnn   ¬Non-normalized names
-bra   ¬Bracket issue
-spc   ¬Incorrect space
-apo   ¬Incorrect apostrophe
-das   ¬Incorrect dash
-car   ¬Maybe incorrect char
-sp2   ¬Double space
-lig   ¬Ligatures
-sba   ¬Space before/after
-ewd   ¬Ends with dots
-dex   ¬Double extension
-mix   ¬Mixed scripts";
+nnn   Non-normalized names     ¬Only NFC names are valid
+bra   Bracket issue            ¬Check correct balance end embedding for Balanced and embedding () [] {} «» ‹›
+spc   Incorrect space          ¬Spaces confusables replaced by ASCII space
+apo   Incorrect apostrophe     ¬Apostrophe confusables replaced by ASCII '
+das   Incorrect dash           ¬Dash confusables replaced by ASCII -
+car   Maybe incorrect char     ¬Allows ASCII 32..126, U alphanum, U A1..BF and some special chars €®™©–—…×·•∶⧹⧸／⚹†‽¿🎜🎝♫♪“”‹›⚡♥
+sp2   Double space             ¬Multiple spaces are replaced by a single one
+lig   Ligatures                ¬Ligatures ÆæĲĳŒœﬀﬁﬂﬃﬄﬅﬆ are replaced by separate characters
+sba   Space before/after       ¬No space after ([{«‹   No space before )]}»›¿!‽.,…
+ewd   Ends with dots           ¬Reports names ending with one or more dots
+dex   Double extension         ¬Reports files ending with .ext.ext
+mix   Mixed scripts            ¬Separate words shouldn't contain mixed scripts
+usd   Unbalanced spaces/dashes ¬A dash sould either be surrounded by 0 or 2 spaces";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }
@@ -143,9 +145,10 @@ Option ⦃-y⦄ generates yaml output, including extra non-yaml header and foote
                                 && pb != "ewd"
                                 && pb != "dex"
                                 && pb != "mix"
+                                && pb != "usd"
                             {
                                 return Err(
-                                    format!("Invalid problem type {}, must be one of nnn|bra|spc|apo|das|car|sp2|lig|sba|ewd|dex|mix", problem).into(),
+                                    format!("Invalid problem type {}, must be one of nnn|bra|spc|apo|das|car|sp2|lig|sba|ewd|dex|mix|usd", problem).into(),
                                 );
                             }
                             if !options.report_types.contains(&pb) {

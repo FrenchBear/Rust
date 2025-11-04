@@ -83,6 +83,7 @@ pub mod check_basename_tests {
             + files_stats.sba
             + files_stats.ewd
             + files_stats.dex
+            + files_stats.usd
     }
 
     #[test]
@@ -356,5 +357,23 @@ pub mod check_basename_tests {
         assert_eq!(is_single_script("ABCabcΑΒΓαβγАБВабв"), false);
         assert_eq!(is_single_script("Ƥḭҽɾɾҽ ѵìǫłҽղէ.docx"), false);
         assert_eq!(is_single_script("2πr πr² Δt Ωmega"), true); // πΔΩ can be mixed with other languages
+    }
+
+    #[test]
+    fn test_check_basename_unbalanced_spaces_dashes() {
+        let mut files_stats = Statistics { ..Default::default() };
+
+        let res = check_name(
+            Path::new("Name -problem- end"),
+            "file",
+            &mut files_stats,
+            &SHARED_DATA.options,
+            &mut logwriter_none(),
+            &SHARED_DATA.transformation_data,
+            true,
+        );
+        assert!(res.is_none()); // Not fixed
+        assert_eq!(get_sum(&files_stats), 1);
+        assert_eq!(files_stats.usd, 1);
     }
 }

@@ -8,12 +8,12 @@
 // 2025-10-13   PV      ActionExec, ActionXargs
 // 2025-10-17   PV      ActionYaml
 // 2025-10-22   PV      to_yaml_single_quoted for Yaml action
-// 2025-19-22   PV      Clippy review
-// 2025-19-22   PV      PrintAction 'Dir' shows Windows files attributes, and more generally, links
-// 2025-19-23   PV      PrintAction 'Dir' processes links, when target of a link does not exist. Show attributes of directories
-// 2025-19-25   PV      ActionDir separated from ActionPrint
-// 2027-10-29   PV      ActionXargs renamed ActionExecg and entirely rewritten to limit command size at 7800 UTF-16 chars
-// 2027-10-30   PV      Flush output after writing a line in ActionPrint
+// 2025-10-22   PV      Clippy review
+// 2025-10-22   PV      PrintAction 'Dir' shows Windows files attributes, and more generally, links
+// 2025-10-23   PV      PrintAction 'Dir' processes links, when target of a link does not exist. Show attributes of directories
+// 2025-10-25   PV      ActionDir separated from ActionPrint
+// 2025-10-29   PV      ActionXargs renamed ActionExecg and entirely rewritten to limit command size at 7800 UTF-16 chars
+// 2025-10-30   PV      Flush output after writing a line in ActionPrint
 
 // Crate imports
 use super::*;

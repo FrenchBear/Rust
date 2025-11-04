@@ -5,7 +5,7 @@
 // 2025-04-30   PV      Use colored instead of termcolor
 // 2025-05-05   PV      Moved to a crate and added support for MacOS and Linux
 // 2025-09-15   PV      1.1: Debugging lines with prefix dbg: are shown in cyan; LogWriter now a struct with path field; logwriter_none()
-// 2025-20-22   PV      Clippy review
+// 2025-10-22   PV      Clippy review
 
 //#[allow(unused)]
 

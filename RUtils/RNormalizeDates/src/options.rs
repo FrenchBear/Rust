@@ -2,7 +2,7 @@
 //
 // 2025-04-14   PV      Extracted to a separate file
 // 2025-05-04   PV      Use MyMarkup crate to format usage and extended help
-// 2025-20-22   PV      Clippy review
+// 2025-10-22   PV      Clippy review
 
 // Application imports
 use crate::*;

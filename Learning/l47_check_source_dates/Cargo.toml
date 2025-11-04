@@ -1,5 +1,5 @@
 [package]
-name = "l47_checkdates"
+name = "l47_check_source_dates"
 description = "Check dates in source files headers"
 version = "1.3.0"
 authors = ["Pierre Violent"]

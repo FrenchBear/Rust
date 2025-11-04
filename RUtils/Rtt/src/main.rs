@@ -3,7 +3,7 @@
 // 2025-05-03	PV      First version
 // 2025-05-04   PV      1.0.1 Use MyMarkup crate to format usage and extended help
 // 2025-10-01   PV      1.0.2 Updated list of text extensions
-// 2025-20-22   PV      1.0.3 Clippy review
+// 2025-10-22   PV      1.0.3 Clippy review
 // 2025-10-31   PV      1.0.4 fn s(n)
 
 //#![allow(unused)]
