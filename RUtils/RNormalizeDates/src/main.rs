@@ -79,7 +79,7 @@ fn main() {
                             process_file(&mut writer, &pb, &date_patterns, &options, &mut b);
                         }
 
-                        // We ignore matching directories in rgrep, we only look for files
+                        // We ignore matching directories in rnormalizedates, we only look for files
                         MyGlobMatch::Dir(_) => {}
 
                         MyGlobMatch::Error(_) => {}

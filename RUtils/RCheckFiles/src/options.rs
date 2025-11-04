@@ -74,7 +74,7 @@ sba   Space before/after       ¬No space after ([{«‹   No space before )]}»
 ewd   Ends with dots           ¬Reports names ending with one or more dots
 dex   Double extension         ¬Reports files ending with .ext.ext
 mix   Mixed scripts            ¬Separate words shouldn't contain mixed scripts
-usd   Unbalanced spaces/dashes ¬A dash sould either be surrounded by 0 or 2 spaces";
+usd   Unbalanced spaces/dashes ¬A dash should either be surrounded by 0 or 2 spaces";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }

@@ -172,7 +172,7 @@ fn main() {
                             print_result(process_file(&mut b, &pb, &pb).as_str(), &options);
                         }
 
-                        // We ignore matching directories in rgrep, we only look for files
+                        // We ignore matching directories in rtt, we only look for files
                         MyGlobMatch::Dir(_) => {}
 
                         MyGlobMatch::Error(err) => {
@@ -478,7 +478,7 @@ fn process_file(b: &mut DataBag, path_for_read: &Path, path_for_name: &Path) -> 
     res
 }
 
-/// Core rgrep process, search for re in txt, read from filename, according to options.
+/// Count EOL styles
 fn get_eol(txt: &str) -> EOLStyleCounts {
     let mut eol = EOLStyleCounts { ..Default::default() };
     let mut iter = txt.as_bytes().iter().peekable();

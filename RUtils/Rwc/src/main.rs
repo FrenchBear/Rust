@@ -72,7 +72,7 @@ fn main() {
                             process_file(&mut b, &pb, &options);
                         }
 
-                        // We ignore matching directories in rgrep, we only look for files
+                        // We ignore matching directories in rwc, we only look for files
                         MyGlobMatch::Dir(_) => {}
 
                         MyGlobMatch::Error(err) => {

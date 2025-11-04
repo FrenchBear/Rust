@@ -874,15 +874,13 @@ fn check_name(
     }
 
     // Check for mixed scripts
-    if options.report_types.is_empty() || options.report_types.contains("mix") {
-        if !is_single_script(&file) {
-            if options.yaml_output {
-                add_problem(&mut problems, "Mixed scripts");
-            } else {
-                logln(writer, &format!("Mixed scripts in {pt} name {fp}"));
-            }
-            stats.mix += 1;
+    if (options.report_types.is_empty() || options.report_types.contains("mix")) && !is_single_script(&file) {
+        if options.yaml_output {
+            add_problem(&mut problems, "Mixed scripts");
+        } else {
+            logln(writer, &format!("Mixed scripts in {pt} name {fp}"));
         }
+        stats.mix += 1;
     }
 
     if !fixit && options.yaml_output && !problems.is_empty() {
@@ -942,7 +940,8 @@ pub fn extract_identifiers(text: &str) -> Vec<&str> {
         }
 
         if let Some(start) = start_pos {
-            let next_is_continue = it.peek().map_or(false, |&(_, next_c)| is_xid_continue(next_c));
+            //let next_is_continue = it.peek().map_or(false, |&(_, next_c)| is_xid_continue(next_c));
+            let next_is_continue = it.peek().is_some_and(|&(_, next_c)| is_xid_continue(next_c));
             if !next_is_continue {
                 identifiers.push(&text[start..i + c.len_utf8()]);
                 start_pos = None;
