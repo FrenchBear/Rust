@@ -2,6 +2,7 @@
 // First build a list of potential dups (same size) then check in depth hashing file content
 //
 // 2025-11-04	PV      First version
+// 2025-11-05	PV      1.0.1 Use a fallback for Path::canonicalise that fails on a Cryptomator volume
 
 //#![allow(unused)]
 
@@ -247,7 +248,7 @@ fn global_process(options: &Options) -> io::Result<GlobalResult> {
 }
 
 fn process_file(already_processed: &mut HashSet<PathBuf>, size_dict: &mut HashMap<u64, Vec<PathBuf>>, pb: PathBuf) -> io::Result<()> {
-    let pc = pb.canonicalize()?;
+    let pc = pb.canonicalize().unwrap_or_else(|_| pb.clone());
     if already_processed.contains(&pc) {
         return Ok(());
     }

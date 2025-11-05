@@ -125,9 +125,10 @@ Recommended: 1st pass without content hashing, delete visibly matching files (sa
 
         // For dev
         // if options.sources.is_empty() {
-        //     options.sources.push(r"W:\BD\Revues\Kiwi\Kiwi n°530 - 1999-06.pdf".to_string());
-        //     options.sources.push(r"W:\BD\Revues\Kiwi\Kiwi - 530 - 1999-06 zip.pdf".to_string());
+        //     options.sources.push(r"D:\Kaforas\CryptomatorKB\PicturesCMKB\Mp4\tumblr_stu0hfaoSm1a6tee8_720.mp4".to_string());
+        //     options.sources.push(r"D:\Kaforas\CryptomatorKB\PicturesCMKB\Mp4\tumblr_stu0hfaoSm1a6tee8_720 - Copy.mp4".to_string());
         //     options.content_hash = false;
+        //     options.verbose = false;
         // }
 
         Ok(options)
