@@ -32,6 +32,7 @@
 // 2025-10-27   PV      2.4.0 Generic filters
 // 2025-10-27   PV      2.4.1 Added {} final for -exec/-execg if there is no {} in command
 // 2025-10-30   PV      2.5.0 Refactored CommandToRun and related methods to a separate source file for sharing
+// 2025-11-15   PV      2.6.0 Option -w to make actions -exec/-execg synchronous (wait for command to terminate)
 
 // Notes:
 // - Finding denormalized paths is handled by rcheckfiles and checknnn, no need for a third version :-)
@@ -83,8 +84,8 @@ const APP_DESCRIPTION: &str = env!("CARGO_PKG_DESCRIPTION");
 
 trait Action: Debug {
     fn name(&self) -> String;
-    fn action(&mut self, lw: &mut LogWriter, path: &Path, noaction: bool, verbose: bool);
-    fn conclusion(&mut self, lw: &mut LogWriter, noaction: bool, verbose: bool);
+    fn action(&mut self, lw: &mut LogWriter, path: &Path, options: &Options);
+    fn conclusion(&mut self, lw: &mut LogWriter, options: &Options);
 }
 
 trait Filter: Debug {
@@ -269,7 +270,7 @@ fn main() {
                     if include {
                         files_count += 1;
                         for ba in actions.iter_mut() {
-                            (**ba).action(&mut writer, &pb, options.noaction, options.verbose);
+                            (**ba).action(&mut writer, &pb, &options);
                         }
                     }
                 }
@@ -289,7 +290,7 @@ fn main() {
                     if include {
                         dirs_count += 1;
                         for ba in actions.iter_mut() {
-                            (**ba).action(&mut writer, &pb, options.noaction, options.verbose);
+                            (**ba).action(&mut writer, &pb, &options);
                         }
                     }
                 }
@@ -306,7 +307,7 @@ fn main() {
 
     // Call conclusions
     for ba in actions.iter_mut() {
-        (**ba).conclusion(&mut writer, options.noaction, options.verbose);
+        (**ba).conclusion(&mut writer, &options);
     }
 
     let duration = start.elapsed();

@@ -16,6 +16,7 @@
 // 2025-10-23   PV      no_glob_filtering
 // 2025-10-29   PV      -xargs replaced by -execg
 // 2025-10-29   PV      Added {} final for -exec/-execg if there is no {} in command
+// 2025-11-15   PV      -w to make actions -exec/-execg synchronous
 
 // Application imports
 use crate::*;
@@ -46,6 +47,7 @@ pub struct Options {
     pub link_mode: usize,
     pub no_glob_filtering: bool,
     pub noaction: bool,
+    pub syncronous_exec: bool,
     pub verbose: bool,
     pub debug: bool,
     pub log: bool,
@@ -59,12 +61,13 @@ impl Options {
     fn usage() {
         Options::header();
         println!();
-        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄] [⦃-v⦄] [⦃-n⦄] [⦃-cs⦄] [⦃-r+⦄|⦃-r-⦄] [⦃-a+⦄|⦃-a-⦄] [⦃-l⦄[⦃0⦄|⦃1⦄|⦃2⦄]] [⦃-name⦄ ⟨name⟩] [⦃-maxdepth⦄ ⟨n⟩] [⟨filter⟩...] [⟨action⟩...] ⟨source⟩...
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄] [⦃-v⦄] [⦃-w⦄] [⦃-n⦄] [⦃-cs⦄] [⦃-r+⦄|⦃-r-⦄] [⦃-a+⦄|⦃-a-⦄] [⦃-l⦄[⦃0⦄|⦃1⦄|⦃2⦄]] [⦃-name⦄ ⟨name⟩] [⦃-maxdepth⦄ ⟨n⟩] [⟨filter⟩...] [⟨action⟩...] ⟨source⟩...
 
 ⌊Options⌋:
 ⦃?⦄|⦃-?⦄|⦃-h⦄          ¬Show this message
 ⦃??⦄               ¬Show advanced usage notes
 ⦃-v⦄               ¬Verbose output
+⦃-w⦄               ¬Actions ⦃-exec⦄/⦃-execg⦄ are synchronous (wait for command execution to terminate before continuing), default is asynchronous
 ⦃-n⦄               ¬No action: display actions, but don't execute them
 ⦃-cs⦄              ¬Case-sensitive search (default is case insensitive)
 ⦃-r+⦄|⦃-r-⦄          ¬Delete to recycle bin (default) or delete forever; Recycle bin is not allowed on network sources
@@ -130,6 +133,9 @@ impl Options {
     pub fn new() -> Result<Options, Box<dyn Error>> {
         let args: Vec<String> = std::env::args().collect();
 
+        // Debug
+        // let args = vec![String::from("app.exe"), String::from(r"C:\Temp\T\*"), String::from(r"-execg"),  String::from(r"cmd"),  String::from(r"/c"),  String::from(r"type"),  String::from(r"{}")];
+
         let mut options = Options {
             autorecurse: true,
             recycle: true,
@@ -168,6 +174,7 @@ impl Options {
                     }
 
                     "v" => options.verbose = true,
+                    "w" => options.syncronous_exec = true,
                     "log" => options.log = true,
                     "dbg" => options.debug = true,
                     "n" => options.noaction = true,

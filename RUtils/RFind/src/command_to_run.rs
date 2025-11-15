@@ -15,7 +15,7 @@ pub struct CommandToRun {
 }
 
 impl CommandToRun {
-    pub fn exec1(&self, path: &Path, noaction: bool) -> Result<String, String> {
+    pub fn exec1(&self, path: &Path, noaction: bool, syncronous_exec: bool) -> Result<String, String> {
         let mut ctr_final = self.clone();
 
         // Special case
@@ -29,15 +29,32 @@ impl CommandToRun {
             }
         }
 
-        ctr_final.exec(noaction)
+        ctr_final.exec(noaction, syncronous_exec)
     }
 
-    pub fn exec(&self, noaction: bool) -> Result<String, String> {
+    pub fn exec(&self, noaction: bool, syncronous_exec: bool) -> Result<String, String> {
         let res = format!("exec {} {}", quoted_string(&self.command), self.args.join(" "));
         if !noaction {
             let status = Command::new(self.command.as_str()).args(&self.args).spawn();
-            if let Err(e) = status {
-                return Err(format!("*** Error running command {}: {}", self.command, e));
+            match status {
+                Ok(mut child) => {
+                    if syncronous_exec {
+                        let status = child.wait();
+                        match status {
+                            Ok(status) => {
+                                if !status.success() {
+                                    return Err(format!("*** Error running command {}: {}", self.command, status));
+                                }
+                            }
+                            Err(e) => {
+                                return Err(format!("*** Error running command {}: {}", self.command, e));
+                            }
+                        }
+                    }
+                }
+                Err(e) => {
+                    return Err(format!("*** Error running command {}: {}", self.command, e));
+                }
             }
         }
         Ok(res)
@@ -122,7 +139,6 @@ impl CommandToRun {
         res
     }
 }
-
 
 #[allow(unused)]
 pub fn quoted_path(path: &Path) -> String {

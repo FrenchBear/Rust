@@ -14,6 +14,7 @@
 // 2025-10-25   PV      ActionDir separated from ActionPrint
 // 2025-10-29   PV      ActionXargs renamed ActionExecg and entirely rewritten to limit command size at 7800 UTF-16 chars
 // 2025-10-30   PV      Flush output after writing a line in ActionPrint
+// 2025-11-15   PV      Pass options: &Options to action and conclusion instead of individual bools
 
 // Crate imports
 use super::*;
@@ -48,7 +49,7 @@ impl Action for ActionPrint {
         "Print".into()
     }
 
-    fn action(&mut self, lw: &mut LogWriter, path: &Path, _noaction: bool, _verbose: bool) {
+    fn action(&mut self, lw: &mut LogWriter, path: &Path, _options: &Options) {
         if path.is_file() {
             // Includes links to existing files
             logln(lw, path.display().to_string().as_str());
@@ -65,7 +66,7 @@ impl Action for ActionPrint {
         }
     }
 
-    fn conclusion(&mut self, _lw: &mut LogWriter, _noaction: bool, _verbose: bool) {}
+    fn conclusion(&mut self, _lw: &mut LogWriter, _options: &Options) {}
 }
 
 // ===============================================================
@@ -85,7 +86,7 @@ impl Action for ActionDir {
         "Dir".into()
     }
 
-    fn action(&mut self, lw: &mut LogWriter, path: &Path, _noaction: bool, _verbose: bool) {
+    fn action(&mut self, lw: &mut LogWriter, path: &Path, _options: &Options) {
         let link_string = if path.is_symlink() {
             let target_path = fs::read_link(path).unwrap();
             let t = target_path.to_string_lossy().replace(r"\\?\", "");
@@ -187,7 +188,7 @@ impl Action for ActionDir {
         }
     }
 
-    fn conclusion(&mut self, _lw: &mut LogWriter, _noaction: bool, _verbose: bool) {}
+    fn conclusion(&mut self, _lw: &mut LogWriter, _options: &Options) {}
 }
 
 // ===============================================================
@@ -214,15 +215,15 @@ impl Action for ActionDelete {
         .into()
     }
 
-    fn action(&mut self, lw: &mut LogWriter, path: &Path, noaction: bool, verbose: bool) {
+    fn action(&mut self, lw: &mut LogWriter, path: &Path, options: &Options) {
         if path.is_file() {
             let qp = quoted_path(path);
             if !self.recycle {
                 logln(lw, format!("DEL {}", qp).as_str());
-                if !noaction {
+                if !options.noaction {
                     match fs::remove_file(path) {
                         Ok(_) => {
-                            if verbose {
+                            if options.verbose {
                                 logln(lw, format!("File {} deleted successfully.", qp).as_str());
                             }
                         }
@@ -231,10 +232,10 @@ impl Action for ActionDelete {
                 }
             } else {
                 logln(lw, format!("RECYCLE {}", qp).as_str());
-                if !noaction {
+                if !options.noaction {
                     match delete(path) {
                         Ok(_) => {
-                            if verbose {
+                            if options.verbose {
                                 logln(lw, format!("File {} deleted successfully.", qp).as_str());
                             }
                         }
@@ -245,7 +246,7 @@ impl Action for ActionDelete {
         }
     }
 
-    fn conclusion(&mut self, _lw: &mut LogWriter, _noaction: bool, _verbose: bool) {}
+    fn conclusion(&mut self, _lw: &mut LogWriter, _options: &Options) {}
 }
 
 // ===============================================================
@@ -272,16 +273,16 @@ impl Action for ActionRmdir {
         .into()
     }
 
-    fn action(&mut self, writer: &mut LogWriter, path: &Path, noaction: bool, verbose: bool) {
+    fn action(&mut self, writer: &mut LogWriter, path: &Path, options: &Options) {
         if path.is_dir() {
             let s = quoted_path(path);
             let qp = s.as_str();
             if !self.recycle {
                 logln(writer, format!("RD /S {}", qp).as_str());
-                if !noaction {
+                if !options.noaction {
                     match fs::remove_dir_all(path) {
                         Ok(_) => {
-                            if verbose {
+                            if options.verbose {
                                 logln(writer, format!("Dir {} deleted successfully.", qp).as_str());
                             }
                         }
@@ -290,10 +291,10 @@ impl Action for ActionRmdir {
                 }
             } else {
                 logln(writer, format!("RECYCLE (dir) {}", quoted_path(path)).as_str());
-                if !noaction {
+                if !options.noaction {
                     match delete(path) {
                         Ok(_) => {
-                            if verbose {
+                            if options.verbose {
                                 logln(writer, format!("Dir '{}' deleted successfully.", qp).as_str());
                             }
                         }
@@ -304,7 +305,7 @@ impl Action for ActionRmdir {
         }
     }
 
-    fn conclusion(&mut self, _lw: &mut LogWriter, _noaction: bool, _verbose: bool) {}
+    fn conclusion(&mut self, _lw: &mut LogWriter, _options: &Options) {}
 }
 
 // ===============================================================
@@ -326,10 +327,10 @@ impl Action for ActionExec {
         format!("Exec «{}» {}", self.ctr.command, self.ctr.args.join(" "))
     }
 
-    fn action(&mut self, lw: &mut LogWriter, path: &Path, noaction: bool, verbose: bool) {
-        match self.ctr.exec1(path, noaction) {
+    fn action(&mut self, lw: &mut LogWriter, path: &Path, options: &Options) {
+        match self.ctr.exec1(path, options.noaction, options.syncronous_exec) {
             Ok(s) => {
-                if verbose {
+                if options.verbose {
                     logln(lw, s.as_str());
                 }
             }
@@ -339,7 +340,7 @@ impl Action for ActionExec {
         }
     }
 
-    fn conclusion(&mut self, _lw: &mut LogWriter, _noaction: bool, _verbose: bool) {}
+    fn conclusion(&mut self, _lw: &mut LogWriter, _options: &Options) {}
 }
 
 // ===============================================================
@@ -366,18 +367,18 @@ impl Action for ActionExecg {
     }
 
     // arguments are already quoted if needed in paths
-    fn action(&mut self, _lw: &mut LogWriter, path: &Path, _noaction: bool, _verbose: bool) {
+    fn action(&mut self, _lw: &mut LogWriter, path: &Path, _options: &Options) {
         self.args.push(quoted_string(&path.display().to_string()));
     }
 
-    fn conclusion(&mut self, lw: &mut LogWriter, noaction: bool, verbose: bool) {
+    fn conclusion(&mut self, lw: &mut LogWriter, options: &Options) {
         // For now we hardcode command limit size at 7500 UTF-16 chars despite win32 CreateProcess 32K limit since cmd /c has a limit of 8000
         // Maybe I'll add an option later to control this size since it's command-dependent
         let chunks = self.ctr.make_chunks(&self.args, 7500);
         for chunk in chunks.iter() {
-            match chunk.exec(noaction) {
+            match chunk.exec(options.noaction, options.syncronous_exec) {
                 Ok(s) => {
-                    if verbose {
+                    if options.verbose {
                         logln(lw, s.as_str());
                     }
                 }
@@ -406,7 +407,7 @@ impl Action for ActionYaml {
         "Yaml".into()
     }
 
-    fn action(&mut self, lw: &mut LogWriter, path: &Path, _noaction: bool, _verbose: bool) {
+    fn action(&mut self, lw: &mut LogWriter, path: &Path, _options: &Options) {
         if path.is_file() {
             logln(lw, "- typ: file");
         } else {
@@ -417,7 +418,7 @@ impl Action for ActionYaml {
         logln(lw, &format!("  new: {}\n", qp));
     }
 
-    fn conclusion(&mut self, _lw: &mut LogWriter, _noaction: bool, _verbose: bool) {}
+    fn conclusion(&mut self, _lw: &mut LogWriter, _options: &Options) {}
 }
 
 /// Wraps a string in single quotes for safe inclusion in a YAML file.
