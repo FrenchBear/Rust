@@ -1,11 +1,12 @@
 [package]
 name = "rcat"
 description = "Rust version of cat utility, concatenate files and print on the standard output"
-version = "1.0.1"
+version = "1.1.0"
 authors = ["Pierre Violent"]
 edition = "2024"
 
 [dependencies]
+myglob = { path = "../../Crates/MyGlob" }
 mymarkup = { path = "../../Crates/MyMarkup" }
 getopt = "1.1.7"
 

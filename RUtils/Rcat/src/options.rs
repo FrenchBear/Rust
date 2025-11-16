@@ -2,6 +2,7 @@
 // Options processing
 //
 // 2025-10-24   PV      First version
+// 2025-11-16   PV      Options -a+/-a-, -d
 
 // Application imports
 use crate::*;
@@ -18,6 +19,8 @@ use mymarkup::MyMarkup;
 pub struct Options {
     pub sources: Vec<String>,
     pub number_lines: bool, // Unused for now
+    pub autorecurse: bool,
+    pub debug: bool,
     pub verbose: bool,
 }
 
@@ -29,14 +32,15 @@ impl Options {
     fn usage() {
         Options::header();
         println!();
-        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄|⦃-??⦄] [-⦃n⦄] [-⦃v⦄] [⟨source⟩...]
+        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄|⦃-??⦄] [-⦃n⦄] [-⦃v⦄] [-⦃d⦄] [⦃-a+⦄|⦃-a-⦄] [⟨source⟩...]
 
 ⌊Options⌋:
 ⦃?⦄|⦃-?⦄|⦃-h⦄  ¬Show this message
 ⦃??⦄|⦃-??⦄   ¬Show advanced usage notes
 ⦃-n⦄       ¬Number all output lines (not implemented yet)
 ⦃-v⦄       ¬Verbose output
-⟨source⟩   ¬Files or directories to read; without source, read stdin";
+⦃-a+⦄|⦃-a-⦄  ¬Enable (default) or disable glob autorecurse mode (see extended usage)
+⟨source⟩   ¬Files or directories to read (globbing supported). Without source, read stdin";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }
@@ -47,9 +51,19 @@ impl Options {
         println!();
 
         MyMarkup::render_markup("⌊Dependencies⌋:");
+        println!("- MyGlob: {}", MyGlobSearch::version());
         println!("- MyMarkup: {}", MyMarkup::version());
         println!("- getopt: {}", env!("DEP_GETOPT_VERSION"));
         println!();
+
+        let text = "⟪⌊Advanced usage notes⌋⟫
+
+⌊Advanced options⌋:
+⦃-d⦄       ¬Debug mode, show internal dev informations";
+
+        MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
+        println!();
+        MyMarkup::render_markup(MyGlobSearch::glob_syntax());
     }
 
     /// Build a new struct Options analyzing command line parameters.<br/>
@@ -69,7 +83,7 @@ impl Options {
         }
 
         let mut options = Options { ..Default::default() };
-        let mut opts = getopt::Parser::new(&args, "h?nv");
+        let mut opts = getopt::Parser::new(&args, "h?nva:");
 
         loop {
             match opts.next().transpose()? {
@@ -86,6 +100,23 @@ impl Options {
 
                     Opt('v', None) => {
                         options.verbose = true;
+                    }
+
+                    Opt('d', None) => {
+                        options.debug = true;
+                    }
+
+                    Opt('a', arg) => {
+                        if let Some(opt) = arg {
+                            if opt == "+" {
+                                options.autorecurse = true;
+                            } else if opt == "-" {
+                                options.autorecurse = false;
+                            } else {
+                                return Err(format!("Invalid option {}", opt).into());
+                            }
+                        }
+                        options.number_lines = true;
                     }
 
                     _ => unreachable!(),

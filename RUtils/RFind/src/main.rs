@@ -9,7 +9,6 @@
 // 2025-04-13	PV      1.4.2 Option -noa[utorecurse]
 // 2025-04-22	PV      1.5.0 Options -a+|-, -r+|-, options module
 // 2025-05-03	PV      1.6.0 Option -name
-// 2025-05-03	PV      1.6.0 Option -name
 // 2025-05-04   PV      1.6.1 Use MyMarkup for extended help formatting.
 // 2025-05-05	PV      1.7.0 Logging crate and Linux compatibility
 // 2025-07-11   PV      1.7.1 Get info from Cargo.toml and use build.rs

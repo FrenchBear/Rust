@@ -2,6 +2,11 @@
 //
 // 2025-10-24	PV      First version
 // 2025-10-31	PV      1.0.1 fn s(n)
+// 2025-11-16	PV      1.1   Use MyGlob
+
+// ToDo: implement a set of standard options to control glob library, not limited to a+/a-
+// ToDo: option to limit to text inputs and control output text encoding
+// ToDo: linuw allows - to represent stdin, as in "cat f - g": output f's contents, then standard input, then g's contents
 
 //#![allow(unused)]
 
@@ -10,6 +15,9 @@ use std::io::{self, Read, Write};
 use std::path::Path;
 use std::process;
 use std::time::Instant;
+
+// External crates imports
+use myglob::{MyGlobMatch, MyGlobSearch};
 
 // -----------------------------------
 // Submodules
@@ -47,12 +55,41 @@ fn main() {
 
     let start = Instant::now();
 
-    let mut b = DataBag { ..Default::default() };
-
+    // Convert String sources into MyGlobSearch structs
+    let mut sources: Vec<(&String, MyGlobSearch)> = Vec::new();
+    let mut err_found = false;
     for source in options.sources.iter() {
-        let pb = Path::new(source);
-        process_file(&mut b, pb, &options);
+
+        // ToDo: use standard options
+        let builder = MyGlobSearch::new(source).autorecurse(options.autorecurse);
+        // .max_depth(options.maxdepth)
+        // .case_sensitive(options.case_sensitive)
+        // .set_link_mode(options.link_mode);
+        // if options.no_glob_filtering {
+        //     builder = builder.clear_ignore_dirs();
+        // }
+
+        let resgs = builder.compile();
+        match resgs {
+            Ok(gs) => {
+                if options.debug {
+                    println!("dbg: {} -> {:?}", source, gs.segments);
+                }
+                sources.push((source, gs));
+            }
+            Err(e) => {
+                err_found = true;
+                println!("*** Error building MyGlob: {:?}", e);
+            }
+        }
     }
+
+    // No valid input, just exit, don't process stdin
+    if err_found && sources.is_empty() {
+        process::exit(1);
+    }
+
+    let mut b = DataBag { ..Default::default() };
 
     // If no source has been provided, use stdin
     if options.sources.is_empty() {
@@ -72,6 +109,24 @@ fn main() {
             eprintln!("{APP_NAME}: error writing to stdout: {}", e);
             // Exit since we can't write to stdout anymore.
             process::exit(1);
+        }
+    } else {
+        for gs in sources.iter() {
+            for ma in gs.1.explore_iter() {
+                match ma {
+                    MyGlobMatch::File(pb) => {
+                        process_file(&mut b, &pb, &options);
+                    }
+
+                    MyGlobMatch::Dir(_) => {}
+
+                    MyGlobMatch::Error(err) => {
+                        if options.verbose {
+                            println!("{APP_NAME}: MyGlobMatch error {}", err);
+                        }
+                    }
+                }
+            }
         }
     }
 
