@@ -33,6 +33,7 @@
 // 2025-10-30   PV      2.5.0 Refactored CommandToRun and related methods to a separate source file for sharing
 // 2025-11-15   PV      2.6.0 Option -w to make actions -exec/-execg synchronous (wait for command to terminate)
 // 2025-11-13   PV      3.0.0 Refactoring of all MyGlob options with -glob opp[,opt]... mygloboptions.ts not moved yet to MyGlob crate
+// 2025-11-16   PV      3.0.1 Moved MyGlobCLOptions to MyGlob crate; flag old MyGlob options as deprecated (but they still work)
 
 // Notes:
 // - Finding denormalized paths is handled by rcheckfiles and checknnn, no need for a third version :-)
@@ -52,7 +53,7 @@ use std::time::Instant;
 
 // External crates imports
 use logging::{LogWriter, log, logln, logwriter_none};
-use myglob::{MyGlobMatch, MyGlobSearch};
+use myglob::{MyGlobMatch, MyGlobSearch, MyGlobCLOptions};
 use windows as _;
 
 // -----------------------------------
@@ -150,14 +151,14 @@ fn main() {
     // Convert String sources into MyGlobSearch structs
     let mut sources: Vec<(&String, MyGlobSearch)> = Vec::new();
     for source in options.sources.iter() {
-        let mut builder = MyGlobSearch::new(source)
-            .autorecurse(options.gclo.autorecurse)
-            .max_depth(options.gclo.max_depth)
-            .case_sensitive(options.gclo.case_sensitive)
-            .set_link_mode(options.gclo.link_mode);
-        if options.gclo.no_glob_filtering {
-            builder = builder.clear_ignore_dirs();
-        }
+        let mut builder = MyGlobSearch::new(source).apply_command_line_options(&options.mgclo);
+        //     .autorecurse(options.mgclo.autorecurse)
+        //     .max_depth(options.mgclo.max_depth)
+        //     .case_sensitive(options.mgclo.case_sensitive)
+        //     .set_link_mode(options.mgclo.link_mode);
+        // if options.mgclo.no_glob_filtering {
+        //     builder = builder.clear_ignore_dirs();
+        // }
 
         let resgs = builder.compile();
         match resgs {

@@ -17,7 +17,7 @@
 // 2025-10-29   PV      -xargs replaced by -execg
 // 2025-10-29   PV      Added {} final for -exec/-execg if there is no {} in command
 // 2025-11-15   PV      -w to make actions -exec/-execg synchronous
-// 2025-11-16   PV      Grouped all MyGlob options into clo: GlobCLOptions
+// 2025-11-16   PV      Grouped all MyGlob options into mgclo: GlobCLOptions; Use MyGlob to parse these options
 
 // Application imports
 use crate::*;
@@ -29,11 +29,6 @@ use std::fmt::Debug;
 
 // External crates imports
 use mymarkup::MyMarkup;
-
-// Temp before moving this module to MyGlob crate
-#[path = "mygloboptions.rs"]
-mod mygloboptions;
-pub use mygloboptions::GlobCLOptions;
 
 // Dedicated struct to store command line arguments
 #[derive(Debug, Default)]
@@ -47,7 +42,7 @@ pub struct Options {
     pub search_dirs: bool,
     pub names: Vec<String>,
     pub recycle: bool,
-    pub gclo: GlobCLOptions,
+    pub mgclo: MyGlobCLOptions,
     pub noaction: bool,
     pub syncronous_exec: bool,
     pub verbose: bool,
@@ -60,23 +55,26 @@ impl Options {
         println!("{APP_NAME} {APP_VERSION}\n{APP_DESCRIPTION}");
     }
 
+    fn header_copyright() {
+        Self::header();
+        println!("Copyright ©2025 Pierre Violent");
+    }
+
     fn usage() {
         Options::header();
         println!();
-        let text = "⌊Usage⌋: {APP_NAME} ¬[⦃?⦄|⦃-?⦄|⦃-h⦄|⦃??⦄] [⦃-v⦄] [⦃-w⦄] [⦃-n⦄] [⦃-cs⦄] [⦃-r+⦄|⦃-r-⦄] [⦃-a+⦄|⦃-a-⦄] [⦃-l⦄[⦃0⦄|⦃1⦄|⦃2⦄]] [⦃-name⦄ ⟨name⟩] [⦃-maxdepth⦄ ⟨n⟩] [⟨filter⟩...] [⟨action⟩...] ⟨source⟩...
+        let text = "⌊Usage⌋: {APP_NAME} [⟨option⟩...] [⟨filter⟩...] [⟨action⟩...] ⟨source⟩...
 
 ⌊Options⌋:
-⦃?⦄|⦃-?⦄|⦃-h⦄          ¬Show this message
-⦃??⦄               ¬Show advanced usage notes
+⦃?⦄|⦃-?⦄|⦃help⦄|⦃-help⦄  ¬Show this message
+⦃??⦄|⦃-??⦄|⦃--help⦄    ¬Show advanced usage notes
 ⦃-v⦄               ¬Verbose output
 ⦃-w⦄               ¬Actions ⦃-exec⦄/⦃-execg⦄ are synchronous (wait for command execution to terminate before continuing), default is asynchronous
 ⦃-n⦄               ¬No action: display actions, but don't execute them
-⦃-cs⦄              ¬Case-sensitive search (default is case insensitive)
 ⦃-r+⦄|⦃-r-⦄          ¬Delete to recycle bin (default) or delete forever; Recycle bin is not allowed on network sources
-⦃-a+⦄|⦃-a-⦄          ¬Enable (default) or disable glob autorecurse mode (see extended usage)
-⦃-l⦄[⦃0⦄|⦃1⦄|⦃2⦄]        ¬Links mode: 0=ignore links, 1=include links but don't follow them (default), 2=follow links
-⦃-name⦄ ⟨name⟩       ¬Append ⟦/**/⟨name⟩⟧ to each source directory (compatibility with XFind/Search)
-⦃-maxdepth⦄ ⟨n⟩      ¬Limit the recursion depth of ** segments, 1=One directory only, ... Default=0 is unlimited depth
+⦃-glob opt⟩[,⟨opt⟩]⦄… ¬Globbing specific options (see extended help)
+
+⟨source⟩           ¬File or directory to search (glob pattern)
 
 ⌊Filters⌋:
 ⦃-f⦄|⦃-type f⦄       ¬Search for files
@@ -84,6 +82,7 @@ impl Options {
 ⦃-e⦄|⦃-empty⦄        ¬Only find empty files or directories
 ⦃-ads⦄             ¬Select files with alternate data streams
 ⦃-adsx⦄            ¬Select files with alternate data streams of 2KB or more (typically ignore Zone.identification, AFP_Resource, ms-properties...)
+⦃-name⦄ ⟨name⟩       ¬Append ⟦/**/⟨name⟩⟧ to each source directory (compatibility with XFind/Search)
 
 ⌊Actions⌋:
 ⦃-print⦄           ¬Default, print matching files names and dir names
@@ -93,16 +92,13 @@ impl Options {
 ⦃-rmdir⦄           ¬Delete matching directories, whether empty or not
 ⦃-exec⦄ ⟨cmd⟩ [⦃;⦄]    ¬Execute command ⟨cmd⟩ for each path found, {} replaced by the path or added at the end. A single semicolon marks the end of the command
 ⦃-execg⦄ ⟨cmd⟩ [⦃;⦄]   ¬Execute grouped command ⟨cmd⟩ at the end, {} replaced by all the paths found or added at the end. A single semicolon marks the end of the command
-⦃-yaml⦄            ¬Generate old/new yaml data for matches, to be edited and used by rcheckfiles -F
-
-⟨source⟩           ¬File or directory to search (glob pattern)";
+⦃-yaml⦄            ¬Generate old/new yaml data for matches, to be edited and used by rcheckfiles -F";
 
         MyMarkup::render_markup(text.replace("{APP_NAME}", APP_NAME).as_str());
     }
 
     fn extended_usage() {
-        Options::header();
-        println!("Copyright ©2025 Pierre Violent");
+        Self::header_copyright();
         println!();
 
         MyMarkup::render_markup("⌊Dependencies⌋:");
@@ -117,10 +113,12 @@ impl Options {
         let text = "⟪⌊Advanced usage notes⌋⟫
 
 ⌊Advanced options⌋:
-⦃-dbg⦄       ¬Debug mode, show internal dev informations
-⦃-log⦄       ¬Write log file in temp folder
-⦃-ngf⦄       ¬No glob filtering: $RECYCLE.BIN, .git and System Volume Information are not filtered out
-
+⦃-dbg⦄       ¬Debug mode, show internal dev information
+⦃-log⦄       ¬Write log file in temp folder\n\n"
+            .to_string()
+            + MyGlobCLOptions::options()
+            + "
+            
 ⌊Compatibility with XFind⌋:
 - ¬Option ⦃-norecycle⦄ can be used instead of ⦃-r-⦄ to indicate to delete forever.
 - ¬Option ⦃-name⦄ can be used to indicate a specific file name or pattern to search.";
@@ -140,7 +138,7 @@ impl Options {
 
         let mut options = Options {
             recycle: true,
-            gclo: GlobCLOptions {
+            mgclo: MyGlobCLOptions {
                 autorecurse: true,
                 link_mode: 1,
                 ..Default::default()
@@ -161,6 +159,23 @@ impl Options {
             arg.starts_with('-')
         }
 
+        // Special options processing
+        if args.len() > 1 {
+            if args[1] == "?" || args[1] == "-?" || args[1].to_lowercase() == "help" || args[1].to_lowercase() == "-help" {
+                Self::usage();
+                return Err("".into());
+            }
+
+            if args[1] == "??" || args[1] == "-??" || args[1].to_lowercase() == "--help" {
+                Self::extended_usage();
+                return Err("".into());
+            }
+        }
+
+        fn dep(old: &str, new: &str) {
+            println!("*** Warning: Deprecated option {old}, use -glob {new} instead")
+        }
+
         // Since we have non-standard long options, don't use getopt for options processing but a manual loop
         let mut args_iter = args.iter();
         args_iter.next(); // Skip application executable
@@ -170,16 +185,15 @@ impl Options {
                 let arglc = arg[1..].to_lowercase();
 
                 match &arglc[..] {
-                    "?" | "h" | "help" | "-help" => {
-                        Self::usage();
-                        return Err("".into());
-                    }
+                    // "?" | "help" => {
+                    //     Self::usage();
+                    //     return Err("".into());
+                    // }
 
-                    "??" => {
-                        Self::extended_usage();
-                        return Err("".into());
-                    }
-
+                    // "??" | "-help" => {
+                    //     Self::extended_usage();
+                    //     return Err("".into());
+                    // }
                     "v" => options.verbose = true,
                     "w" => options.syncronous_exec = true,
                     "log" => options.log = true,
@@ -211,39 +225,63 @@ impl Options {
                     // -- MyGlob options
 
                     // New compact version
-                    "glob" => {
+                    "glob" | "-glob" => {
                         if let Some(arg) = args_iter.next() {
-                            options.gclo.process_options(arg);
+                            options.mgclo.process_options(arg);
                         } else {
                             return Err("Option -glob requires an argument".into());
                         }
                     }
 
-                    "a+" => options.gclo.autorecurse = true,
-                    "a-" => options.gclo.autorecurse = false,
-
-                    "l0" => options.gclo.link_mode = 0,
-                    "l1" => options.gclo.link_mode = 1,
-                    "l2" => options.gclo.link_mode = 2,
+                    // Keep legacy glob options, but they are deprecated
+                    "a+" => {
+                        options.mgclo.autorecurse = true;
+                        dep("-a+", "a+");
+                    }
+                    "a-" => {
+                        options.mgclo.autorecurse = false;
+                        dep("-a-", "a-");
+                    }
+                    "l0" => {
+                        options.mgclo.link_mode = 0;
+                        dep("-l0", "l0");
+                    }
+                    "l1" => {
+                        options.mgclo.link_mode = 1;
+                        dep("-l1", "l1");
+                    }
+                    "l2" => {
+                        options.mgclo.link_mode = 2;
+                        dep("-l2", "l2");
+                    }
 
                     "maxdepth" => {
+                        dep("-maxdepth n", "md n");
                         if let Some(name) = args_iter.next() {
                             if name.parse::<usize>().is_err() {
                                 return Err("Option -maxdepth requires a numeric argument".into());
                             }
-                            options.gclo.max_depth = name.parse::<usize>().unwrap();
+                            options.mgclo.max_depth = name.parse::<usize>().unwrap();
                         } else {
                             return Err("Option -maxdepth requires an argument".into());
                         }
                     }
 
-                    "cs" | "cs+" => options.gclo.case_sensitive = true,
-                    "cs-" => options.gclo.case_sensitive = false,
+                    "cs" | "cs+" => {
+                        options.mgclo.case_sensitive = true;
+                        dep("-cs", "cs");
+                    }
+                    "cs-" => {
+                        options.mgclo.case_sensitive = false;
+                        dep("-ci", "ci");
+                    }
 
-                    "ngf" => options.gclo.no_glob_filtering = true,
+                    "ngf" => {
+                        options.mgclo.no_glob_filtering = true;
+                        dep("-ngf", "ngf");
+                    }
 
                     // --
-
                     "e" | "empty" => {
                         options.filters_names.insert("empty");
                     }

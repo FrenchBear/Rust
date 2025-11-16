@@ -3,12 +3,13 @@
 // 2025-10-24	PV      First version
 // 2025-10-31	PV      1.0.1 fn s(n)
 // 2025-11-16	PV      1.1   Use MyGlob
+// 2025-11-16	PV      2.0   Use getopts instead of getopt to parse options; Use MyGlobCLOptions to process MyGlob options
 
 // ToDo: implement a set of standard options to control glob library, not limited to a+/a-
 // ToDo: option to limit to text inputs and control output text encoding
 // ToDo: linuw allows - to represent stdin, as in "cat f - g": output f's contents, then standard input, then g's contents
 
-//#![allow(unused)]
+#![allow(unused)]
 
 // Standard library imports
 use std::io::{self, Read, Write};
@@ -17,7 +18,7 @@ use std::process;
 use std::time::Instant;
 
 // External crates imports
-use myglob::{MyGlobMatch, MyGlobSearch};
+use myglob::{MyGlobCLOptions, MyGlobMatch, MyGlobSearch};
 
 // -----------------------------------
 // Submodules
@@ -44,7 +45,7 @@ struct DataBag {
 
 fn main() {
     // Process options
-    let options = Options::new().unwrap_or_else(|err| {
+    let options = AppOptions::new().unwrap_or_else(|err| {
         let msg = format!("{}", err);
         if msg.is_empty() {
             process::exit(0);
@@ -53,22 +54,15 @@ fn main() {
         process::exit(1);
     });
 
+    // println!("options: {:#?}\n", options);
+
     let start = Instant::now();
 
     // Convert String sources into MyGlobSearch structs
     let mut sources: Vec<(&String, MyGlobSearch)> = Vec::new();
     let mut err_found = false;
     for source in options.sources.iter() {
-
-        // ToDo: use standard options
-        let builder = MyGlobSearch::new(source).autorecurse(options.autorecurse);
-        // .max_depth(options.maxdepth)
-        // .case_sensitive(options.case_sensitive)
-        // .set_link_mode(options.link_mode);
-        // if options.no_glob_filtering {
-        //     builder = builder.clear_ignore_dirs();
-        // }
-
+        let mut builder = MyGlobSearch::new(source).apply_command_line_options(&options.mgclo);
         let resgs = builder.compile();
         match resgs {
             Ok(gs) => {
@@ -93,7 +87,7 @@ fn main() {
 
     // If no source has been provided, use stdin
     if options.sources.is_empty() {
-        if options.verbose {
+        if options.verbose > 0 {
             // Use eprintln for verbose messages to not mix with stdout content
             eprintln!("Reading from stdin");
         }
@@ -121,7 +115,7 @@ fn main() {
                     MyGlobMatch::Dir(_) => {}
 
                     MyGlobMatch::Error(err) => {
-                        if options.verbose {
+                        if options.verbose > 0 {
                             println!("{APP_NAME}: MyGlobMatch error {}", err);
                         }
                     }
@@ -139,7 +133,7 @@ fn main() {
         }
     }
 
-    if options.verbose {
+    if options.verbose > 0 {
         println!("{} file{} searched in {:.3}s", b.files_count, s(b.files_count), duration.as_secs_f64());
     }
 }
@@ -150,11 +144,11 @@ fn s(n: usize) -> &'static str {
 }
 
 /// First step processing a file, read text content from path and call process_text.
-fn process_file(b: &mut DataBag, path: &Path, options: &Options) {
+fn process_file(b: &mut DataBag, path: &Path, options: &AppOptions) {
     match std::fs::read(path) {
         Ok(bytes) => {
             if let Err(e) = io::stdout().write_all(&bytes) {
-                if options.verbose {
+                if options.verbose > 0 {
                     eprintln!("{APP_NAME}: error writing to stdout: {}", e);
                 }
                 // Exit since we can't write to stdout anymore

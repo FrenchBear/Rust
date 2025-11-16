@@ -32,6 +32,7 @@
 // 2025-10-23   PV      2.1.0 Rollback and use again std::os::windows::fs::FileTypeExt, because dir entry .is_dir() is different than path .is_dir() (for dir link, first is false, second is true)
 // 2025-10-24   PV      2.1.1 Fixed bug C:\**\thumbs.db stopping search at first file not found
 // 2025-10-29   PV      2.2.0 MyGlobSearch::root()
+// 2025-11-16   PV      3.0.0 Added MyGlobCLOptions; MyGlobBuilder::apply_command_line_options helper
 
 //#![allow(unused_variables, dead_code, unused_imports)]
 
@@ -45,7 +46,10 @@ use std::os::windows::fs::FileTypeExt;
 use std::path::{Path, PathBuf};
 
 // -----------------------------------
-// Submodules
+
+// Helper to standardize command line options processing
+mod myglobcloptions;
+pub use myglobcloptions::MyGlobCLOptions;
 
 mod tests;
 
@@ -220,10 +224,26 @@ Pattern ⟦*.*⟧ explicitly refers to segments containing a dot. This is differ
             link_mode: self.link_mode,
         }
     }
-
 }
 
 impl MyGlobBuilder {
+    /// Process at once all options of MyGlobCLOptions
+    /// Note: duplicate the code of individual hepers instead of calling them to avoid multiple objects creation/drop
+    pub fn apply_command_line_options(mut self, opt: &MyGlobCLOptions) -> Self {
+        if opt.no_glob_filtering {
+            self.ignore_dirs.clear();
+        }
+        self.autorecurse = opt.autorecurse;
+        self.case_sensitive = opt.case_sensitive;
+        self.max_depth = opt.max_depth;
+        self.link_mode = opt.link_mode;
+        for dir in &opt.filters {
+            self.ignore_dirs.push(dir.to_lowercase());
+        }
+
+        self
+    }
+
     /// Add a directory name to ignore during search, case insensitive (no path, no *)
     pub fn add_ignore_dir(mut self, dir: &str) -> Self {
         self.ignore_dirs.push(dir.to_lowercase());
