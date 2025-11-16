@@ -17,6 +17,7 @@
 // 2025-10-29   PV      -xargs replaced by -execg
 // 2025-10-29   PV      Added {} final for -exec/-execg if there is no {} in command
 // 2025-11-15   PV      -w to make actions -exec/-execg synchronous
+// 2025-11-16   PV      Grouped all MyGlob options into clo: GlobCLOptions
 
 // Application imports
 use crate::*;
@@ -29,6 +30,11 @@ use std::fmt::Debug;
 // External crates imports
 use mymarkup::MyMarkup;
 
+// Temp before moving this module to MyGlob crate
+#[path = "mygloboptions.rs"]
+mod mygloboptions;
+pub use mygloboptions::GlobCLOptions;
+
 // Dedicated struct to store command line arguments
 #[derive(Debug, Default)]
 pub struct Options {
@@ -40,12 +46,8 @@ pub struct Options {
     pub search_files: bool,
     pub search_dirs: bool,
     pub names: Vec<String>,
-    pub maxdepth: usize,
     pub recycle: bool,
-    pub case_sensitive: bool,
-    pub autorecurse: bool,
-    pub link_mode: usize,
-    pub no_glob_filtering: bool,
+    pub gclo: GlobCLOptions,
     pub noaction: bool,
     pub syncronous_exec: bool,
     pub verbose: bool,
@@ -137,9 +139,14 @@ impl Options {
         // let args = vec![String::from("app.exe"), String::from(r"C:\Temp\T\*"), String::from(r"-execg"),  String::from(r"cmd"),  String::from(r"/c"),  String::from(r"type"),  String::from(r"{}")];
 
         let mut options = Options {
-            autorecurse: true,
             recycle: true,
-            link_mode: 1,
+            gclo: GlobCLOptions {
+                autorecurse: true,
+                link_mode: 1,
+                ..Default::default()
+            },
+            search_files: false,
+            search_dirs: false,
             ..Default::default()
         };
 
@@ -201,19 +208,41 @@ impl Options {
                         }
                     }
 
+                    // -- MyGlob options
+
+                    // New compact version
+                    "glob" => {
+                        if let Some(arg) = args_iter.next() {
+                            options.gclo.process_options(arg);
+                        } else {
+                            return Err("Option -glob requires an argument".into());
+                        }
+                    }
+
+                    "a+" => options.gclo.autorecurse = true,
+                    "a-" => options.gclo.autorecurse = false,
+
+                    "l0" => options.gclo.link_mode = 0,
+                    "l1" => options.gclo.link_mode = 1,
+                    "l2" => options.gclo.link_mode = 2,
+
                     "maxdepth" => {
                         if let Some(name) = args_iter.next() {
                             if name.parse::<usize>().is_err() {
                                 return Err("Option -maxdepth requires a numeric argument".into());
                             }
-                            options.maxdepth = name.parse::<usize>().unwrap();
+                            options.gclo.max_depth = name.parse::<usize>().unwrap();
                         } else {
                             return Err("Option -maxdepth requires an argument".into());
                         }
                     }
 
-                    "cs" | "cs+" => options.case_sensitive = true,
-                    "cs-" => options.case_sensitive = false,
+                    "cs" | "cs+" => options.gclo.case_sensitive = true,
+                    "cs-" => options.gclo.case_sensitive = false,
+
+                    "ngf" => options.gclo.no_glob_filtering = true,
+
+                    // --
 
                     "e" | "empty" => {
                         options.filters_names.insert("empty");
@@ -227,15 +256,6 @@ impl Options {
 
                     "r+" | "recycle" => options.recycle = true,
                     "r-" | "norecycle" => options.recycle = false,
-
-                    "a+" => options.autorecurse = true,
-                    "a-" => options.autorecurse = false,
-
-                    "l0" => options.link_mode = 0,
-                    "l1" => options.link_mode = 1,
-                    "l2" => options.link_mode = 2,
-
-                    "ngf" => options.no_glob_filtering = true,
 
                     "print" => {
                         options.actions_names.insert("print");

@@ -32,6 +32,7 @@
 // 2025-10-27   PV      2.4.1 Added {} final for -exec/-execg if there is no {} in command
 // 2025-10-30   PV      2.5.0 Refactored CommandToRun and related methods to a separate source file for sharing
 // 2025-11-15   PV      2.6.0 Option -w to make actions -exec/-execg synchronous (wait for command to terminate)
+// 2025-11-13   PV      3.0.0 Refactoring of all MyGlob options with -glob opp[,opt]... mygloboptions.ts not moved yet to MyGlob crate
 
 // Notes:
 // - Finding denormalized paths is handled by rcheckfiles and checknnn, no need for a third version :-)
@@ -40,7 +41,7 @@
 // - Accent insensitive search (actually maybe not useful, but everything does it)
 // - Option -rename with a simplified sed syntax
 
-//#![allow(unused)]
+#![allow(unused)]
 
 // Standard library imports
 use std::fmt::Debug;
@@ -57,19 +58,19 @@ use windows as _;
 // -----------------------------------
 // Submodules
 
-mod filters;
 mod actions;
-mod options;
-mod fa_streams;
 mod command_to_run;
+mod fa_streams;
+mod filters;
+mod options;
 
 mod tests;
 
 // -----------------------------------
 // Modules
 
-use options::*;
 use command_to_run::*;
+use options::*;
 
 // -----------------------------------
 // Global constants
@@ -91,7 +92,6 @@ trait Filter: Debug {
     fn name(&self) -> &'static str;
     fn filter(&mut self, lw: &mut LogWriter, path: &Path, verbose: bool) -> bool;
 }
-
 
 // ==============================================================================================
 // Main
@@ -151,11 +151,11 @@ fn main() {
     let mut sources: Vec<(&String, MyGlobSearch)> = Vec::new();
     for source in options.sources.iter() {
         let mut builder = MyGlobSearch::new(source)
-            .autorecurse(options.autorecurse)
-            .max_depth(options.maxdepth)
-            .case_sensitive(options.case_sensitive)
-            .set_link_mode(options.link_mode);
-        if options.no_glob_filtering {
+            .autorecurse(options.gclo.autorecurse)
+            .max_depth(options.gclo.max_depth)
+            .case_sensitive(options.gclo.case_sensitive)
+            .set_link_mode(options.gclo.link_mode);
+        if options.gclo.no_glob_filtering {
             builder = builder.clear_ignore_dirs();
         }
 
@@ -202,7 +202,6 @@ fn main() {
         }
     }
 
-
     let mut actions = Vec::<Box<dyn Action>>::new();
     for action_name in options.actions_names.iter() {
         match *action_name {
@@ -241,7 +240,7 @@ fn main() {
 
         if !filters.is_empty() {
             logln(&mut writer, "\nFilter(s): ");
-            for ba in filters.iter() {  
+            for ba in filters.iter() {
                 logln(&mut writer, format!("- {}", (**ba).name()).as_str());
             }
         }

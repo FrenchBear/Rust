@@ -1,12 +1,15 @@
 // rfind tests
 //
 // 2025-10-30   PV      First version of the tests
+// 2025-11-16   PV      test_cl_options
 
 #[cfg(test)]
 mod tests {
     use assert_cmd::{Command, cargo};
     use predicates::prelude::*;
     use std::collections::HashSet;
+
+    use crate::*;
 
     #[test]
     fn test_find_rs_files_in_src() {
@@ -79,15 +82,10 @@ mod tests {
         let assert = cmd.arg("src\\fa*.rs").arg("-yaml").assert();
 
         assert.success().stdout(predicate::function(|output: &str| {
-            let mut expected_files: HashSet<&str> = [
-                r"- typ: file",
-                r"",
-                r"  old: 'src\fa_streams.rs'",
-                r"  new: 'src\fa_streams.rs'",
-            ]
-            .iter()
-            .cloned()
-            .collect();
+            let mut expected_files: HashSet<&str> = [r"- typ: file", r"", r"  old: 'src\fa_streams.rs'", r"  new: 'src\fa_streams.rs'"]
+                .iter()
+                .cloned()
+                .collect();
 
             for line in output.lines() {
                 if !expected_files.remove(line) {
@@ -100,4 +98,28 @@ mod tests {
             expected_files.is_empty()
         }));
     }
+
+    #[test]
+    fn test_cl_options_1() {
+        let mut gclo = GlobCLOptions::new();
+        gclo.process_options("a+,cs,l2,md 3,ngf");
+        assert_eq!(gclo.autorecurse, true);
+        assert_eq!(gclo.case_sensitive, true);
+        assert_eq!(gclo.link_mode, 2);
+        assert_eq!(gclo.max_depth, 3);
+        assert_eq!(gclo.no_glob_filtering, true);
+        assert!(gclo.filters.is_empty());
+    }
+
+    #[test]
+    fn test_cl_options_2() {
+        let mut gclo = GlobCLOptions::new();
+        gclo.process_options("cs");
+        gclo.process_options("fbin,f obj");
+        assert_eq!(gclo.case_sensitive, true);
+        assert_eq!(gclo.filters.len(), 2);
+        assert_eq!(gclo.filters[0], "bin");
+        assert_eq!(gclo.filters[1], "obj");
+    }
+    
 }
