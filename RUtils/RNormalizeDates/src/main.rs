@@ -8,6 +8,7 @@
 // 2025-05-05	PV      1.1.4 Logging crate
 // 2025-05-07	PV      1.1.5 "Hors-Serie" -> "HS"
 // 2025-10-31	PV      1.1.6 fn s(n)
+// 2025-11-29   PV      1.1.7 Updated definition of re_date_ymm_std, second month mandatory
 
 //#![allow(unused)]
 

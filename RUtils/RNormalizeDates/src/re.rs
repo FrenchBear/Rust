@@ -3,6 +3,7 @@
 //
 // 2025-04-14   PV      Moved to a separate file to reduce size of main.rs
 // 2025-04-16   PV      Better normalization of n°
+// 2025-11-29   PV      Updated definition of re_date_ymm_std, second month mandatory
 
 use regex::Regex;
 
@@ -137,7 +138,8 @@ impl DatePatterns {
 
         // Dates already valid, to ignore
         let re_date_ymd_std = Regex::new((String::from("(?i)") + year + "-" + month + "-" + day + r"(\.\." + day + ")?").as_str()).unwrap();
-        let re_date_ymm_std = Regex::new((String::from("(?i)") + year + "-" + month + r"(\.\." + month + ")?").as_str()).unwrap();
+        //let re_date_ymm_std = Regex::new((String::from("(?i)") + year + "-" + month + r"(\.\." + month + ")?").as_str()).unwrap();
+        let re_date_ymm_std = Regex::new((String::from("(?i)") + year + "-" + month + r"\.\." + month).as_str()).unwrap();
 
         // Special patterns
         let re_date_ymd_head = Regex::new((String::from("(?i)") + "^ " + year + "[ -]" + "(0[1-9]|10|11|12)" + "[ -]" + day + " ").as_str()).unwrap();

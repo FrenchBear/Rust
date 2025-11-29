@@ -35,6 +35,7 @@ fn test_re_mymy() {
     assert!(d.re_date_mymy.is_match("xx 12 2024 - 02 2025 xx"));
     assert!(d.re_date_mymy.is_match("xx déc 2024 à fév 2025 xx"));
     assert!(d.re_date_mymy.is_match("xx June 2024 January 2025 xx"));
+    assert!(d.re_date_mymy.is_match("xx Décembre 2025-Février 2026 xx"));
 }
 
 #[test]
