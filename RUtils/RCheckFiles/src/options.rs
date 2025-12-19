@@ -7,6 +7,7 @@
 // 2025-10-22   PV      Clippy review
 // 2025-10-24   PV      Problem das for dashes confusables, and mex for mixed scripts
 // 2025-11-03   PV      Problem usd for unbalanced spaces around dashes
+// 2025-12-19   PV      Print message and terminate when no options have been provided instead of crashing
 
 // Application imports
 use crate::*;
@@ -104,6 +105,11 @@ Option ⦃-y⦄ generates yaml output, including extra non-yaml header and foote
     /// Build a new struct Options analyzing command line parameters.<br/>
     /// Some invalid/inconsistent options or missing arguments return an error.
     pub fn new() -> Result<Options, Box<dyn Error>> {
+        if std::env::args().len()==1 {
+            Options::header();
+            return Err("Missing option(s), use option ? or ?? to see usage".into());
+        }
+
         let mut args: Vec<String> = std::env::args().collect();
         if args.len() > 1 && args[1].to_lowercase() == "help" {
             Self::usage();

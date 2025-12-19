@@ -26,6 +26,7 @@
 // 2025-10-25   PV      3.2.1 Space allowed before ¡
 // 2025-10-25   PV      3.2.2 πΔΩ allowed with other scripts
 // 2025-11-04   PV      3.3.0 Test unbalanced spaces around dashes
+// 2025-12-19   PV      3.3.1 Print message and terminate when no options have been provided instead of crashing
 
 // Note: Can't use MyGlob crate since directories names can be updated during recursive enumeration, this is not a
 // supported use case of MyGlob, so hierarchical exploration is handled directly
