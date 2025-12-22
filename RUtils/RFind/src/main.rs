@@ -152,13 +152,6 @@ fn main() {
     let mut sources: Vec<(&String, MyGlobSearch)> = Vec::new();
     for source in options.sources.iter() {
         let mut builder = MyGlobSearch::new(source).apply_command_line_options(&options.mgclo);
-        //     .autorecurse(options.mgclo.autorecurse)
-        //     .max_depth(options.mgclo.max_depth)
-        //     .case_sensitive(options.mgclo.case_sensitive)
-        //     .set_link_mode(options.mgclo.link_mode);
-        // if options.mgclo.no_glob_filtering {
-        //     builder = builder.clear_ignore_dirs();
-        // }
 
         let resgs = builder.compile();
         match resgs {
@@ -174,8 +167,9 @@ fn main() {
         }
     }
     if sources.is_empty() {
-        logln(&mut writer, format!("*** No source specified. Use {APP_NAME} ? to show usage.").as_str());
-        process::exit(1);
+        Options::header();
+        eprintln!("\nNo source/pattern specified.\nUse {APP_NAME} ? to show options or {APP_NAME} ?? for advanced usage notes.");
+        process::exit(0);
     }
 
     if options.verbose {

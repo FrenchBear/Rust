@@ -51,7 +51,7 @@ pub struct Options {
 }
 
 impl Options {
-    fn header() {
+    pub fn header() {
         println!("{APP_NAME} {APP_VERSION}\n{APP_DESCRIPTION}");
     }
 
@@ -185,15 +185,6 @@ impl Options {
                 let arglc = arg[1..].to_lowercase();
 
                 match &arglc[..] {
-                    // "?" | "help" => {
-                    //     Self::usage();
-                    //     return Err("".into());
-                    // }
-
-                    // "??" | "-help" => {
-                    //     Self::extended_usage();
-                    //     return Err("".into());
-                    // }
                     "v" => options.verbose = true,
                     "w" => options.syncronous_exec = true,
                     "log" => options.log = true,

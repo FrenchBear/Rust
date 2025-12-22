@@ -107,7 +107,8 @@ Option ⦃-y⦄ generates yaml output, including extra non-yaml header and foote
     pub fn new() -> Result<Options, Box<dyn Error>> {
         if std::env::args().len()==1 {
             Options::header();
-            return Err("Missing option(s), use option ? or ?? to see usage".into());
+            eprintln!("\nNo folder specified.\nUse {APP_NAME} ? to show options or {APP_NAME} ?? for advanced usage notes.");
+            return Err("".into());
         }
 
         let mut args: Vec<String> = std::env::args().collect();
