@@ -72,12 +72,12 @@ Without ⟨source⟩ argument, default directory is ⟦C:\\Downloads\\A_Trier\\!
     pub fn new() -> Result<Options, Box<dyn Error>> {
         let mut args: Vec<String> = std::env::args().collect();
         if args.len() > 1 {
-            if args[1].to_lowercase() == "help" {
+            if args[1] == "?" || args[1] == "-?" || args[1] == "/?" || args[1].to_lowercase() == "help" || args[1].to_lowercase() == "-help" || args[1].to_lowercase() == "/help" {
                 Self::usage();
                 return Err("".into());
             }
 
-            if args[1] == "??" || args[1] == "-??" {
+            if args[1] == "??" || args[1] == "-??" || args[1] == "/??" || args[1].to_lowercase() == "--help" {
                 Self::extended_usage();
                 return Err("".into());
             }
@@ -129,11 +129,6 @@ Without ⟨source⟩ argument, default directory is ⟦C:\\Downloads\\A_Trier\\!
 
         // Check for extra argument
         for arg in args.split_off(opts.index()) {
-            if arg == "?" || arg == "help" {
-                Self::usage();
-                return Err("".into());
-            }
-
             if arg.starts_with("-") {
                 return Err(format!("Invalid/unsupported option {}", arg).into());
             }
