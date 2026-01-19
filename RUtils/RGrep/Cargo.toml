@@ -1,7 +1,7 @@
 [package]
 name = "rgrep"
 description = "Grep utility in Rust"
-version = "1.8.2"
+version = "1.8.3"
 authors = ["Pierre Violent"]
 edition = "2024"
 
