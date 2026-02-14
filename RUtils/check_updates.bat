@@ -3,6 +3,7 @@ for /d %%d in (*.*) do (
 	echo ---------------------
 	echo %%d
 	pushd %%d
-	cargo update --verbose
+REM	cargo update --verbose
+    cargo clippy
 	popd
 )

@@ -2,6 +2,7 @@
 // Iterates over lines of a text matching some pattern
 //
 // 2025-03-14   PV
+// 2026-02-14   PV      Clippu review
 
 use regex::{Match, Matches, Regex};
 use std::ops::Range;
@@ -40,7 +41,10 @@ impl Iterator for GrepIteratorState<'_> {
         let mut currentline = String::new();
         let mut currentmatches = Vec::<Range<usize>>::new();
         loop {
-            let ma = if self.ma.is_none() {
+            let ma = if let Some(m) = self.ma {
+                self.ma = None;
+                m
+            } else {
                 let m = self.fi.next();
                 if m.is_none() {
                     if prevstartix == usize::MAX {
@@ -52,13 +56,9 @@ impl Iterator for GrepIteratorState<'_> {
                     });
                 }
                 m.unwrap()
-            } else {
-                let m = self.ma.unwrap();
-                self.ma = None;
-                m
             };
 
-            if ma.as_str()=="\r" || ma.as_str()=="\n" {
+            if ma.as_str() == "\r" || ma.as_str() == "\n" {
                 continue;
             }
 
