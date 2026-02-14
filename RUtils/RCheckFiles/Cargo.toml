@@ -17,4 +17,4 @@ unicode-ident = "1.0.12"
 unicode-script = "0.5.7"
 
 [build-dependencies]
-toml = "0.9"
+toml = "1.0.1"

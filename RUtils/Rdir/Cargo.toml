@@ -26,4 +26,4 @@ features = [
 ]
 
 [build-dependencies]
-toml = "0.9"
+toml = "1.0.1"

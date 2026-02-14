@@ -12,4 +12,4 @@ mymarkup = { path = "../../Crates/MyMarkup" }
 getopt = "1.1.7"
 
 [build-dependencies]
-toml = "0.9"
+toml = "1.0.1"
