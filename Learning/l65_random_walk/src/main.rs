@@ -33,7 +33,7 @@
 #![allow(unused)]
 
 use rand::rngs::SmallRng;
-use rand::{Rng, SeedableRng};
+use rand::{Rng, RngExt, SeedableRng};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 // Define the three villages for clarity and type safety.
