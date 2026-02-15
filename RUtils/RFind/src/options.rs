@@ -57,7 +57,7 @@ impl Options {
 
     fn header_copyright() {
         Self::header();
-        println!("Copyright ©2025 Pierre Violent");
+        println!("Copyright ©2025-2026 Pierre Violent");
     }
 
     fn usage() {

@@ -1,9 +1,12 @@
 [package]
 name = "rcat"
 description = "Rust version of cat utility, concatenate files and print on the standard output"
-version = "2.0.0"
+version = "2.1.0"
 authors = ["Pierre Violent"]
 edition = "2024"
+
+[package.metadata]
+copyright = "Copyright ©2025-2026 Pierre Violent"
 
 [dependencies]
 myglob = { path = "../../Crates/MyGlob" }
@@ -12,3 +15,5 @@ getopts = "0.2.24"
 
 [build-dependencies]
 toml = "1.0.1"
+winres = "0.1.12"
+cargo_metadata = "0.23.1"

@@ -46,7 +46,7 @@ impl Options {
 
     fn extended_usage() {
         Options::header();
-        println!("Copyright ©2025 Pierre Violent");
+        println!("Copyright ©2025-2026 Pierre Violent");
         println!();
 
         MyMarkup::render_markup("⌊Dependencies⌋:");
