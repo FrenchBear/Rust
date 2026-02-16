@@ -5,6 +5,9 @@ version = "1.2.0"
 authors = ["Pierre Violent"]
 edition = "2024"
 
+[package.metadata]
+copyright = "Copyright ©2025-2026 Pierre Violent"
+
 [dependencies]
 myglob = { path = "../../Crates/MyGlob" }
 mymarkup = { path = "../../Crates/MyMarkup" }
@@ -15,3 +18,5 @@ windows = {version= "0.62", features = ["Win32_Foundation", "Win32_Storage_FileS
 
 [build-dependencies]
 toml = "1.0.1"
+winres = "0.1.12"
+cargo_metadata = "0.23.1"
