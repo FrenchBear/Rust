@@ -1,9 +1,12 @@
 [package]
 name = "rfind"
 description = "Searching files in Rust"
-version = "3.0.1"
+version = "3.1.0"
 authors = ["Pierre Violent"]
 edition = "2024"
+
+[package.metadata]
+copyright = "Copyright ©2025-2026 Pierre Violent"
 
 [dependencies]
 myglob = { path = "../../Crates/MyGlob" }
@@ -16,6 +19,8 @@ windows = { version = "0.62", features = ["Win32_Foundation", "Win32_Storage_Fil
 
 [build-dependencies]
 toml = "1.0.1"
+winres = "0.1.12"
+cargo_metadata = "0.23.1"
 
 # For testing
 [dev-dependencies]

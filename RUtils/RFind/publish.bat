@@ -1,3 +1,4 @@
-echo Prefer publish.ps1 that signs the .exe
+@echo off
+echo You should use the Powershell version build.ps1
 cargo build --release
 COPY /Y target\release\rfind.exe C:\Utils
