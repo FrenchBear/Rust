@@ -1,9 +1,12 @@
 [package]
 name = "rcheckfiles"
 description = "Detect and optionally fix incorrect filenames"
-version = "3.3.1"
+version = "3.4.0"
 authors = ["Pierre Violent"]
 edition = "2024"
+
+[package.metadata]
+copyright = "Copyright ©2025-2026 Pierre Violent"
 
 [dependencies]
 mymarkup = { path = "../../Crates/MyMarkup" }
@@ -18,3 +21,5 @@ unicode-script = "0.5.7"
 
 [build-dependencies]
 toml = "1.0.1"
+winres = "0.1.12"
+cargo_metadata = "0.23.1"
