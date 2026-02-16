@@ -1,9 +1,12 @@
 [package]
 name = "rgrep"
 description = "Grep utility in Rust"
-version = "1.8.3"
+version = "1.9.0"
 authors = ["Pierre Violent"]
 edition = "2024"
+
+[package.metadata]
+copyright = "Copyright ©2025-2026 Pierre Violent"
 
 [dependencies]
 myglob = { path = "../../Crates/MyGlob" }
@@ -12,7 +15,8 @@ mymarkup = { path = "../../Crates/MyMarkup" }
 getopt = "1.1.7"
 regex = "1.11.1"
 colored = "3.0.0"
-# atty = "0.2.14"
 
 [build-dependencies]
 toml = "1.0.1"
+winres = "0.1.12"
+cargo_metadata = "0.23.1"
