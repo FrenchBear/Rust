@@ -1,9 +1,12 @@
 [package]
 name = "rnormalizedates"
-description = "Rust version of NormalizeDates, Normalizes dates in filenames, replace 'January 2020' by '2020-01'"
-version = "1.1.7"
+description = "Normalizes dates in filenames, replace 'January 2020' by '2020-01'"
+version = "1.2.0"
 authors = ["Pierre Violent"]
 edition = "2024"
+
+[package.metadata]
+copyright = "Copyright ©2025-2026 Pierre Violent"
 
 [dependencies]
 myglob = { path = "../../Crates/MyGlob" }
@@ -15,3 +18,5 @@ unicode-normalization = "0.1.24"
 
 [build-dependencies]
 toml = "1.0.1"
+winres = "0.1.12"
+cargo_metadata = "0.23.1"
